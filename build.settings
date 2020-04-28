@@ -1,0 +1,70 @@
+--
+-- For more information on build.settings, see the Project Build Settings guide at:
+-- https://docs.coronalabs.com/guide/distribution/buildSettings
+--
+
+settings =
+{
+	splashScreen = {enable = false},
+	orientation =
+	{
+		-- Supported values for orientation:
+		-- portrait, portraitUpsideDown, landscapeLeft, landscapeRight
+		default = "portrait",
+		supported = { "portrait", },
+	},
+
+	win32 =
+	{
+		singleInstance = true,
+	},
+
+	window =
+		{
+			defaultMode = "normal",
+			minViewWidth = 1650,
+			minViewHeight = 1024,
+			defaultViewWidth = 1650,
+			defaultViewHeight = 1024,
+			resizable = false,
+			enableMinimizeButton = true,
+			enableMaximizeButton = true,
+			enableCloseButton = true,
+			suspendWhenMinimized = false,
+			titleText = {
+				-- The "default" text will be used if the system is using a language and/or
+				-- country code not defined below. This serves as a fallback mechanism.
+				default = "Play - The Music Player",
+				-- This text is used on English language systems in the United States.
+				-- Note that the country code must be separated by a dash (-).
+				["en‐us"] = "Play - The Music Player",
+				-- This text is used on English language systems in the United Kingdom.
+				-- Note that the country code must be separated by a dash (-).
+				["en‐gb"] = "Play - The Music Player",
+				-- This text is used for all other English language systems.
+				["en"] = "Play - The Music Player",
+				-- This text is used for all French language systems.
+				["fr"] = "Window Title Test (French)",
+				-- This text is used for all Spanish language systems.
+				["es"] = "Window Title Test (Spanish)",
+			},
+		},
+
+	--
+	-- Plugins section
+	--
+	plugins =
+	{
+		["plugin.tinyfiledialogs"] = { publisherId = "com.xibalbastudios" },
+	},
+
+	--
+	-- Project section
+	--
+	excludeFiles =
+	{
+		-- Exclude unnecessary files for each platform
+		all = {"Icon.png", "Icon-*dpi.png", "Images.xcassets", ".git"},
+		android = {"LaunchScreen.storyboardc"},
+	},
+}
