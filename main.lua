@@ -11,8 +11,6 @@ local strict = require("strict")
 local tfd = require("plugin.tinyfiledialogs")
 local bass = require("plugin.bass")
 local utils = require("utils")
-widget.mouseEventsEnabled = true
-widget.setTheme("widget_theme_android_holo_dark")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -45,24 +43,117 @@ local controlButtonsXOffset = 10
 local documentsDirectoryPath = system.pathForFile("", system.DocumentsDirectory)
 local songProgess = 0
 local rowColors = {}
-local statusText = nil
+local songTitleText = nil
+local songAlbumText = nil
 local songProgressView = nil
 local musicTableView = nil
+local playbutton = nil
+local pauseButton = nil
 local playAudio = nil
+local volumeOnButton = nil
+local volumeOffButton = nil
+local volumeSlider = nil
+local previousVolume = 0
+local leftChannel = {}
+local rightChannel = {}
+local levelVisualizationGroup = display.newGroup()
+local buttonSize = 20
 local rowFontSize = 10
-local id3Info = {
-	album = "",
-	artist = "",
-	genre = "",
-	publisher = "",
-	title = "",
-	track = "",
-	duration = {
-		hours = 0,
-		minutes = 0,
-		seconds = 0
-	}
+local supportedFormats = {
+	"b",
+	"m",
+	"2sf",
+	"ahx",
+	"as0",
+	"asc",
+	"ay",
+	"ayc",
+	"bin",
+	"cc3",
+	"chi",
+	"cop",
+	"d",
+	"dmm",
+	"dsf",
+	"dsq",
+	"dst",
+	"esv",
+	"fdi",
+	"ftc",
+	"gam",
+	"gamplus",
+	"gbs",
+	"gsf",
+	"gtr",
+	"gym",
+	"hes",
+	"hrm",
+	"hrp",
+	"hvl",
+	"kss",
+	"lzs",
+	"m",
+	"mod",
+	"msp",
+	"mtc",
+	"nsf",
+	"nsfe",
+	"p",
+	"pcd",
+	"psc",
+	"psf",
+	"psf2",
+	"psg",
+	"psm",
+	"pt1",
+	"pt2",
+	"pt3",
+	"rmt",
+	"rsn",
+	"s",
+	"sap",
+	"scl",
+	"sid",
+	"spc",
+	"sqd",
+	"sqt",
+	"ssf",
+	"st1",
+	"st3",
+	"stc",
+	"stp",
+	"str",
+	"szx",
+	"td0",
+	"tf0",
+	"tfc",
+	"tfd",
+	"tfe",
+	"tlz",
+	"tlzp",
+	"trd",
+	"trs",
+	"ts",
+	"usf",
+	"vgm",
+	"vgz",
+	"vtx",
+	"ym",
+	"spx",
+	"mpc",
+	"ape",
+	"ac3",
+	"wav",
+	"aiff",
+	"mp3",
+	"mp2",
+	"mp1",
+	"ogg",
+	"flac",
+	"wav"
 }
+widget.mouseEventsEnabled = true
+widget.setTheme("widget_theme_ios")
 
 local function fileExists(filePath, baseDir)
 	local path = system.pathForFile(filePath, baseDir or system.DocumentsDirectory)
@@ -107,99 +198,6 @@ end
 local function isMusicFile(fileName)
 	local fileExtension = fileName:match("^.+(%..+)$")
 	local isMusic = false
-	local supportedFormats = {
-		"b",
-		"m",
-		"2sf",
-		"ahx",
-		"as0",
-		"asc",
-		"ay",
-		"ayc",
-		"bin",
-		"cc3",
-		"chi",
-		"cop",
-		"d",
-		"dmm",
-		"dsf",
-		"dsq",
-		"dst",
-		"esv",
-		"fdi",
-		"ftc",
-		"gam",
-		"gamplus",
-		"gbs",
-		"gsf",
-		"gtr",
-		"gym",
-		"hes",
-		"hrm",
-		"hrp",
-		"hvl",
-		"kss",
-		"lzs",
-		"m",
-		"mod",
-		"msp",
-		"mtc",
-		"nsf",
-		"nsfe",
-		"p",
-		"pcd",
-		"psc",
-		"psf",
-		"psf2",
-		"psg",
-		"psm",
-		"pt1",
-		"pt2",
-		"pt3",
-		"rmt",
-		"rsn",
-		"s",
-		"sap",
-		"scl",
-		"sid",
-		"spc",
-		"sqd",
-		"sqt",
-		"ssf",
-		"st1",
-		"st3",
-		"stc",
-		"stp",
-		"str",
-		"szx",
-		"td0",
-		"tf0",
-		"tfc",
-		"tfd",
-		"tfe",
-		"tlz",
-		"tlzp",
-		"trd",
-		"trs",
-		"ts",
-		"usf",
-		"vgm",
-		"vgz",
-		"vtx",
-		"ym",
-		"spx",
-		"mpc",
-		"ape",
-		"ac3",
-		"wav",
-		"aiff",
-		"mp3",
-		"mp2",
-		"mp1",
-		"ogg",
-		"flac",
-		"wav"
-	}
 
 	for i = 1, #supportedFormats do
 		if (fileExtension == sFormat(".%s", supportedFormats[i])) then
@@ -322,7 +320,8 @@ end
 
 playAudio = function(index)
 	resetSongProgress()
-	statusText:setSongName(musicFiles[index].tags.title, musicFiles[index].tags.artist)
+	songTitleText:setText(musicFiles[index].tags.title)
+	songAlbumText:setText(musicFiles[index].tags.album)
 	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
 	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 	musicDuration = bass.getDuration(musicStreamHandle) * 1000
@@ -333,38 +332,20 @@ local background = display.newRect(0, 0, dWidth, 80)
 background.anchorY = 0
 background.x = dCenterX
 background.y = 0
-background.fill = {
-	type = "gradient",
-	color1 = {39 / 255, 51 / 255, 1, 0.6},
-	color2 = {181 / 255, 42 / 255, 1, 0.6},
-	direction = "up"
-}
-
-statusText =
-	display.newText(
-	{
-		text = "No Song Playing",
-		align = "center",
-		width = dWidth - 20,
-		fontSize = 18
-	}
-)
-statusText.x = dCenterX
-statusText.y = 20
-function statusText:setSongName(name, artist)
-	self.text = sFormat("Currently Playing: %s by %s", name, artist)
-end
+background:setFillColor(0.1, 0.1, 0.1)
 
 local previousButton =
 	widget.newButton(
 	{
 		defaultFile = defaultButtonPath .. "previous-button.png",
 		overFile = overButtonPath .. "previous-button.png",
-		width = 30,
-		height = 30,
+		width = buttonSize,
+		height = buttonSize,
 		onPress = function(event)
 			if (currentSongIndex - 1 > 0) then
 				currentSongIndex = currentSongIndex - 1
+				playButton.isVisible = false
+				pauseButton.isVisible = true
 
 				cleanupAudio()
 				playAudio(currentSongIndex)
@@ -373,33 +354,20 @@ local previousButton =
 	}
 )
 previousButton.x = (dScreenOriginX + (previousButton.contentWidth * 0.5) + controlButtonsXOffset)
-previousButton.y = (statusText.y + (statusText.contentHeight) + 10)
+previousButton.y = 55
 
-local stopButton =
-	widget.newButton(
-	{
-		defaultFile = defaultButtonPath .. "stop-button.png",
-		overFile = overButtonPath .. "stop-button.png",
-		width = 30,
-		height = 30,
-		onPress = function(event)
-			statusText:setSongName("Nothing", "Nobody")
-			cleanupAudio()
-		end
-	}
-)
-stopButton.x = (previousButton.x + previousButton.contentWidth + controlButtonsXOffset)
-stopButton.y = previousButton.y
-
-local playButton =
+playButton =
 	widget.newButton(
 	{
 		defaultFile = defaultButtonPath .. "play-button.png",
 		overFile = overButtonPath .. "play-button.png",
-		width = 30,
-		height = 30,
+		width = buttonSize,
+		height = buttonSize,
 		onPress = function(event)
 			if (musicStreamHandle) then
+				event.target.isVisible = false
+				pauseButton.isVisible = true
+
 				if (bass.isChannelPlaying(musicPlayChannel)) then
 					return
 				end
@@ -414,38 +382,43 @@ local playButton =
 		end
 	}
 )
-playButton.x = (stopButton.x + stopButton.contentWidth + controlButtonsXOffset)
+playButton.x = (previousButton.x + previousButton.contentWidth + controlButtonsXOffset)
 playButton.y = previousButton.y
 
-local pauseButton =
+pauseButton =
 	widget.newButton(
 	{
 		defaultFile = defaultButtonPath .. "pause-button.png",
 		overFile = overButtonPath .. "pause-button.png",
-		width = 30,
-		height = 30,
+		width = buttonSize,
+		height = buttonSize,
 		onPress = function(event)
 			if (musicStreamHandle) then
 				if (bass.isChannelPlaying(musicPlayChannel)) then
 					bass.pause(musicPlayChannel)
+					event.target.isVisible = false
+					playButton.isVisible = true
 				end
 			end
 		end
 	}
 )
-pauseButton.x = (playButton.x + playButton.contentWidth + controlButtonsXOffset)
+pauseButton.x = playButton.x
 pauseButton.y = previousButton.y
+pauseButton.isVisible = false
 
 local nextButton =
 	widget.newButton(
 	{
 		defaultFile = defaultButtonPath .. "next-button.png",
 		overFile = overButtonPath .. "next-button.png",
-		width = 30,
-		height = 30,
+		width = buttonSize,
+		height = buttonSize,
 		onPress = function(event)
 			if (currentSongIndex + 1 <= #musicFiles) then
 				currentSongIndex = currentSongIndex + 1
+				playButton.isVisible = false
+				pauseButton.isVisible = true
 
 				cleanupAudio()
 				playAudio(currentSongIndex)
@@ -455,6 +428,48 @@ local nextButton =
 )
 nextButton.x = (pauseButton.x + pauseButton.contentWidth + controlButtonsXOffset)
 nextButton.y = previousButton.y
+
+local songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
+songContainerBox.anchorX = 0
+songContainerBox.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset + 29)
+songContainerBox.y = nextButton.y - 5
+songContainerBox.strokeWidth = 1
+songContainerBox:setFillColor(0, 0, 0, 0)
+songContainerBox:setStrokeColor(0.6, 0.6, 0.6)
+
+songTitleText =
+	display.newText(
+	{
+		text = "",
+		align = "center",
+		width = dWidth / 2,
+		fontSize = 15
+	}
+)
+songTitleText.anchorX = 0
+songTitleText.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset + 30)
+songTitleText.y = songContainerBox.y - 12
+songTitleText:setFillColor(0.9, 0.9, 0.9)
+function songTitleText:setText(title)
+	self.text = title
+end
+
+songAlbumText =
+	display.newText(
+	{
+		text = "",
+		align = "center",
+		width = dWidth / 2,
+		fontSize = 12
+	}
+)
+songAlbumText.anchorX = 0
+songAlbumText.x = songTitleText.x
+songAlbumText.y = songTitleText.y + songTitleText.contentHeight
+songAlbumText:setFillColor(0.6, 0.6, 0.6)
+function songAlbumText:setText(album)
+	self.text = album
+end
 
 local loopButton =
 	widget.newSwitch(
@@ -466,41 +481,33 @@ local loopButton =
 		end
 	}
 )
+loopButton.width = buttonSize
+loopButton.height = buttonSize
 loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
 loopButton.y = previousButton.y
-
-local volumeSlider =
-	widget.newSlider(
-	{
-		width = 100,
-		value = 100,
-		listener = function(event)
-			bass.setVolume(event.value / 100)
-			--print("new volume: " .. bass.getVolume())
-		end
-	}
-)
-volumeSlider.x = (loopButton.x + (loopButton.contentWidth * 0.5) + 20)
-volumeSlider.y = previousButton.y - 5
+loopButton._viewOff:setFillColor(0.7, 0.7, 0.7)
 
 songProgressView =
 	widget.newProgressView(
 	{
-		width = 100,
+		width = dWidth / 2,
 		isAnimated = true
 	}
 )
-songProgressView.x = (volumeSlider.x + volumeSlider.contentWidth + songProgressView.contentWidth)
-songProgressView.y = previousButton.y
+songProgressView.height = songProgressView.height / 2
+songProgressView.anchorX = 0
+songProgressView.x = songTitleText.x
+songProgressView.y = songAlbumText.y + songAlbumText.contentHeight
 
 function songProgressView:touch(event)
 	local phase = event.phase
 
 	if (phase == "began") then
 		local valueX, valueY = self:contentToLocal(event.x, event.y)
-		--local duration = (musicDuration / 1000)
+		local onePercent = self.contentWidth / 100
+		local currentPercent = valueX / onePercent
 		local duration = musicDuration
-		local seekPosition = ((valueX / 10) * musicDuration / 10)
+		local seekPosition = ((currentPercent / 10) * musicDuration / 10)
 		--print(seekPosition)
 
 		if (bass.isChannelPlaying(musicPlayChannel)) then
@@ -514,13 +521,67 @@ end
 songProgressView:addEventListener("touch")
 songProgressView:setProgress(0)
 
+volumeOnButton =
+	widget.newButton(
+	{
+		defaultFile = defaultButtonPath .. "volume-button.png",
+		overFile = overButtonPath .. "volume-button.png",
+		width = buttonSize,
+		height = buttonSize,
+		onPress = function(event)
+			previousVolume = bass.getVolume()
+			bass.setVolume(0)
+			volumeSlider:setValue(0)
+			event.target.isVisible = false
+			volumeOffButton.isVisible = true
+		end
+	}
+)
+volumeOnButton.x = (songProgressView.x + (songProgressView.contentWidth) + controlButtonsXOffset + 20)
+volumeOnButton.y = previousButton.y
+
+volumeOffButton =
+	widget.newButton(
+	{
+		defaultFile = defaultButtonPath .. "volume-off-button.png",
+		overFile = overButtonPath .. "volume-off-button.png",
+		width = buttonSize,
+		height = buttonSize,
+		onPress = function(event)
+			bass.setVolume(previousVolume)
+			volumeSlider:setValue(previousVolume * 100)
+			event.target.isVisible = false
+			volumeOnButton.isVisible = true
+		end
+	}
+)
+volumeOffButton.x = volumeOnButton.x
+volumeOffButton.y = previousButton.y
+volumeOffButton.isVisible = false
+
+volumeSlider =
+	widget.newSlider(
+	{
+		width = 100,
+		value = 100,
+		listener = function(event)
+			bass.setVolume(event.value / 100)
+			--print("new volume: " .. bass.getVolume())
+		end
+	}
+)
+volumeSlider.height = volumeSlider.height / 1.5
+volumeSlider.x = (volumeOnButton.x + (volumeOnButton.contentWidth) + 2)
+volumeSlider.y = previousButton.y - 4
+
+--[[
 local addMusicButton =
 	widget.newButton(
 	{
 		defaultFile = defaultButtonPath .. "add-button.png",
 		overFile = overButtonPath .. "add-button.png",
-		width = 30,
-		height = 30,
+		width = buttonSize,
+		height = buttonSize,
 		onPress = function(event)
 			local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
 
@@ -537,8 +598,37 @@ local addMusicButton =
 		end
 	}
 )
-addMusicButton.x = (songProgressView.x + songProgressView.contentWidth + addMusicButton.contentWidth)
-addMusicButton.y = previousButton.y
+addMusicButton.x = (volumeSlider.x + volumeSlider.contentWidth + addMusicButton.contentWidth)
+addMusicButton.y = previousButton.y--]]
+for i = 1, 13 do
+	leftChannel[i] = display.newRect(50, 0, 2, 30)
+	rightChannel[i] = display.newRect(50, 0, 2, 30)
+
+	if (i == 1) then
+		leftChannel[i].x = 50
+		leftChannel[i].origHeight = 2
+		rightChannel[i].x = 104
+		rightChannel[i].origHeight = 2
+	else
+		leftChannel[i].x = mFloor(leftChannel[i - 1].x + 4)
+		leftChannel[i].origHeight = mFloor(28 - (i * 2))
+		rightChannel[i].x = mFloor(rightChannel[i - 1].x + 4)
+		rightChannel[i].origHeight = mFloor(rightChannel[i - 1].origHeight + 2)
+	end
+
+	leftChannel[i]:setFillColor((255 - (21 * i - 1)) / 255, (21 * i - 1) / 255, 0)
+	rightChannel[i]:setFillColor((21 * i - 1) / 255, (255 - (21 * i - 1)) / 255, 0)
+
+	leftChannel[i].anchorY = 1
+	rightChannel[i].anchorY = 1
+	rightChannel[i].height = 1
+	leftChannel[i].height = 1
+	levelVisualizationGroup:insert(leftChannel[i])
+	levelVisualizationGroup:insert(rightChannel[i])
+end
+
+levelVisualizationGroup.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
+levelVisualizationGroup.y = volumeOnButton.y --+ previousButton.contentHeight * 0.5 - 5
 
 musicTableView =
 	widget.newTableView(
@@ -672,6 +762,8 @@ musicTableView =
 				currentSongIndex = row.index - 1
 				cleanupAudio()
 				playAudio(currentSongIndex)
+				playButton.isVisible = false
+				pauseButton.isVisible = true
 			end
 		end,
 		listener = function(event)
@@ -694,40 +786,6 @@ function musicTableView:highlightPressedIndex(pressedIndex)
 		end
 	end
 end
-
-local leftChannel = {}
-local rightChannel = {}
-local levelVisualizationGroup = display.newGroup()
-
-for i = 1, 13 do
-	leftChannel[i] = display.newRect(50, 0, 2, 30)
-	rightChannel[i] = display.newRect(50, 0, 2, 30)
-
-	if (i == 1) then
-		leftChannel[i].x = 50
-		leftChannel[i].origHeight = 2
-		rightChannel[i].x = 104
-		rightChannel[i].origHeight = 2
-	else
-		leftChannel[i].x = mFloor(leftChannel[i - 1].x + 4)
-		leftChannel[i].origHeight = mFloor(28 - (i * 2))
-		rightChannel[i].x = mFloor(rightChannel[i - 1].x + 4)
-		rightChannel[i].origHeight = mFloor(rightChannel[i - 1].origHeight + 2)
-	end
-
-	leftChannel[i]:setFillColor((255 - (21 * i - 1)) / 255, (21 * i - 1) / 255, 0)
-	rightChannel[i]:setFillColor((21 * i - 1) / 255, (255 - (21 * i - 1)) / 255, 0)
-
-	leftChannel[i].anchorY = 1
-	rightChannel[i].anchorY = 1
-	rightChannel[i].height = 1
-	leftChannel[i].height = 1
-	levelVisualizationGroup:insert(leftChannel[i])
-	levelVisualizationGroup:insert(rightChannel[i])
-end
-
-levelVisualizationGroup.x = addMusicButton.x
-levelVisualizationGroup.y = addMusicButton.y + addMusicButton.contentHeight * 0.5 - 5
 
 timer.performWithDelay(
 	10,
@@ -820,10 +878,6 @@ local function keyEventListener(event)
 				cleanupAudio()
 				playAudio(currentSongIndex)
 			end
-		elseif (keyCode == 65540) then
-			-- stop
-			statusText:setSongName("Nothing", "Nobody")
-			cleanupAudio()
 		end
 	end
 
