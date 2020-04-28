@@ -59,6 +59,8 @@ local rightChannel = {}
 local levelVisualizationGroup = display.newGroup()
 local buttonSize = 20
 local rowFontSize = 10
+local titleFont = "fonts/Roboto-Regular.ttf"
+local subTitleFont = "fonts/Roboto-Light.ttf"
 local supportedFormats = {
 	"b",
 	"m",
@@ -171,7 +173,7 @@ end
 local function populateMusicTableView()
 	local default = {default = {0.38, 0.38, 0.38, 0.6}, over = {0.38, 0.38, 0.38, 0}}
 	local defaultSecondRow = {default = {0.28, 0.28, 0.28, 0.6}, over = {0.28, 0.28, 0.28, 0}}
-	local category = {default = {0.48, 0.48, 0.8}, over = {0.48, 0.48, 0.48, 0.8}}
+	local category = {default = {0.15, 0.15, 0.15}, over = {0.2, 0.2, 0.2, 0.8}}
 	local rowColor = default
 
 	for i = 1, #musicFiles + 1 do
@@ -328,12 +330,6 @@ playAudio = function(index)
 	musicPlayChannel = bass.play(musicStreamHandle, {loop = false, onComplete = onAudioComplete})
 end
 
-local background = display.newRect(0, 0, dWidth, 80)
-background.anchorY = 0
-background.x = dCenterX
-background.y = 0
-background:setFillColor(0.1, 0.1, 0.1)
-
 local previousButton =
 	widget.newButton(
 	{
@@ -435,12 +431,13 @@ songContainerBox.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOf
 songContainerBox.y = nextButton.y - 5
 songContainerBox.strokeWidth = 1
 songContainerBox:setFillColor(0, 0, 0, 0)
-songContainerBox:setStrokeColor(0.6, 0.6, 0.6)
+songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 
 songTitleText =
 	display.newText(
 	{
 		text = "",
+		font = titleFont,
 		align = "center",
 		width = dWidth / 2,
 		fontSize = 15
@@ -458,6 +455,7 @@ songAlbumText =
 	display.newText(
 	{
 		text = "",
+		font = subTitleFont,
 		align = "center",
 		width = dWidth / 2,
 		fontSize = 12
@@ -491,13 +489,18 @@ songProgressView =
 	widget.newProgressView(
 	{
 		width = dWidth / 2,
-		isAnimated = true
+		isAnimated = false
 	}
 )
-songProgressView.height = songProgressView.height / 2
+songProgressView._view._outerLeft.height = 5
+songProgressView._view._outerMiddle.height = 5
+songProgressView._view._outerRight.height = 5
+songProgressView._view._fillLeft.height = 5
+songProgressView._view._fillMiddle.height = 5
+songProgressView._view._fillRight.height = 5
 songProgressView.anchorX = 0
 songProgressView.x = songTitleText.x
-songProgressView.y = songAlbumText.y + songAlbumText.contentHeight - 2
+songProgressView.y = songAlbumText.y + songAlbumText.contentHeight + 1
 
 function songProgressView:touch(event)
 	local phase = event.phase
@@ -653,6 +656,7 @@ musicTableView =
 					display.newText(
 					{
 						text = "Title",
+						font = titleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -667,6 +671,7 @@ musicTableView =
 					display.newText(
 					{
 						text = "Album",
+						font = titleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -681,6 +686,7 @@ musicTableView =
 					display.newText(
 					{
 						text = "Artist",
+						font = titleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -712,6 +718,7 @@ musicTableView =
 					display.newText(
 					{
 						text = tags.title,
+						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -727,6 +734,7 @@ musicTableView =
 					display.newText(
 					{
 						text = tags.album,
+						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -742,6 +750,7 @@ musicTableView =
 					display.newText(
 					{
 						text = tags.artist,
+						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
@@ -783,7 +792,7 @@ function musicTableView:highlightPressedIndex(pressedIndex)
 		end
 
 		if (musicTableView._view._rows[pressedIndex + 1]._view) then
-			musicTableView._view._rows[pressedIndex + 1]._view._cell:setFillColor(0, 0, 0, 0)
+			musicTableView._view._rows[pressedIndex + 1]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
 		end
 	end
 end
@@ -856,9 +865,15 @@ local function keyEventListener(event)
 		if (keyCode == 65539) then
 			if (musicPlayChannel) then
 				if (bass.isChannelPaused(musicPlayChannel)) then
+					playButton.isVisible = false
+					pauseButton.isVisible = true
+
 					bass.resume(musicPlayChannel)
 				else
 					if (bass.isChannelPlaying(musicPlayChannel)) then
+						playButton.isVisible = true
+						pauseButton.isVisible = false
+
 						bass.pause(musicPlayChannel)
 					end
 				end
@@ -867,6 +882,8 @@ local function keyEventListener(event)
 			-- next
 			if (currentSongIndex + 1 <= #musicFiles) then
 				currentSongIndex = currentSongIndex + 1
+				playButton.isVisible = false
+				pauseButton.isVisible = true
 
 				cleanupAudio()
 				playAudio(currentSongIndex)
@@ -875,6 +892,8 @@ local function keyEventListener(event)
 			-- previous
 			if (currentSongIndex - 1 > 0) then
 				currentSongIndex = currentSongIndex - 1
+				playButton.isVisible = false
+				pauseButton.isVisible = true
 
 				cleanupAudio()
 				playAudio(currentSongIndex)
