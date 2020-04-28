@@ -497,7 +497,7 @@ songProgressView =
 songProgressView.height = songProgressView.height / 2
 songProgressView.anchorX = 0
 songProgressView.x = songTitleText.x
-songProgressView.y = songAlbumText.y + songAlbumText.contentHeight
+songProgressView.y = songAlbumText.y + songAlbumText.contentHeight - 2
 
 function songProgressView:touch(event)
 	local phase = event.phase
@@ -628,7 +628,8 @@ for i = 1, 13 do
 end
 
 levelVisualizationGroup.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
-levelVisualizationGroup.y = volumeOnButton.y --+ previousButton.contentHeight * 0.5 - 5
+levelVisualizationGroup.y = volumeOnButton.y
+display.getCurrentStage():insert(levelVisualizationGroup)
 
 musicTableView =
 	widget.newTableView(
