@@ -9,9 +9,11 @@ local lfs = require("lfs")
 local widget = require("widget")
 local strict = require("strict")
 local tfd = require("plugin.tinyfiledialogs")
+local mousecursor = require("plugin.mousecursor")
 local bass = require("plugin.bass")
 local mainMenuBar = require("main-menu-bar")
 local utils = require("utils")
+local tableView = require("music_tableview")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -47,7 +49,10 @@ local rowColors = {}
 local songTitleText = nil
 local songAlbumText = nil
 local songProgressView = nil
-local musicTableView = nil
+local tableViewTarget = nil
+local categoryTarget = nil
+local categoryList = {}
+local tableViewList = {}
 local playbutton = nil
 local pauseButton = nil
 local playAudio = nil
@@ -65,6 +70,7 @@ local buttonSize = 20
 local rowFontSize = 10
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
+local resizeCursor = mousecursor.newCursor("resize left right")
 local supportedFormats = {
 	"b",
 	"m",
@@ -177,27 +183,28 @@ end
 local function populateMusicTableView()
 	local default = {default = {0.38, 0.38, 0.38, 0.6}, over = {0.38, 0.38, 0.38, 0}}
 	local defaultSecondRow = {default = {0.28, 0.28, 0.28, 0.6}, over = {0.28, 0.28, 0.28, 0}}
-	local category = {default = {0.15, 0.15, 0.15}, over = {0.2, 0.2, 0.2, 0.8}}
 	local rowColor = default
 
-	for i = 1, #musicFiles + 1 do
-		rowColor = default
+	for j = 1, #tableViewList do
+		for i = 1, #musicFiles do
+			rowColor = default
 
-		if (i % 2 == 0) then
-			rowColor = defaultSecondRow
-		end
+			if (i % 2 == 0) then
+				rowColor = defaultSecondRow
+			end
 
-		musicTableView:insertRow {
-			isCategory = i == 1,
-			rowHeight = 25,
-			rowColor = i == 1 and category or rowColor,
-			params = {
-				--id = [i].id,
-				fileName = i > 1 and musicFiles[i - 1].fileName,
-				filePath = i > 1 and musicFiles[i - 1].filePath
+			tableViewList[j]:insertRow {
+				isCategory = false,
+				rowHeight = 25,
+				rowColor = rowColor,
+				params = {
+					--id = [i].id,
+					fileName = musicFiles[i].fileName,
+					filePath = musicFiles[i].filePath
+				}
 			}
-		}
-		rowColors[i] = (i == 1) and category or rowColor
+			rowColors[i] = rowColor
+		end
 	end
 end
 
@@ -234,7 +241,10 @@ local function gatherMusic(path)
 
 		if (isMusicFile(fullPath)) then
 			local chan = bass.load(filename, musicPath)
+			local playbackDuration = bass.getPlaybackTime(chan).duration
 			musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = bass.getTags(chan)}
+			musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
+			playbackDuration = nil
 		--bass.dispose(chan)
 		end
 	end
@@ -751,70 +761,26 @@ function playBackTimeText:update()
 		sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
 end
 
-musicTableView =
-	widget.newTableView(
-	{
-		left = 0,
-		top = 80,
-		width = dWidth,
-		height = dHeight - 80,
-		isLocked = true,
-		noLines = true,
-		rowTouchDelay = 0,
-		backgroundColor = {0.18, 0.18, 0.18},
-		onRowRender = function(event)
-			local phase = event.phase
-			local row = event.row
-			local rowContentHeight = row.contentHeight
-			local params = row.params
+local function createTableView(options)
+	local tView =
+		tableView.new(
+		{
+			left = options.left,
+			top = 105,
+			width = options.width or (dWidth / 5),
+			height = dHeight - 80,
+			isLocked = true,
+			noLines = true,
+			rowTouchDelay = 0,
+			backgroundColor = {0.18, 0.18, 0.18},
+			onRowRender = function(event)
+				local phase = event.phase
+				local row = event.row
+				local rowContentWidth = row.contentWidth
+				local rowContentHeight = row.contentHeight
+				local params = row.params
+				local tags = musicFiles[row.index].tags
 
-			if (row.isCategory) then
-				local titleText =
-					display.newText(
-					{
-						text = "Title",
-						font = titleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						align = "left"
-					}
-				)
-				titleText.anchorX = 0
-				titleText.x = 25
-				row:insert(titleText)
-
-				local albumText =
-					display.newText(
-					{
-						text = "Album",
-						font = titleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						align = "left"
-					}
-				)
-				albumText.anchorX = 0
-				albumText.x = titleText.x + titleText.contentWidth + albumText.contentWidth + 380
-				row:insert(albumText)
-
-				local artistText =
-					display.newText(
-					{
-						text = "Artist",
-						font = titleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						align = "left"
-					}
-				)
-				artistText.anchorX = 0
-				artistText.x = albumText.x + albumText.contentWidth + artistText.contentWidth + 200
-				row:insert(artistText)
-			else
-				local tags = musicFiles[row.index - 1].tags
 				if (tags.title == nil) then
 					tags = {
 						album = "",
@@ -831,85 +797,343 @@ musicTableView =
 					}
 				end
 
-				local songTitleText =
+				local rowTitleText =
 					display.newText(
 					{
-						text = tags.title,
+						text = tags[options.rowTitle],
 						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
-						width = row.contentWidth * 0.5 - 10,
+						width = rowContentWidth - 10,
+						height = rowContentHeight * 0.5,
 						align = "left"
 					}
 				)
-				songTitleText.anchorX = 0
-				songTitleText.x = 25
-				row:insert(songTitleText)
+				rowTitleText.anchorX = 0
+				rowTitleText.x = 10
+				row:insert(rowTitleText)
+			end,
+			onRowTouch = function(event)
+				local phase = event.phase
+				local row = event.row
+				local params = row.params
 
-				local songAlbumText =
-					display.newText(
-					{
-						text = tags.album,
-						font = subTitleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						width = row.contentWidth * 0.25,
-						align = "left"
-					}
-				)
-				songAlbumText.anchorX = 0
-				songAlbumText.x = songTitleText.x + songTitleText.contentWidth + 10
-				row:insert(songAlbumText)
-
-				local songArtistText =
-					display.newText(
-					{
-						text = tags.artist,
-						font = subTitleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						width = row.contentWidth * 0.25,
-						align = "left"
-					}
-				)
-				songArtistText.anchorX = 0
-				songArtistText.x = songAlbumText.x + songAlbumText.contentWidth + 10
-				row:insert(songArtistText)
+				if (phase == "press") then
+					currentSongIndex = row.index
+					cleanupAudio()
+					playAudio(currentSongIndex)
+					playButton.isVisible = false
+					pauseButton.isVisible = true
+				end
 			end
-		end,
-		onRowTouch = function(event)
-			local phase = event.phase
-			local row = event.row
-			local params = row.params
+		}
+	)
+	tView.leftPos = options.left
+	tView.topPos = 80
+	tView.orderIndex = options.index
 
-			if (phase == "press") then
-				currentSongIndex = row.index - 1
-				cleanupAudio()
-				playAudio(currentSongIndex)
-				playButton.isVisible = false
-				pauseButton.isVisible = true
-			end
-		end,
-		listener = function(event)
-		end
+	return tView
+end
+
+local categoryBar = display.newRect(0, 0, dWidth, 25)
+categoryBar.anchorX = 0
+categoryBar.anchorY = 0
+categoryBar.x = 0
+categoryBar.y = 80
+categoryBar:setFillColor(0.15, 0.15, 0.15)
+
+local listOptions = {
+	{
+		index = 1,
+		left = 0,
+		width = dWidth,
+		showSeperatorLine = true,
+		categoryTitle = "Title",
+		rowTitle = "title"
+	},
+	{
+		index = 2,
+		left = 200,
+		width = dWidth,
+		showSeperatorLine = true,
+		categoryTitle = "Artist",
+		rowTitle = "artist"
+	},
+	{
+		index = 3,
+		left = 400,
+		width = dWidth,
+		showSeperatorLine = true,
+		categoryTitle = "Album",
+		rowTitle = "album"
+	},
+	{
+		index = 4,
+		left = 600,
+		width = dWidth,
+		showSeperatorLine = true,
+		categoryTitle = "Genre",
+		rowTitle = "genre"
+	},
+	{
+		index = 5,
+		left = 750,
+		width = dWidth,
+		showSeperatorLine = true,
+		categoryTitle = "Duration",
+		rowTitle = "duration"
 	}
-)
+}
 
-function musicTableView:highlightPressedIndex(pressedIndex)
-	if (pressedIndex) then
-		for i = 2, musicTableView:getNumRows() do
-			local view = musicTableView._view._rows[i]._view
+for i = 1, #listOptions do
+	tableViewList[i] = createTableView(listOptions[i])
+	categoryList[i] = display.newGroup()
+	categoryList[i].x = listOptions[i].left
+	categoryList[i].y = 80
+	categoryList[i].index = i
 
-			if (view) then
-				view._cell:setFillColor(unpack(rowColors[i].default))
-			end
+	local seperatorText =
+		display.newText(
+		{
+			text = "|",
+			left = 0,
+			y = categoryBar.contentHeight * 0.5,
+			font = subTitleFont,
+			fontSize = 18,
+			align = "left"
+		}
+	)
+	categoryList[i]:insert(seperatorText)
+
+	function seperatorText:touch(event)
+		local phase = event.phase
+
+		if (phase == "began") then
+			tableViewTarget = tableViewList[self.parent.index]
+			categoryTarget = categoryList[i]
+		elseif (phase == "ended" or phase == "cancelled") then
+			tableViewTarget = nil
 		end
 
-		if (musicTableView._view._rows[pressedIndex + 1]._view) then
-			musicTableView._view._rows[pressedIndex + 1]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
+		return true
+	end
+
+	function seperatorText:mouse(event)
+		local phase = event.type
+		local xStart = self.x
+		local xEnd = self.x + self.contentWidth
+		local yStart = self.y - self.contentHeight * 0.5
+		local yEnd = self.y + self.contentHeight * 0.5
+		local x, y = self:contentToLocal(event.x, event.y)
+
+		if (phase == "move") then
+			-- handle main menu buttons
+			if (y >= yStart - 8 and y <= yStart + 8) then
+				if (x >= xStart - 2 and x <= xEnd - 4) then
+					resizeCursor:show()
+				else
+					resizeCursor:hide()
+				end
+			else
+				resizeCursor:hide()
+			end
+		end
+	end
+
+	seperatorText:addEventListener("touch")
+	seperatorText:addEventListener("mouse")
+
+	local titleText =
+		display.newText(
+		{
+			text = listOptions[i].categoryTitle,
+			y = categoryBar.contentHeight * 0.5,
+			font = titleFont,
+			fontSize = 12,
+			align = "left"
+		}
+	)
+	titleText.anchorX = 0
+	titleText.x = seperatorText.x + seperatorText.contentWidth
+	titleText:setFillColor(1, 1, 1)
+	categoryList[i]:insert(titleText)
+
+	function titleText:touch(event)
+		local phase = event.phase
+		local target = event.target
+		local xStart = target.x
+		local xEnd = target.x + target.contentWidth
+		local yStart = target.y - target.contentHeight * 0.5
+		local yEnd = target.y + target.contentHeight * 0.5
+		local x, y = event.x, event.y
+
+		if (phase == "began") then
+			local thisTableView = tableViewList[self.parent.index]
+			local origIndex = tableViewList[thisTableView.orderIndex].orderIndex
+			local buttons = {"Right", "Left", "Cancel"}
+
+			if (tableViewList[thisTableView.orderIndex].orderIndex == 1) then
+				buttons = {"Right", "Cancel"}
+			elseif (tableViewList[thisTableView.orderIndex].orderIndex == #tableViewList) then
+				buttons = {"Left", "Cancel"}
+			end
+
+			local function onComplete(event)
+				local optionName = buttons[event.index]
+
+				if (event.action == "clicked") then
+					if (optionName == "Right") then
+						local origList = tableViewList[origIndex]
+						local origPreviousList = tableViewList[origIndex + 1]
+						local origCategory = categoryList[origIndex]
+						local origPreviousCategory = categoryList[origIndex + 1]
+						local targetX = tableViewList[origIndex + 1].x
+						local swapTargetX = tableViewList[origIndex].x
+						local targetCategoryX = categoryList[origIndex + 1].x
+						local swapTargetCategoryX = categoryList[origIndex].x
+
+						-- swap positions
+						tableViewList[origIndex].x = targetX
+						tableViewList[origIndex + 1].x = swapTargetX
+						categoryList[origIndex].x = targetCategoryX
+						categoryList[origIndex + 1].x = swapTargetCategoryX
+
+						-- set new indexes
+						tableViewList[origIndex + 1].orderIndex = origIndex
+						tableViewList[origIndex].orderIndex = origIndex + 1
+						categoryList[origIndex + 1].index = origIndex
+						categoryList[origIndex].index = origIndex + 1
+
+						-- swap table items
+						tableViewList[origIndex + 1] = origList
+						tableViewList[origIndex] = origPreviousList
+						categoryList[origIndex + 1] = origCategory
+						categoryList[origIndex] = origPreviousCategory
+
+						-- push moved (left) list to front
+						tableViewList[origIndex]:toFront()
+
+						for i = origIndex + 1, #tableViewList do
+							tableViewList[i]:toFront()
+						end
+					elseif (optionName == "Left") then
+						local origList = tableViewList[origIndex]
+						local origPreviousList = tableViewList[origIndex - 1]
+						local origCategory = categoryList[origIndex]
+						local origPreviousCategory = categoryList[origIndex - 1]
+						local targetX = tableViewList[origIndex - 1].x
+						local swapTargetX = tableViewList[origIndex].x
+						local targetCategoryX = categoryList[origIndex - 1].x
+						local swapTargetCategoryX = categoryList[origIndex].x
+
+						-- swap positions
+						tableViewList[origIndex].x = targetX
+						tableViewList[origIndex - 1].x = swapTargetX
+						categoryList[origIndex].x = targetCategoryX
+						categoryList[origIndex - 1].x = swapTargetCategoryX
+
+						-- set new indexes
+						tableViewList[origIndex - 1].orderIndex = origIndex
+						tableViewList[origIndex].orderIndex = origIndex - 1
+						categoryList[origIndex - 1].index = origIndex
+						categoryList[origIndex].index = origIndex - 1
+
+						-- swap table items
+						tableViewList[origIndex - 1] = origList
+						tableViewList[origIndex] = origPreviousList
+						categoryList[origIndex - 1] = origCategory
+						categoryList[origIndex] = origPreviousCategory
+
+						-- push moved (right) list to front
+						tableViewList[origIndex]:toFront()
+
+						for i = origIndex + 1, #tableViewList do
+							tableViewList[i]:toFront()
+						end
+					else
+						print("cancel")
+					end
+				end
+			end
+
+			local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
+		end
+
+		return true
+	end
+
+	titleText:addEventListener("touch")
+end
+
+local function moveColumns(event)
+	local phase = event.phase
+
+	if (tableViewTarget) then
+		if (phase == "moved") then
+			tableViewTarget.x = mFloor(event.x + tableViewTarget.contentWidth * 0.5)
+			categoryTarget.x = mFloor(event.x + categoryTarget.contentWidth * 0.5 - 20)
+		end
+
+		if (phase == "ended" or phase == "cancelled") then
+			resizeCursor:hide()
+			tableViewTarget = nil
+
+			for i = 1, #tableViewList do
+				tableViewList[i]:addListeners()
+			end
+		end
+	end
+
+	return true
+end
+
+Runtime:addEventListener("touch", moveColumns)
+
+local function onMouseEvent(event)
+	local eventType = event.type
+
+	if (eventType == "move") then
+		local x = event.x
+		local y = event.y
+
+		-- handle main menu buttons
+		if (y >= 105) then
+			resizeCursor:hide()
+		end
+	end
+end
+
+Runtime:addEventListener("mouse", onMouseEvent)
+
+local function mouseEvents(event)
+	for i = 1, #tableViewList do
+		tableViewList[i]:mouse(event)
+	end
+
+	if event.type == "up" then
+		resizeCursor:hide()
+	end
+end
+
+Runtime:addEventListener("mouse", mouseEvents)
+
+local ts = tableViewList[1]
+
+function ts:highlightPressedIndex(pressedIndex)
+	if (pressedIndex) then
+		for i = 1, #tableViewList do
+			for j = 1, ts:getNumRows() do
+				local list = tableViewList[i]._view._rows[j]._view
+
+				if (list and j ~= pressedIndex) then
+					list._cell:setFillColor(unpack(rowColors[j].default))
+				end
+			end
+
+			if (tableViewList[i]._view._rows[pressedIndex]._view) then
+				tableViewList[i]._view._rows[pressedIndex]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
+			end
 		end
 	end
 end
@@ -917,8 +1141,8 @@ end
 timer.performWithDelay(
 	10,
 	function()
-		if (currentSongIndex > 0 and currentSongIndex <= musicTableView:getNumRows()) then
-			musicTableView:highlightPressedIndex(currentSongIndex)
+		if (currentSongIndex > 0 and currentSongIndex <= ts:getNumRows()) then
+			ts:highlightPressedIndex(currentSongIndex)
 		end
 
 		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then

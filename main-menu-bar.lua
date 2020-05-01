@@ -201,6 +201,10 @@ function M.new(options)
 					else
 						button._view:setFillColor(unpack(button.origFill.default))
 					end
+				else
+					if (not isItemOpen) then
+						button._view:setFillColor(unpack(button.origFill.default))
+					end
 				end
 
 				-- handle subItems (the tableview contents)

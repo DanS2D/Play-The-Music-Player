@@ -55,7 +55,8 @@ settings =
 	--
 	plugins =
 	{
-		["plugin.tinyfiledialogs"] = { publisherId = "com.xibalbastudios" },
+		["plugin.tinyfiledialogs"] = {publisherId = "com.xibalbastudios"},
+		["plugin.mousecursor"] = {publisherId = "com.spiralcodestudio"}
 	},
 
 	--
