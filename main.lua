@@ -10,6 +10,7 @@ local widget = require("widget")
 local strict = require("strict")
 local tfd = require("plugin.tinyfiledialogs")
 local bass = require("plugin.bass")
+local mainMenuBar = require("main-menu-bar")
 local utils = require("utils")
 local mAbs = math.abs
 local mMin = math.min
@@ -53,7 +54,10 @@ local playAudio = nil
 local volumeOnButton = nil
 local volumeOffButton = nil
 local volumeSlider = nil
+local playBackTimeText = nil
 local previousVolume = 0
+local looping = false
+local audioChannels = {}
 local leftChannel = {}
 local rightChannel = {}
 local levelVisualizationGroup = display.newGroup()
@@ -211,17 +215,16 @@ local function isMusicFile(fileName)
 	return isMusic
 end
 
-local devices = bass.getDevices()
+--local devices = bass.getDevices()
 --print(type(devices), "num elements", #devices)
-
+--[[
 for i = 1, #devices do
 	--print(devices[i].name)
 	if devices[i].name:lower():find("headset") ~= 0 then
 	--print("setting device to headset")
 	--bass.setDevice(devices[i].index)
 	end
-end
-
+end--]]
 local function gatherMusic(path)
 	local foundMusic = false
 	musicFiles = {}
@@ -290,12 +293,14 @@ local function gatherMusic(path)
 end
 
 local function resetSongProgress()
+	playBackTimeText.text = "00:00/00:00"
 	songProgess = 0
 	songProgressView:setProgress(0)
 end
 
 local function cleanupAudio()
 	if (musicPlayChannel ~= nil) then
+		playBackTimeText:update()
 		bass.stop(musicPlayChannel)
 		bass.dispose(musicStreamHandle)
 		resetSongProgress()
@@ -305,9 +310,9 @@ end
 local function onAudioComplete(event)
 	print("audio playback complete?", event.completed)
 
-	if (event.loop) then
+	if (looping) then
 		print("audio is set to loop, restarting audio")
-		resetSongProgress()
+		playAudio(currentSongIndex)
 
 		return
 	end
@@ -326,9 +331,101 @@ playAudio = function(index)
 	songAlbumText:setText(musicFiles[index].tags.album)
 	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
 	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
+	print(musicStreamHandle)
 	musicDuration = bass.getDuration(musicStreamHandle) * 1000
-	musicPlayChannel = bass.play(musicStreamHandle, {loop = false, onComplete = onAudioComplete})
+	musicPlayChannel = bass.play(musicStreamHandle)
+	table.remove(audioChannels)
+	audioChannels[#audioChannels + 1] = musicStreamHandle
 end
+
+local applicationMainMenuBar =
+	mainMenuBar.new(
+	{
+		font = titleFont,
+		items = {
+			{
+				title = "File",
+				subItems = {
+					{
+						title = "Add Music Folder",
+						onClick = function()
+							print("add folder")
+						end
+					},
+					{
+						title = "Add Music File",
+						onClick = function()
+							print("add file")
+						end
+					},
+					{
+						title = "Exit",
+						onClick = function()
+							print("exit")
+							os.exit()
+						end
+					}
+				}
+			},
+			{
+				title = "Edit",
+				subItems = {
+					{
+						title = "Edit Tags"
+					},
+					{
+						title = "Edit Playlist"
+					},
+					{
+						title = "Preferences"
+					}
+				}
+			},
+			{
+				title = "Music",
+				subItems = {
+					{
+						title = "Fade In Track"
+					},
+					{
+						title = "Fade Out Track"
+					}
+				}
+			},
+			{
+				title = "View",
+				subItems = {
+					{
+						title = "Show Music List"
+					},
+					{
+						title = "Show Playlists"
+					},
+					{
+						title = "Show Visualizer"
+					}
+				}
+			},
+			{
+				title = "Help",
+				subItems = {
+					{
+						title = "Report Bug"
+					},
+					{
+						title = "Submit Feature Request"
+					},
+					{
+						title = "Visit Website"
+					},
+					{
+						title = "About"
+					}
+				}
+			}
+		}
+	}
+)
 
 local previousButton =
 	widget.newButton(
@@ -373,7 +470,7 @@ playButton =
 					return
 				end
 
-				musicPlayChannel = bass.play(musicStreamHandle, {loop = false, onComplete = onAudioComplete})
+				musicPlayChannel = bass.play(musicStreamHandle)
 			end
 		end
 	}
@@ -475,7 +572,8 @@ local loopButton =
 		style = "checkbox",
 		id = "loop",
 		onPress = function(event)
-			bass.update(musicStreamHandle, {loop = event.target.isOn})
+			looping = event.target.isOn
+			--bass.update(musicStreamHandle, {loop = event.target.isOn})
 		end
 	}
 )
@@ -633,6 +731,25 @@ end
 levelVisualizationGroup.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
 levelVisualizationGroup.y = volumeOnButton.y
 display.getCurrentStage():insert(levelVisualizationGroup)
+
+playBackTimeText =
+	display.newText(
+	{
+		text = "00:00/00:00",
+		font = titleFont,
+		fontSize = rowFontSize,
+		align = "left"
+	}
+)
+playBackTimeText.x = levelVisualizationGroup.x + levelVisualizationGroup.contentWidth
+playBackTimeText.y = levelVisualizationGroup.y + levelVisualizationGroup.contentHeight + playBackTimeText.contentHeight
+function playBackTimeText:update()
+	local playbackTime = bass.getPlaybackTime(musicPlayChannel)
+	local pbElapsed = playbackTime.elapsed
+	local pbDuration = playbackTime.duration
+	playBackTimeText.text =
+		sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
+end
 
 musicTableView =
 	widget.newTableView(
@@ -834,13 +951,9 @@ timer.performWithDelay(
 		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then
 			local duration = (musicDuration)
 			songProgess = songProgess + 1
-			local playbackTime = bass.getPlaybackTime(musicPlayChannel)
-			local pbElapsed = playbackTime.elapsed
-			local pbDuration = playbackTime.duration
-
-			--print(sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds))
 			--print(musicDuration, duration, prog / duration)
 
+			playBackTimeText:update()
 			songProgressView:setProgress(songProgess / duration)
 		end
 	end,
@@ -851,6 +964,26 @@ if (type(settings) == "table" and settings.musicPath) then
 	print("gathering music")
 	gatherMusic(settings.musicPath)
 end
+
+local function handleAudioEvents(event)
+	if (type(audioChannels) == "table") then
+		for i = 1, #audioChannels do
+			local channel = audioChannels[i]
+			if (channel and not bass.isChannelPlaying(channel) and not bass.isChannelPaused(channel)) then
+				local e = {
+					name = "bass",
+					completed = true
+					--loop = bass.isChannelLooping(musicStreamHandle)
+				}
+				--print(bass.isChannelLooping(musicStreamHandle))
+				--table.remove(audioChannels, i)
+				onAudioComplete(e)
+			end
+		end
+	end
+end
+
+Runtime:addEventListener("enterFrame", handleAudioEvents)
 
 local function keyEventListener(event)
 	local keyCode = event.nativeKeyCode
@@ -905,4 +1038,5 @@ local function keyEventListener(event)
 end
 
 bass.setVolume(1.0)
+display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
