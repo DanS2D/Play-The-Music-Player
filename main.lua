@@ -913,7 +913,7 @@ for i = 1, 13 do
 
 	if (i == 1) then
 		leftChannel[i].x = 50
-		leftChannel[i].origHeight = 2
+		leftChannel[i].origHeight = mFloor(28 - (i * 2))
 		rightChannel[i].x = 104
 		rightChannel[i].origHeight = 2
 	else
@@ -1436,7 +1436,7 @@ timer.performWithDelay(
 			local maxLevel = 32768
 			local chunk = 2520
 
-			for i = 1, 13 do
+			for i = 1, #leftChannel do
 				if (leftLevel > chunk * (14 - i)) then
 					leftChannel[i].height = leftChannel[i].origHeight
 				else
