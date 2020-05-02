@@ -881,43 +881,59 @@ loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
 loopButton.y = previousButton.y
 loopButton._viewOff:setFillColor(0.7, 0.7, 0.7)
 
-songProgressView =
-	widget.newProgressView(
-	{
-		width = dWidth / 2,
-		isAnimated = false
-	}
-)
-songProgressView._view._outerLeft.height = 5
-songProgressView._view._outerMiddle.height = 5
-songProgressView._view._outerRight.height = 5
-songProgressView._view._fillLeft.height = 5
-songProgressView._view._fillMiddle.height = 5
-songProgressView._view._fillRight.height = 5
-songProgressView.anchorX = 0
-songProgressView.x = songContainerBox.x
-songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
+local function createProgressView(options)
+	local width = options.width
+	local height = options.height or 6
+	local outerColor = options.innerColor or {0.28, 0.28, 0.28, 1}
+	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
+	local group = display.newGroup()
+	local outerBox = nil
+	local innerBox = nil
+	group.actualWidth = width
 
-function songProgressView:touch(event)
-	local phase = event.phase
+	local outerBox = display.newRect(0, 0, width, height)
+	outerBox.anchorX = 0
+	outerBox.x = 0
+	outerBox:setFillColor(unpack(outerColor))
+	group:insert(outerBox)
 
-	if (phase == "began") then
-		local valueX, valueY = self:contentToLocal(event.x, event.y)
-		local onePercent = self.contentWidth / 100
-		local currentPercent = valueX / onePercent
-		local duration = musicDuration
-		local seekPosition = ((currentPercent / 10) * musicDuration / 10)
-		--print(seekPosition)
+	local innerBox = display.newRect(0, 0, 0.001, height)
+	innerBox.anchorX = 0
+	innerBox.x = 0
+	innerBox:setFillColor(unpack(innerColor))
+	group:insert(innerBox)
 
-		if (bass.isChannelPlaying(musicPlayChannel)) then
-			songProgess = seekPosition
-			songProgressView:setProgress(songProgess / duration)
-			bass.seek(musicStreamHandle, songProgess / 1000)
+	function group:touch(event)
+		local phase = event.phase
+
+		if (phase == "began") then
+			local valueX, valueY = self:contentToLocal(event.x, event.y)
+			local onePercent = width / 100
+			local currentPercent = valueX / onePercent
+			local duration = musicDuration
+			local seekPosition = ((currentPercent / 10) * musicDuration / 10)
+			--print(seekPosition)
+
+			if (bass.isChannelPlaying(musicPlayChannel)) then
+				songProgess = seekPosition
+				self:setProgress(songProgess / duration)
+				bass.seek(musicStreamHandle, songProgess / 1000)
+			end
 		end
 	end
+	group:addEventListener("touch")
+
+	function group:setProgress(progress)
+		innerBox.width = (width / 100) * (progress * 100)
+	end
+
+	return group
 end
 
-songProgressView:addEventListener("touch")
+songProgressView = createProgressView({width = dWidth / 2 - 10})
+songProgressView.anchorX = 0
+songProgressView.x = songContainerBox.x + 2
+songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
 songProgressView:setProgress(0)
 
 volumeOnButton =
@@ -936,7 +952,7 @@ volumeOnButton =
 		end
 	}
 )
-volumeOnButton.x = (songProgressView.x + (songProgressView.contentWidth) + controlButtonsXOffset + 20)
+volumeOnButton.x = (songProgressView.x + songProgressView.actualWidth + controlButtonsXOffset + 20)
 volumeOnButton.y = previousButton.y
 
 volumeOffButton =
