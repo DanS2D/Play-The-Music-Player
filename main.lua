@@ -701,8 +701,6 @@ playButton =
 					bass.resume(musicPlayChannel)
 					return
 				end
-
-				musicPlayChannel = bass.play(musicStreamHandle)
 			end
 		end
 	}
@@ -762,6 +760,11 @@ songContainerBox.strokeWidth = 1
 songContainerBox:setFillColor(0, 0, 0, 0)
 songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 
+local songContainer = display.newContainer(songContainerBox.contentWidth - 80, 50)
+songContainer.anchorX = 0
+songContainer.x = songContainerBox.x + 46
+songContainer.y = songContainerBox.y - 10
+
 updateAlbumArtworkPosition = function()
 	if (albumArtwork ~= nil) then
 		albumArtwork.x = songContainerBox.x + 5
@@ -775,16 +778,58 @@ songTitleText =
 		text = "",
 		font = titleFont,
 		align = "center",
-		width = dWidth / 2,
 		fontSize = 15
 	}
 )
 songTitleText.anchorX = 0
-songTitleText.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset + 30)
-songTitleText.y = songContainerBox.y - 12
+songTitleText.x = -(songTitleText.contentWidth * 0.5)
+songTitleText.scrollTimer = nil
 songTitleText:setFillColor(0.9, 0.9, 0.9)
+songContainer:insert(songTitleText)
+
+function songTitleText:enterFrame()
+	if (songTitleText and songTitleText.contentWidth > songContainer.contentWidth) then
+		songTitleText.x = songTitleText.x - 1
+
+		if (songTitleText.x + songTitleText.contentWidth < -songTitleText.contentWidth * 0.4) then
+			songTitleText.x = songContainer.x + songContainer.contentWidth * 0.25
+		end
+	end
+
+	if (songAlbumText and songAlbumText.contentWidth > songContainer.contentWidth) then
+		songAlbumText.x = songAlbumText.x - 1
+
+		if (songAlbumText.x + songAlbumText.contentWidth < -songAlbumText.contentWidth * 0.4) then
+			songAlbumText.x = songContainer.x + songContainer.contentWidth * 0.25
+		end
+	end
+end
+
 function songTitleText:setText(title)
 	self.text = title
+
+	if (self.contentWidth > songContainer.contentWidth) then
+		self.x = -(self.contentWidth * 0.40)
+	else
+		self.x = -(self.contentWidth * 0.5)
+	end
+
+	Runtime:removeEventListener("enterFrame", songTitleText)
+
+	if (self.scrollTimer) then
+		timer.cancel(self.scrollTimer)
+		self.scrollTimer = nil
+	end
+
+	if (self.contentWidth > songContainer.contentWidth) then
+		self.scrollTimer =
+			timer.performWithDelay(
+			3000,
+			function()
+				Runtime:addEventListener("enterFrame", songTitleText)
+			end
+		)
+	end
 end
 
 songAlbumText =
@@ -793,16 +838,22 @@ songAlbumText =
 		text = "",
 		font = subTitleFont,
 		align = "center",
-		width = dWidth / 2,
 		fontSize = 12
 	}
 )
 songAlbumText.anchorX = 0
-songAlbumText.x = songTitleText.x
-songAlbumText.y = songTitleText.y + songTitleText.contentHeight
+songAlbumText.x = -(songAlbumText.contentWidth * 0.5)
+songAlbumText.y = songTitleText.contentHeight
 songAlbumText:setFillColor(0.6, 0.6, 0.6)
+songContainer:insert(songAlbumText)
 function songAlbumText:setText(album)
 	self.text = album
+
+	if (self.contentWidth > songContainer.contentWidth) then
+		self.x = -(self.contentWidth * 0.40)
+	else
+		self.x = -(self.contentWidth * 0.5)
+	end
 end
 
 local loopButton =
@@ -836,8 +887,8 @@ songProgressView._view._fillLeft.height = 5
 songProgressView._view._fillMiddle.height = 5
 songProgressView._view._fillRight.height = 5
 songProgressView.anchorX = 0
-songProgressView.x = songTitleText.x
-songProgressView.y = songAlbumText.y + songAlbumText.contentHeight + 1
+songProgressView.x = songContainerBox.x
+songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
 
 function songProgressView:touch(event)
 	local phase = event.phase
@@ -1558,6 +1609,7 @@ display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
 local function onSystemEvent(event)
+	print(event.type)
 	if (event.type == "applicationExit") then
 		bass.stop()
 
