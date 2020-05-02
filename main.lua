@@ -434,7 +434,6 @@ playAudio = function(index)
 		else
 			--print("RESPONSE: " .. event.response)
 			local response = json.decode(event.response)
-			albumArtwork.isVisible = false
 
 			if (response and response["release-groups"] and response["release-groups"][1].releases) then
 				local releases = response["release-groups"][1]
@@ -528,7 +527,21 @@ local applicationMainMenuBar =
 					{
 						title = "Add Music Folder",
 						onClick = function()
-							print("add folder")
+							local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
+
+							if (selectedPath ~= nil) then
+								if (type(settings) ~= "table") then
+									settings = {}
+								end
+
+								for i = 1, #tableViewList do
+									tableViewList[i]:deleteAllRows()
+								end
+
+								settings.musicPath = selectedPath
+								utils:saveTable(settings, settingsFileName)
+								gatherMusic(settings.musicPath)
+							end
 						end
 					},
 					{
@@ -709,11 +722,6 @@ songContainerBox.strokeWidth = 1
 songContainerBox:setFillColor(0, 0, 0, 0)
 songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 
-albumArtwork = display.newImageRect("icon.png", system.ResourceDirectory, 30, 30)
-albumArtwork.anchorX = 0
-albumArtwork.x = songContainerBox.x + 5
-albumArtwork.y = songContainerBox.y - 2.5
-albumArtwork.isVisible = false
 updateAlbumArtworkPosition = function()
 	albumArtwork.x = songContainerBox.x + 5
 	albumArtwork.y = songContainerBox.y - 2.5
@@ -864,32 +872,6 @@ volumeSlider.height = volumeSlider.height / 1.5
 volumeSlider.x = (volumeOnButton.x + (volumeOnButton.contentWidth) + 2)
 volumeSlider.y = previousButton.y - 4
 
---[[
-local addMusicButton =
-	widget.newButton(
-	{
-		defaultFile = defaultButtonPath .. "add-button.png",
-		overFile = overButtonPath .. "add-button.png",
-		width = buttonSize,
-		height = buttonSize,
-		onPress = function(event)
-			local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
-
-			if (selectedPath ~= nil) then
-				if (type(settings) ~= "table") then
-					settings = {}
-				end
-
-				settings.musicPath = selectedPath
-				utils:saveTable(settings, settingsFileName)
-				musicTableView:deleteAllRows()
-				gatherMusic(settings.musicPath)
-			end
-		end
-	}
-)
-addMusicButton.x = (volumeSlider.x + volumeSlider.contentWidth + addMusicButton.contentWidth)
-addMusicButton.y = previousButton.y--]]
 for i = 1, 13 do
 	leftChannel[i] = display.newRect(50, 0, 2, 30)
 	rightChannel[i] = display.newRect(50, 0, 2, 30)

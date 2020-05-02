@@ -99,6 +99,7 @@ function M.new(options)
 		}
 		function mainButton:openSubmenu()
 			mainButton.mainTableView.isVisible = true
+			display.getCurrentStage():insert(mainButton.mainTableView)
 		end
 		function mainButton:closeSubmenu()
 			mainButton.mainTableView.isVisible = false
@@ -143,7 +144,7 @@ function M.new(options)
 					local row = event.row
 					local params = row.params
 
-					if (phase == "press") then
+					if (phase == "release") then
 						isItemOpen = false
 						closeSubmenus()
 
@@ -151,6 +152,8 @@ function M.new(options)
 							params.onClick()
 						end
 					end
+
+					return true
 				end
 			}
 		)
