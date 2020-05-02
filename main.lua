@@ -72,6 +72,7 @@ local rightChannel = {}
 local levelVisualizationGroup = display.newGroup()
 local buttonSize = 20
 local rowFontSize = 10
+local rowHeight = 20
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
@@ -199,7 +200,7 @@ local function populateMusicTableView()
 
 			tableViewList[j]:insertRow {
 				isCategory = false,
-				rowHeight = 25,
+				rowHeight = rowHeight,
 				rowColor = rowColor,
 				params = {
 					--id = [i].id,
@@ -212,39 +213,74 @@ local function populateMusicTableView()
 	end
 end
 
-local function sortByTitle(a, b)
+local function sortByTitleAToZ(a, b)
 	local tagA = a.tags.title:len() > 1 and a.tags.title or "z"
 	local tagB = b.tags.title:len() > 1 and b.tags.title or "z"
 
 	return tagA < tagB
 end
 
-local function sortByArtist(a, b)
+local function sortByTitleZToA(a, b)
+	local tagA = a.tags.title:len() > 1 and a.tags.title or "a"
+	local tagB = b.tags.title:len() > 1 and b.tags.title or "a"
+
+	return tagA > tagB
+end
+
+local function sortByArtistAToZ(a, b)
 	local tagA = a.tags.artist:len() > 1 and a.tags.artist or "z"
 	local tagB = b.tags.artist:len() > 1 and b.tags.artist or "z"
 
 	return tagA < tagB
 end
 
-local function sortByAlbum(a, b)
+local function sortByArtistZToA(a, b)
+	local tagA = a.tags.artist:len() > 1 and a.tags.artist or "a"
+	local tagB = b.tags.artist:len() > 1 and b.tags.artist or "a"
+
+	return tagA > tagB
+end
+
+local function sortByAlbumAToZ(a, b)
 	local tagA = a.tags.album:len() > 1 and a.tags.album or "z"
 	local tagB = b.tags.album:len() > 1 and b.tags.album or "z"
 
 	return tagA < tagB
 end
 
-local function sortByGenre(a, b)
+local function sortByAlbumZToA(a, b)
+	local tagA = a.tags.album:len() > 1 and a.tags.album or "a"
+	local tagB = b.tags.album:len() > 1 and b.tags.album or "a"
+
+	return tagA > tagB
+end
+
+local function sortByGenreAToZ(a, b)
 	local tagA = a.tags.genre:len() > 1 and a.tags.genre or "z"
 	local tagB = b.tags.genre:len() > 1 and b.tags.genre or "z"
 
 	return tagA < tagB
 end
 
-local function sortByDuration(a, b)
+local function sortByGenreZToA(a, b)
+	local tagA = a.tags.genre:len() > 1 and a.tags.genre or "a"
+	local tagB = b.tags.genre:len() > 1 and b.tags.genre or "a"
+
+	return tagA > tagB
+end
+
+local function sortByDurationAToZ(a, b)
 	local tagA = a.tags.duration:len() > 1 and a.tags.duration or "z"
 	local tagB = b.tags.duration:len() > 1 and b.tags.duration or "z"
 
 	return tagA < tagB
+end
+
+local function sortByDurationZToA(a, b)
+	local tagA = a.tags.duration:len() > 1 and a.tags.duration or "a"
+	local tagB = b.tags.duration:len() > 1 and b.tags.duration or "a"
+
+	return tagA > tagB
 end
 
 local function isMusicFile(fileName)
@@ -328,7 +364,7 @@ local function gatherMusic(path)
 	if (foundMusic) then
 		print("found music")
 
-		tSort(musicFiles, sortByTitle)
+		tSort(musicFiles, sortByTitleAToZ)
 		populateMusicTableView()
 	else
 		native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
@@ -927,7 +963,7 @@ local function createTableView(options)
 		tableView.new(
 		{
 			left = options.left,
-			top = 105,
+			top = 80 + rowHeight,
 			width = options.width or (dWidth / 5),
 			height = dHeight - 80,
 			isLocked = true,
@@ -967,7 +1003,6 @@ local function createTableView(options)
 						y = (rowContentHeight * 0.5),
 						fontSize = rowFontSize,
 						width = rowContentWidth - 10,
-						height = rowContentHeight * 0.5,
 						align = "left"
 					}
 				)
@@ -997,7 +1032,7 @@ local function createTableView(options)
 	return tView
 end
 
-local categoryBar = display.newRect(0, 0, dWidth, 25)
+local categoryBar = display.newRect(0, 0, dWidth, rowHeight)
 categoryBar.anchorX = 0
 categoryBar.anchorY = 0
 categoryBar.x = 0
@@ -1065,6 +1100,7 @@ for i = 1, #listOptions do
 			align = "left"
 		}
 	)
+	seperatorText:setFillColor(0.8, 0.8, 0.8)
 	categoryList[i]:insert(seperatorText)
 
 	function seperatorText:touch(event)
@@ -1111,14 +1147,32 @@ for i = 1, #listOptions do
 			text = listOptions[i].categoryTitle,
 			y = categoryBar.contentHeight * 0.5,
 			font = titleFont,
-			fontSize = 12,
+			fontSize = 10,
 			align = "left"
 		}
 	)
 	titleText.anchorX = 0
 	titleText.x = seperatorText.x + seperatorText.contentWidth
+	titleText.sortAToZ = false
 	titleText:setFillColor(1, 1, 1)
 	categoryList[i]:insert(titleText)
+
+	local sortIndicator =
+		display.newText(
+		{
+			text = "⌃",
+			y = categoryBar.contentHeight * 0.5,
+			font = titleFont,
+			fontSize = 10,
+			align = "left"
+		}
+	)
+	sortIndicator.anchorX = 0
+	sortIndicator.x = titleText.x + titleText.contentWidth + 2
+	sortIndicator.isVisible = false
+	titleText.sortIndicator = sortIndicator
+	categoryList[i].sortIndicator = sortIndicator
+	categoryList[i]:insert(sortIndicator)
 
 	function titleText:touch(event)
 		local phase = event.phase
@@ -1218,16 +1272,24 @@ for i = 1, #listOptions do
 				end
 			end
 
+			for i = 1, #categoryList do
+				categoryList[i].sortIndicator.isVisible = false
+			end
+
+			self.sortAToZ = not self.sortAToZ
+			self.sortIndicator.isVisible = true
+			self.sortIndicator.text = self.sortAToZ and "⌃" or "⌄"
+
 			if (self.text:lower() == "title") then
-				tSort(musicFiles, sortByTitle)
+				tSort(musicFiles, self.sortAToZ and sortByTitleAToZ or sortByTitleZToA)
 			elseif (self.text:lower() == "artist") then
-				tSort(musicFiles, sortByArtist)
+				tSort(musicFiles, self.sortAToZ and sortByArtistAToZ or sortByArtistZToA)
 			elseif (self.text:lower() == "album") then
-				tSort(musicFiles, sortByAlbum)
+				tSort(musicFiles, self.sortAToZ and sortByAlbumAToZ or sortByAlbumZToA)
 			elseif (self.text:lower() == "genre") then
-				tSort(musicFiles, sortByGenre)
+				tSort(musicFiles, self.sortAToZ and sortByGenreAToZ or sortByGenreZToA)
 			elseif (self.text:lower() == "duration") then
-				tSort(musicFiles, sortByDuration)
+				tSort(musicFiles, self.sortAToZ and sortByDurationAToZ or sortByDurationZToA)
 			end
 
 			for i = 1, #tableViewList do
@@ -1322,7 +1384,7 @@ local function onMouseEvent(event)
 
 	if (eventType == "move") then
 		-- handle main menu buttons
-		if (y >= 105) then
+		if (y >= 80 + rowHeight) then
 			resizeCursor:hide()
 		end
 	end
