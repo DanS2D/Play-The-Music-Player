@@ -7,12 +7,14 @@
 local composer = require("composer")
 local lfs = require("lfs")
 local widget = require("widget")
+local json = require("json")
 local strict = require("strict")
 local tfd = require("plugin.tinyfiledialogs")
 local mousecursor = require("plugin.mousecursor")
 local bass = require("plugin.bass")
 local mainMenuBar = require("main-menu-bar")
 local utils = require("utils")
+local crypto = require("crypto")
 local tableView = require("music_tableview")
 local mAbs = math.abs
 local mMin = math.min
@@ -60,8 +62,10 @@ local volumeOnButton = nil
 local volumeOffButton = nil
 local volumeSlider = nil
 local playBackTimeText = nil
+local albumArtwork = nil
 local previousVolume = 0
 local looping = false
+local updateAlbumArtworkPosition = nil
 local audioChannels = {}
 local leftChannel = {}
 local rightChannel = {}
@@ -181,8 +185,8 @@ local function fileExists(filePath, baseDir)
 end
 
 local function populateMusicTableView()
-	local default = {default = {0.38, 0.38, 0.38, 0.6}, over = {0.38, 0.38, 0.38, 0}}
-	local defaultSecondRow = {default = {0.28, 0.28, 0.28, 0.6}, over = {0.28, 0.28, 0.28, 0}}
+	local default = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 0}}
+	local defaultSecondRow = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.28, 0.28, 0}}
 	local rowColor = default
 
 	for j = 1, #tableViewList do
@@ -341,7 +345,87 @@ playAudio = function(index)
 	songAlbumText:setText(musicFiles[index].tags.album)
 	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
 	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
-	print(musicStreamHandle)
+	local hash = crypto.digest(crypto.md5, musicFiles[index].tags.title .. musicFiles[index].tags.album)
+
+	local function artworkDownloadListener(event)
+		if (event.isError) then
+			print("Network error - download failed: ", event.response)
+		elseif (event.phase == "began") then
+			print("Progress Phase: began")
+		elseif (event.phase == "ended") then
+			print("got artwork")
+			if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
+				albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
+				albumArtwork.anchorX = 0
+				albumArtwork.isVisible = true
+				updateAlbumArtworkPosition()
+			end
+		end
+	end
+
+	local function urlEncode(str)
+		if (str) then
+			str = string.gsub(str, "\n", "\r\n")
+			str =
+				string.gsub(
+				str,
+				"([^%w ])",
+				function(c)
+					return string.format("%%%02X", string.byte(c))
+				end
+			)
+			str = string.gsub(str, " ", "+")
+		end
+		return str
+	end
+
+	local artistTitle = musicFiles[index].tags.artist
+	--:gsub("%&", "and")
+	--artistTitle = musicFiles[index].tags.artist:gsub("%;", ",")
+	local albumTitle = musicFiles[index].tags.album
+	--:gsub("%&", "and")
+	--albumTitle = musicFiles[index].tags.album:gsub("%;", ",")
+
+	-- for music brainz, you can do songtitle:songArtist or songArtist:songAlbum etc
+
+	local musicBrainzUrl =
+		"http://musicbrainz.org/ws/2/release-group/?query=release:another chance:roger sanchez&limit=1&fmt=json"
+	local url = "https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=fa8c6c8d936cb3d3ec7c6dc14683a66e"
+	local fullUrl = sFormat("%s&artist=%s&album=%s&format=json", url, urlEncode(artistTitle), urlEncode(albumTitle))
+	local params = {}
+	params.progress = false
+	albumArtwork.isVisible = false
+
+	local function urlRequestListener(event)
+		if (event.isError) then
+			print("Network error: ", event.response)
+		else
+			--print("RESPONSE: " .. event.response)
+			local response = json.decode(event.response)
+			--albumArtwork.isVisible = false
+
+			if (response and response.album) then
+				local imageUrl = response.album.image[2]["#text"]
+				if (imageUrl:len() > 1) then
+					--print("getting artwork for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
+					network.download(imageUrl, "GET", artworkDownloadListener, params, hash .. ".png", system.DocumentsDirectory)
+				end
+			end
+		end
+	end
+
+	if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
+		--print("artwork exists for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
+		albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
+		albumArtwork.anchorX = 0
+		albumArtwork.isVisible = true
+		updateAlbumArtworkPosition()
+	else
+		--local albummm = (musicFiles[index].tags.album:gsub("%&", "and"))
+		--print(fullUrl)
+		network.request(fullUrl, "GET", urlRequestListener)
+	end
+
 	musicDuration = bass.getDuration(musicStreamHandle) * 1000
 	musicPlayChannel = bass.play(musicStreamHandle)
 	table.remove(audioChannels)
@@ -539,6 +623,16 @@ songContainerBox.y = nextButton.y - 5
 songContainerBox.strokeWidth = 1
 songContainerBox:setFillColor(0, 0, 0, 0)
 songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+
+albumArtwork = display.newImageRect("icon.png", system.ResourceDirectory, 30, 30)
+albumArtwork.anchorX = 0
+albumArtwork.x = songContainerBox.x + 5
+albumArtwork.y = songContainerBox.y - 2.5
+albumArtwork.isVisible = false
+updateAlbumArtworkPosition = function()
+	albumArtwork.x = songContainerBox.x + 5
+	albumArtwork.y = songContainerBox.y - 2.5
+end
 
 songTitleText =
 	display.newText(
