@@ -212,6 +212,41 @@ local function populateMusicTableView()
 	end
 end
 
+local function sortByTitle(a, b)
+	local tagA = a.tags.title:len() > 1 and a.tags.title or "z"
+	local tagB = b.tags.title:len() > 1 and b.tags.title or "z"
+
+	return tagA < tagB
+end
+
+local function sortByArtist(a, b)
+	local tagA = a.tags.artist:len() > 1 and a.tags.artist or "z"
+	local tagB = b.tags.artist:len() > 1 and b.tags.artist or "z"
+
+	return tagA < tagB
+end
+
+local function sortByAlbum(a, b)
+	local tagA = a.tags.album:len() > 1 and a.tags.album or "z"
+	local tagB = b.tags.album:len() > 1 and b.tags.album or "z"
+
+	return tagA < tagB
+end
+
+local function sortByGenre(a, b)
+	local tagA = a.tags.genre:len() > 1 and a.tags.genre or "z"
+	local tagB = b.tags.genre:len() > 1 and b.tags.genre or "z"
+
+	return tagA < tagB
+end
+
+local function sortByDuration(a, b)
+	local tagA = a.tags.duration:len() > 1 and a.tags.duration or "z"
+	local tagB = b.tags.duration:len() > 1 and b.tags.duration or "z"
+
+	return tagA < tagB
+end
+
 local function isMusicFile(fileName)
 	local fileExtension = fileName:match("^.+(%..+)$")
 	local isMusic = false
@@ -292,14 +327,8 @@ local function gatherMusic(path)
 
 	if (foundMusic) then
 		print("found music")
-		local function sortByTitle(a, b)
-			if (not a.tags.title or not b.tags.title) then
-				return 1 < 0
-			end
-			return a.tags.title < b.tags.title
-		end
 
-		table.sort(musicFiles, sortByTitle)
+		tSort(musicFiles, sortByTitle)
 		populateMusicTableView()
 	else
 		native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
@@ -339,6 +368,22 @@ local function onAudioComplete(event)
 	end
 end
 
+local function urlEncode(str)
+	if (str) then
+		str = string.gsub(str, "\n", "\r\n")
+		str =
+			string.gsub(
+			str,
+			"([^%w ])",
+			function(c)
+				return string.format("%%%02X", string.byte(c))
+			end
+		)
+		str = string.gsub(str, " ", "+")
+	end
+	return str
+end
+
 playAudio = function(index)
 	resetSongProgress()
 	songTitleText:setText(musicFiles[index].tags.title)
@@ -346,73 +391,111 @@ playAudio = function(index)
 	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
 	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 	local hash = crypto.digest(crypto.md5, musicFiles[index].tags.title .. musicFiles[index].tags.album)
-
-	local function artworkDownloadListener(event)
-		if (event.isError) then
-			print("Network error - download failed: ", event.response)
-		elseif (event.phase == "began") then
-			print("Progress Phase: began")
-		elseif (event.phase == "ended") then
-			print("got artwork")
-			if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
-				albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
-				albumArtwork.anchorX = 0
-				albumArtwork.isVisible = true
-				updateAlbumArtworkPosition()
-			end
-		end
-	end
-
-	local function urlEncode(str)
-		if (str) then
-			str = string.gsub(str, "\n", "\r\n")
-			str =
-				string.gsub(
-				str,
-				"([^%w ])",
-				function(c)
-					return string.format("%%%02X", string.byte(c))
-				end
-			)
-			str = string.gsub(str, " ", "+")
-		end
-		return str
-	end
-
+	local coverRequests = {}
+	local artworkDownloadListener = nil
+	local songTitle = musicFiles[index].tags.title
 	local artistTitle = musicFiles[index].tags.artist
-	--:gsub("%&", "and")
-	--artistTitle = musicFiles[index].tags.artist:gsub("%;", ",")
 	local albumTitle = musicFiles[index].tags.album
-	--:gsub("%&", "and")
-	--albumTitle = musicFiles[index].tags.album:gsub("%;", ",")
-
 	-- for music brainz, you can do songtitle:songArtist or songArtist:songAlbum etc
 
-	local musicBrainzUrl =
-		"http://musicbrainz.org/ws/2/release-group/?query=release:another chance:roger sanchez&limit=1&fmt=json"
-	local url = "https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=fa8c6c8d936cb3d3ec7c6dc14683a66e"
-	local fullUrl = sFormat("%s&artist=%s&album=%s&format=json", url, urlEncode(artistTitle), urlEncode(albumTitle))
-	local params = {}
-	params.progress = false
-	albumArtwork.isVisible = false
+	local coverArtUrl = "http://coverartarchive.org/release-group/"
+	local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
+	--local lastFmURL = "https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=fa8c6c8d936cb3d3ec7c6dc14683a66e"
+	--local fullLastFmUrl =
+	--sFormat("%s&artist=%s&album=%s&format=json", lastFmURL, urlEncode(artistTitle), urlEncode(albumTitle))
+	local fullMusicBrainzUrl =
+		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, urlEncode(artistTitle), urlEncode(albumTitle))
+	local musicBrainzParams = {
+		headers = {
+			["User-Agent"] = "Play The Music Player/1.0"
+		}
+	}
+	local tryAgain = true
 
-	local function urlRequestListener(event)
+	--[[
+	local function lastFmUrlRequestListener(event)
 		if (event.isError) then
 			print("Network error: ", event.response)
 		else
 			--print("RESPONSE: " .. event.response)
 			local response = json.decode(event.response)
-			--albumArtwork.isVisible = false
-
 			if (response and response.album) then
 				local imageUrl = response.album.image[2]["#text"]
 				if (imageUrl:len() > 1) then
 					--print("getting artwork for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
-					network.download(imageUrl, "GET", artworkDownloadListener, params, hash .. ".png", system.DocumentsDirectory)
+					network.download(imageUrl, "GET", artworkDownloadListener, {}, hash .. ".png", system.DocumentsDirectory)
 				end
 			end
 		end
+	end--]]
+	local function musicBrainzUrlRequestListener(event)
+		if (event.isError) then
+			print("Network error: ", event.response)
+		else
+			--print("RESPONSE: " .. event.response)
+			local response = json.decode(event.response)
+			albumArtwork.isVisible = false
+
+			if (response and response["release-groups"] and response["release-groups"][1].releases) then
+				local releases = response["release-groups"][1]
+
+				--for i = 1, #releases do
+				local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, releases.id)
+				print("FOUND entry for " .. musicFiles[index].tags.title .. " at musicbrainz - url:", imageUrl)
+				--coverRequests[#coverRequests + 1] =
+				network.download(imageUrl, "GET", artworkDownloadListener, {}, hash .. ".png", system.DocumentsDirectory)
+			else
+				print("FAILED to get song info for " .. musicFiles[index].tags.title .. " at musicbrainz")
+			end
+		end
 	end
+
+	artworkDownloadListener = function(event)
+		print("download callback")
+
+		if (event.status ~= 200) then
+			if (tryAgain) then
+				display.remove(albumArtwork)
+				albumArtwork = nil
+				--network.cancel(event.requestId)
+				print("FAILED to get artwork for " .. musicFiles[index].tags.title .. " from coverarchive.org")
+				print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (song title, artist) from musicbrainz")
+				fullMusicBrainzUrl =
+					sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, urlEncode(songTitle), urlEncode(artistTitle))
+				network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
+				tryAgain = false
+			end
+
+			return
+		end
+
+		if (event.isError) then
+			print("Network error - download failed: ", event.response)
+		elseif (event.phase == "began") then
+			print("Progress Phase: began")
+		elseif (event.phase == "ended") then
+			--print(event.response)
+
+			if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
+				print("GOT artwork for " .. musicFiles[index].tags.title .. " from opencoverart.org")
+				--network.cancel(event.requestId)
+				--for i = 1, #coverRequests do
+				--	network.cancel(coverRequests[i])
+				--	coverRequests[i] = nil
+				--end
+
+				albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
+				albumArtwork.anchorX = 0
+				albumArtwork.isVisible = true
+				albumArtwork.alpha = 0
+				updateAlbumArtworkPosition()
+				transition.to(albumArtwork, {alpha = 1, transition = easing.inOutQuad})
+			end
+		end
+	end
+
+	display.remove(albumArtwork)
+	albumArtwork = nil
 
 	if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
 		--print("artwork exists for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
@@ -423,7 +506,9 @@ playAudio = function(index)
 	else
 		--local albummm = (musicFiles[index].tags.album:gsub("%&", "and"))
 		--print(fullUrl)
-		network.request(fullUrl, "GET", urlRequestListener)
+		--network.request(fullLastFmUrl, "GET", lastFmUrlRequestListener)
+		print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (artist, album) from musicbrainz")
+		network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
 	end
 
 	musicDuration = bass.getDuration(musicStreamHandle) * 1000
@@ -1151,7 +1236,23 @@ for i = 1, #listOptions do
 				end
 			end
 
-			local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
+			if (self.text:lower() == "title") then
+				tSort(musicFiles, sortByTitle)
+			elseif (self.text:lower() == "artist") then
+				tSort(musicFiles, sortByArtist)
+			elseif (self.text:lower() == "album") then
+				tSort(musicFiles, sortByAlbum)
+			elseif (self.text:lower() == "genre") then
+				tSort(musicFiles, sortByGenre)
+			elseif (self.text:lower() == "duration") then
+				tSort(musicFiles, sortByDuration)
+			end
+
+			for i = 1, #tableViewList do
+				tableViewList[i]:reloadData()
+			end
+
+		--local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 		end
 
 		return true
@@ -1186,11 +1287,58 @@ Runtime:addEventListener("touch", moveColumns)
 
 local function onMouseEvent(event)
 	local eventType = event.type
+	local x = event.x
+	local y = event.y
+
+	if (albumArtwork ~= nil) then
+		if (y >= albumArtwork.y - albumArtwork.contentHeight * 0.5 and y <= albumArtwork.y + albumArtwork.contentHeight * 0.5) then
+			if (x >= albumArtwork.x and x <= albumArtwork.x + albumArtwork.contentWidth) then
+				if (not albumArtwork.transition) then
+					albumArtwork.transition =
+						transition.to(
+						albumArtwork,
+						{
+							xScale = 2.0,
+							yScale = 2.0,
+							onComplete = function()
+								albumArtwork.transition = nil
+							end
+						}
+					)
+				end
+			else
+				if (not albumArtwork.transition) then
+					albumArtwork.transition =
+						transition.to(
+						albumArtwork,
+						{
+							xScale = 1.0,
+							yScale = 1.0,
+							onComplete = function()
+								albumArtwork.transition = nil
+							end
+						}
+					)
+				end
+			end
+		else
+			if (not albumArtwork.transition) then
+				albumArtwork.transition =
+					transition.to(
+					albumArtwork,
+					{
+						xScale = 1.0,
+						yScale = 1.0,
+						onComplete = function()
+							albumArtwork.transition = nil
+						end
+					}
+				)
+			end
+		end
+	end
 
 	if (eventType == "move") then
-		local x = event.x
-		local y = event.y
-
 		-- handle main menu buttons
 		if (y >= 105) then
 			resizeCursor:hide()
