@@ -320,7 +320,7 @@ local function gatherMusic(path)
 			musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = bass.getTags(chan)}
 			musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
 			playbackDuration = nil
-		--bass.dispose(chan)
+			bass.dispose(chan)
 		end
 	end
 
@@ -589,8 +589,7 @@ local applicationMainMenuBar =
 					{
 						title = "Exit",
 						onClick = function()
-							print("exit")
-							os.exit()
+							native.requestExit()
 						end
 					}
 				}
@@ -1550,3 +1549,15 @@ end
 bass.setVolume(1.0)
 display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
+
+local function onSystemEvent(event)
+	if (event.type == "applicationExit") then
+		bass.stop()
+
+		if (musicStreamHandle) then
+			bass.dispose(musicStreamHandle)
+		end
+	end
+end
+
+Runtime:addEventListener("system", onSystemEvent)
