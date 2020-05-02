@@ -424,6 +424,14 @@ playAudio = function(index)
 	resetSongProgress()
 	songTitleText:setText(musicFiles[index].tags.title)
 	songAlbumText:setText(musicFiles[index].tags.album)
+
+	if (type(musicStreamHandle) == "number") then
+		if (bass.isChannelPlaying(musicStreamHandle)) then
+			bass.rewind(musicStreamHandle)
+			return
+		end
+	end
+
 	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
 	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 	local hash = crypto.digest(crypto.md5, musicFiles[index].tags.title .. musicFiles[index].tags.album)
