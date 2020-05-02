@@ -1218,7 +1218,7 @@ for i = 1, #listOptions do
 	)
 	titleText.anchorX = 0
 	titleText.x = seperatorText.x + seperatorText.contentWidth
-	titleText.sortAToZ = false
+	titleText.sortAToZ = i == 1 or false
 	titleText:setFillColor(1, 1, 1)
 	categoryList[i]:insert(titleText)
 
@@ -1234,7 +1234,7 @@ for i = 1, #listOptions do
 	)
 	sortIndicator.anchorX = 0
 	sortIndicator.x = titleText.x + titleText.contentWidth + 2
-	sortIndicator.isVisible = false
+	sortIndicator.isVisible = i == 1
 	titleText.sortIndicator = sortIndicator
 	categoryList[i].sortIndicator = sortIndicator
 	categoryList[i]:insert(sortIndicator)
