@@ -490,8 +490,11 @@ playAudio = function(index)
 
 		if (event.status ~= 200) then
 			if (tryAgain) then
-				display.remove(albumArtwork)
-				albumArtwork = nil
+				if (albumArtwork ~= nil) then
+					display.remove(albumArtwork)
+					albumArtwork = nil
+				end
+
 				--network.cancel(event.requestId)
 				print("FAILED to get artwork for " .. musicFiles[index].tags.title .. " from coverarchive.org")
 				print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (song title, artist) from musicbrainz")
@@ -529,8 +532,10 @@ playAudio = function(index)
 		end
 	end
 
-	display.remove(albumArtwork)
-	albumArtwork = nil
+	if (albumArtwork ~= nil) then
+		display.remove(albumArtwork)
+		albumArtwork = nil
+	end
 
 	if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
 		--print("artwork exists for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
@@ -758,8 +763,10 @@ songContainerBox:setFillColor(0, 0, 0, 0)
 songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 
 updateAlbumArtworkPosition = function()
-	albumArtwork.x = songContainerBox.x + 5
-	albumArtwork.y = songContainerBox.y - 2.5
+	if (albumArtwork ~= nil) then
+		albumArtwork.x = songContainerBox.x + 5
+		albumArtwork.y = songContainerBox.y - 2.5
+	end
 end
 
 songTitleText =
@@ -1333,6 +1340,7 @@ local function onMouseEvent(event)
 	local x = event.x
 	local y = event.y
 
+	--[[
 	if (albumArtwork ~= nil) then
 		if (y >= albumArtwork.y - albumArtwork.contentHeight * 0.5 and y <= albumArtwork.y + albumArtwork.contentHeight * 0.5) then
 			if (x >= albumArtwork.x and x <= albumArtwork.x + albumArtwork.contentWidth) then
@@ -1379,8 +1387,7 @@ local function onMouseEvent(event)
 				)
 			end
 		end
-	end
-
+	end--]]
 	if (eventType == "move") then
 		-- handle main menu buttons
 		if (y >= 80 + rowHeight) then
