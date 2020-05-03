@@ -420,7 +420,7 @@ local function createTableView(tableView, options)
 						if not self._targetRow.isCategory then
 							if self._targetRow._wasTouched then
 								-- Set the row cell's fill color
-								self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.default))
+								--self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.default))
 								-- Set back the separators
 								if self._targetRow._separator then
 									self._targetRow._separator.isVisible = true
@@ -521,7 +521,7 @@ local function createTableView(tableView, options)
 
 				-- Set the row cell's fill color, if the row's view still exists (not being deleted)
 				if self._targetRow._cell then
-					self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.default))
+					--self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.default))
 					if self._targetRow._separator then
 						self._targetRow._separator.isVisible = true
 					end
@@ -641,7 +641,7 @@ local function createTableView(tableView, options)
 						}
 
 						-- Set the row cell's fill color
-						self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.over))
+						--self._targetRow._cell:setFillColor(unpack(self._targetRow._rowColor.over))
 						if self._targetRow._separator then
 							self._targetRow._separator.isVisible = false
 						end
@@ -1027,7 +1027,7 @@ local function createTableView(tableView, options)
 				-- After a little delay, set the row's fill color back to default
 				--timer.performWithDelay( 100, function()
 				-- Set the row cell's fill color
-				row._cell:setFillColor(unpack(row._rowColor.default))
+				--row._cell:setFillColor(unpack(row._rowColor.default))
 				if row._separator then
 					row._separator.isVisible = true
 				end

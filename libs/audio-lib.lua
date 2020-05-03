@@ -92,7 +92,8 @@ local M = {
 		"flac",
 		"wav"
 	},
-	loopOne = false
+	loopOne = false,
+	currentSongIndex = 0
 }
 local bass = require("plugin.bass")
 local tRemove = table.remove
