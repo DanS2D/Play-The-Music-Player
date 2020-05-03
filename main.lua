@@ -16,6 +16,7 @@ local stringExt = require("libs.string-ext")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local progressView = require("libs.ui.progress-view")
 local levelVisualization = require("libs.ui.level-visualizer")
+local musicVisualizer = require("libs.ui.music-visualizer")
 local musicList = require("libs.ui.music-list")
 local mAbs = math.abs
 local mMin = math.min
@@ -407,10 +408,9 @@ local nextButton =
 nextButton.x = (pauseButton.x + pauseButton.contentWidth + controlButtonsXOffset)
 nextButton.y = previousButton.y
 
-local emitterParams = fileUtils:loadTable("my_galaxy.json", system.ResourceDirectory)
-local emitter = display.newEmitter(emitterParams)
-emitter.x = display.contentCenterX
-emitter.y = nextButton.y - 5
+local musicVisualizerBar = musicVisualizer.new({})
+musicVisualizerBar.x = display.contentCenterX
+musicVisualizerBar.y = nextButton.y - 5
 
 local songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
 songContainerBox.anchorX = 0
@@ -620,39 +620,6 @@ function playBackTimeText:update()
 end
 
 musicTableView = musicList.new()
-
-timer.performWithDelay(
-	10,
-	function()
-		if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
-			local leftLevel, rightLevel = audioLib.getLevel()
-			local minLevel = 0
-			local maxLevel = 32768
-			local chunk = 2520
-
-			emitter.radialAcceleration = (leftLevel / 1000) * (rightLevel / 1000)
-			emitter.startParticleSize = 1
-			emitter.finishParticleSizeVariance = emitter.startParticleSize
-			emitter.startColorAlpha = 0
-			emitter.finishColorAlpha = 1
-		--emitter.startColorRed = 1
-		--emitter.startColorBlue = 1
-		--emitter.startColorGreen = 1
-		--emitter.startColorVarianceAlpha = (leftLevel / 100000 * 2)
-		--emitter.startColorVarianceRed = (leftLevel / 100000 * 3)
-		--emitter.startColorVarianceBlue = (leftLevel / 100000 * 3)
-		--emitter.startColorVarianceGreen = (leftLevel / 100000 * 3)
-		--emitter.gravityx = leftLevel / 100
-		--emitter.gravityy = leftLevel / 100
-		--emitter.sourcePositionVariancex = leftLevel / 200
-		--emitter.sourcePositionVariancey = -(leftLevel / 200)
-		--emitter.speedVariance = leftLevel / 50
-		--emitter.startParticleSize = leftLevel / 3200
-		--emitter.radialAccelVariance = leftLevel / 300
-		end
-	end,
-	0
-)
 
 timer.performWithDelay(
 	1000,
