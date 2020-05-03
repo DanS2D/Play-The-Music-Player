@@ -113,6 +113,7 @@ local bassSetVolume = bass.setVolume
 local bassStop = bass.stop
 local channelHandle = nil
 local currentSong = nil
+local previousVolume = 0
 local audioChannels = {}
 
 local function dispatchPlayEvent()
@@ -236,6 +237,10 @@ function M.getPlaybackTime()
 	return nil
 end
 
+function M.getPreviousVolume()
+	return previousVolume
+end
+
 function M.getTags()
 	if (channelHandle ~= nil) then
 		return bassGetTags(channelHandle)
@@ -300,6 +305,7 @@ end
 
 function M.setVolume(vol)
 	if (channelHandle ~= nil) then
+		previousVolume = bassGetVolume()
 		bassSetVolume(vol)
 	end
 end

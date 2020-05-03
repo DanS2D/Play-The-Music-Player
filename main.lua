@@ -60,7 +60,6 @@ local volumeOffButton = nil
 local volumeSlider = nil
 local playBackTimeText = nil
 local albumArtwork = nil
-local previousVolume = 0
 local updateAlbumArtworkPosition = nil
 local leftChannel = {}
 local rightChannel = {}
@@ -591,7 +590,6 @@ volumeOnButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			previousVolume = audioLib.getVolume()
 			audioLib.setVolume(0)
 			volumeSlider:setValue(0)
 			event.target.isVisible = false
@@ -610,8 +608,8 @@ volumeOffButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			audioLib.setVolume(previousVolume)
-			volumeSlider:setValue(previousVolume * 100)
+			audioLib.setVolume(audioLib.getPreviousVolume())
+			volumeSlider:setValue(audioLib.getVolume() * 100)
 			event.target.isVisible = false
 			volumeOnButton.isVisible = true
 		end
