@@ -1,6 +1,5 @@
 local M = {}
 local widget = require("widget")
-local utils = require("utils")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max

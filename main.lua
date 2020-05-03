@@ -1,21 +1,19 @@
 -----------------------------------------------------------------------------------------
---
--- main.lua
---
+-- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
-local composer = require("composer")
 local lfs = require("lfs")
 local widget = require("widget")
 local json = require("json")
-local strict = require("strict")
+local crypto = require("crypto")
 local tfd = require("plugin.tinyfiledialogs")
 local mousecursor = require("plugin.mousecursor")
 local bass = require("plugin.bass")
-local mainMenuBar = require("main-menu-bar")
-local utils = require("utils")
-local crypto = require("crypto")
-local tableView = require("music_tableview")
+local strict = require("strict")
+local utils = require("libs.file-utils")
+local mainMenuBar = require("libs.ui.main-menu-bar")
+local tableView = require("libs.ui.music-tableview")
+local progressView = require("libs.ui.progress-view")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -46,7 +44,6 @@ local musicDuration = 0
 local currentSongIndex = 0
 local controlButtonsXOffset = 10
 local documentsDirectoryPath = system.pathForFile("", system.DocumentsDirectory)
-local songProgess = 0
 local rowColors = {}
 local songTitleText = nil
 local songAlbumText = nil
@@ -376,8 +373,8 @@ end
 
 local function resetSongProgress()
 	playBackTimeText.text = "00:00/00:00"
-	songProgess = 0
-	songProgressView:setProgress(0)
+	songProgressView:setElapsedProgress(0)
+	songProgressView:setOverallProgress(0)
 end
 
 local function cleanupAudio()
@@ -892,60 +889,17 @@ loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
 loopButton.y = previousButton.y
 loopButton._viewOff:setFillColor(0.7, 0.7, 0.7)
 
-local function createProgressView(options)
-	local width = options.width
-	local height = options.height or 6
-	local outerColor = options.innerColor or {0.28, 0.28, 0.28, 1}
-	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
-	local group = display.newGroup()
-	local outerBox = nil
-	local innerBox = nil
-	group.actualWidth = width
-
-	local outerBox = display.newRect(0, 0, width, height)
-	outerBox.anchorX = 0
-	outerBox.x = 0
-	outerBox:setFillColor(unpack(outerColor))
-	group:insert(outerBox)
-
-	local innerBox = display.newRect(0, 0, 0.001, height)
-	innerBox.anchorX = 0
-	innerBox.x = 0
-	innerBox:setFillColor(unpack(innerColor))
-	group:insert(innerBox)
-
-	function group:touch(event)
-		local phase = event.phase
-
-		if (phase == "began") then
-			local valueX, valueY = self:contentToLocal(event.x, event.y)
-			local onePercent = width / 100
-			local currentPercent = valueX / onePercent
-			local duration = musicDuration
-			local seekPosition = ((currentPercent / 10) * musicDuration / 10)
-			--print(seekPosition)
-
-			if (bass.isChannelPlaying(musicPlayChannel)) then
-				songProgess = seekPosition
-				self:setProgress(songProgess / duration)
-				bass.seek(musicStreamHandle, songProgess / 1000)
-			end
-		end
-	end
-	group:addEventListener("touch")
-
-	function group:setProgress(progress)
-		innerBox.width = (width / 100) * (progress * 100)
-	end
-
-	return group
-end
-
-songProgressView = createProgressView({width = dWidth / 2 - 10})
+songProgressView =
+	progressView.new(
+	{
+		width = dWidth / 2 - 10,
+		musicDuration = musicDuration,
+		musicStreamHandle = musicStreamHandle
+	}
+)
 songProgressView.anchorX = 0
 songProgressView.x = songContainerBox.x + 2
 songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
-songProgressView:setProgress(0)
 
 volumeOnButton =
 	widget.newButton(
@@ -1571,12 +1525,12 @@ timer.performWithDelay(
 	1000,
 	function()
 		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then
-			local duration = (musicDuration)
-			songProgess = songProgess + 1
 			--print(musicDuration, duration, prog / duration)
 
 			playBackTimeText:update()
-			songProgressView:setProgress(songProgess / duration)
+			songProgressView:updateHandles(musicDuration, musicStreamHandle)
+			songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
+			songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
 		end
 	end,
 	0

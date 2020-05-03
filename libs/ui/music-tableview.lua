@@ -10,7 +10,6 @@ local M = {
 -- Require needed widget files
 local _widget = require("widget")
 local _momentumScrolling = require("widget_momentumScrolling")
-
 local isGraphicsV1 = (1 == display.getDefault("graphicsCompatibility"))
 
 -- Localize math functions
