@@ -25,8 +25,8 @@ local overButtonPath = "img/buttons/over/"
 local settingsFileName = "settings.json"
 
 function M.new(options)
-	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18}
-	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12}
+	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
+	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12, 1}
 	local menuBarHeight = options.menuBarHeight or 20
 	local font = options.font or native.systemFont
 	local itemWidth = options.itemWidth or 60
@@ -42,6 +42,7 @@ function M.new(options)
 	background.x = display.contentCenterX
 	background.y = background.contentHeight * 0.5
 	background:setFillColor(unpack(menuBarColor))
+	group:insert(background)
 
 	local function closeSubmenus(excludingTarget)
 		local target = excludingTarget or {index = 0}
@@ -97,10 +98,12 @@ function M.new(options)
 			default = menuBarColor,
 			over = menuBarOverColor
 		}
+
 		function mainButton:openSubmenu()
 			mainButton.mainTableView.isVisible = true
 			display.getCurrentStage():insert(mainButton.mainTableView)
 		end
+
 		function mainButton:closeSubmenu()
 			mainButton.mainTableView.isVisible = false
 		end
