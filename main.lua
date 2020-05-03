@@ -12,6 +12,7 @@ local bass = require("plugin.bass")
 local strict = require("strict")
 local utils = require("libs.file-utils")
 local sort = require("libs.sort")
+local stringExt = require("libs.string-ext")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local tableView = require("libs.ui.music-tableview")
 local progressView = require("libs.ui.progress-view")
@@ -335,22 +336,6 @@ local function onAudioComplete(event)
 	end
 end
 
-local function urlEncode(str)
-	if (str) then
-		str = string.gsub(str, "\n", "\r\n")
-		str =
-			string.gsub(
-			str,
-			"([^%w ])",
-			function(c)
-				return string.format("%%%02X", string.byte(c))
-			end
-		)
-		str = string.gsub(str, " ", "+")
-	end
-	return str
-end
-
 playAudio = function(index)
 	resetSongProgress()
 	songTitleText:setText(musicFiles[index].tags.title)
@@ -363,46 +348,24 @@ playAudio = function(index)
 		end
 	end
 
-	--musicTableView:scrollToIndex(currentSongIndex + 1, 200)
-	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 	local hash = crypto.digest(crypto.md5, musicFiles[index].tags.title .. musicFiles[index].tags.album)
 	local coverRequests = {}
 	local artworkDownloadListener = nil
 	local songTitle = musicFiles[index].tags.title
 	local artistTitle = musicFiles[index].tags.artist
 	local albumTitle = musicFiles[index].tags.album
-	-- for music brainz, you can do songtitle:songArtist or songArtist:songAlbum etc
-
 	local coverArtUrl = "http://coverartarchive.org/release-group/"
 	local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
-	--local lastFmURL = "https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=fa8c6c8d936cb3d3ec7c6dc14683a66e"
-	--local fullLastFmUrl =
-	--sFormat("%s&artist=%s&album=%s&format=json", lastFmURL, urlEncode(artistTitle), urlEncode(albumTitle))
 	local fullMusicBrainzUrl =
-		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, urlEncode(artistTitle), urlEncode(albumTitle))
+		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
 	local musicBrainzParams = {
 		headers = {
 			["User-Agent"] = "Play The Music Player/1.0"
 		}
 	}
 	local tryAgain = true
+	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 
-	--[[
-	local function lastFmUrlRequestListener(event)
-		if (event.isError) then
-			print("Network error: ", event.response)
-		else
-			--print("RESPONSE: " .. event.response)
-			local response = json.decode(event.response)
-			if (response and response.album) then
-				local imageUrl = response.album.image[2]["#text"]
-				if (imageUrl:len() > 1) then
-					--print("getting artwork for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
-					network.download(imageUrl, "GET", artworkDownloadListener, {}, hash .. ".png", system.DocumentsDirectory)
-				end
-			end
-		end
-	end--]]
 	local function musicBrainzUrlRequestListener(event)
 		if (event.isError) then
 			print("Network error: ", event.response)
@@ -416,10 +379,8 @@ playAudio = function(index)
 			 then
 				local releases = response["release-groups"][1]
 
-				--for i = 1, #releases do
 				local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, releases.id)
 				print("FOUND entry for " .. musicFiles[index].tags.title .. " at musicbrainz - url:", imageUrl)
-				--coverRequests[#coverRequests + 1] =
 				network.download(imageUrl, "GET", artworkDownloadListener, {}, hash .. ".png", system.DocumentsDirectory)
 			else
 				print("FAILED to get song info for " .. musicFiles[index].tags.title .. " at musicbrainz")
@@ -437,11 +398,10 @@ playAudio = function(index)
 					albumArtwork = nil
 				end
 
-				--network.cancel(event.requestId)
 				print("FAILED to get artwork for " .. musicFiles[index].tags.title .. " from coverarchive.org")
 				print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (song title, artist) from musicbrainz")
 				fullMusicBrainzUrl =
-					sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, urlEncode(songTitle), urlEncode(artistTitle))
+					sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, songTitle:urlEncode(), artistTitle:urlEncode())
 				network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
 				tryAgain = false
 			end
@@ -455,15 +415,8 @@ playAudio = function(index)
 			print("Progress Phase: began")
 		elseif (event.phase == "ended") then
 			--print(event.response)
-
 			if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
 				print("GOT artwork for " .. musicFiles[index].tags.title .. " from opencoverart.org")
-				--network.cancel(event.requestId)
-				--for i = 1, #coverRequests do
-				--	network.cancel(coverRequests[i])
-				--	coverRequests[i] = nil
-				--end
-
 				albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
 				albumArtwork.anchorX = 0
 				albumArtwork.isVisible = true
@@ -486,9 +439,6 @@ playAudio = function(index)
 		albumArtwork.isVisible = true
 		updateAlbumArtworkPosition()
 	else
-		--local albummm = (musicFiles[index].tags.album:gsub("%&", "and"))
-		--print(fullUrl)
-		--network.request(fullLastFmUrl, "GET", lastFmUrlRequestListener)
 		print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (artist, album) from musicbrainz")
 		network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
 	end
@@ -810,7 +760,6 @@ local loopButton =
 		id = "loop",
 		onPress = function(event)
 			looping = event.target.isOn
-			--bass.update(musicStreamHandle, {loop = event.target.isOn})
 		end
 	}
 )
@@ -877,7 +826,6 @@ volumeSlider =
 		value = 100,
 		listener = function(event)
 			bass.setVolume(event.value / 100)
-			--print("new volume: " .. bass.getVolume())
 		end
 	}
 )
@@ -1311,54 +1259,6 @@ local function onMouseEvent(event)
 	local x = event.x
 	local y = event.y
 
-	--[[
-	if (albumArtwork ~= nil) then
-		if (y >= albumArtwork.y - albumArtwork.contentHeight * 0.5 and y <= albumArtwork.y + albumArtwork.contentHeight * 0.5) then
-			if (x >= albumArtwork.x and x <= albumArtwork.x + albumArtwork.contentWidth) then
-				if (not albumArtwork.transition) then
-					albumArtwork.transition =
-						transition.to(
-						albumArtwork,
-						{
-							xScale = 2.0,
-							yScale = 2.0,
-							onComplete = function()
-								albumArtwork.transition = nil
-							end
-						}
-					)
-				end
-			else
-				if (not albumArtwork.transition) then
-					albumArtwork.transition =
-						transition.to(
-						albumArtwork,
-						{
-							xScale = 1.0,
-							yScale = 1.0,
-							onComplete = function()
-								albumArtwork.transition = nil
-							end
-						}
-					)
-				end
-			end
-		else
-			if (not albumArtwork.transition) then
-				albumArtwork.transition =
-					transition.to(
-					albumArtwork,
-					{
-						xScale = 1.0,
-						yScale = 1.0,
-						onComplete = function()
-							albumArtwork.transition = nil
-						end
-					}
-				)
-			end
-		end
-	end--]]
 	if (eventType == "move") then
 		-- handle main menu buttons
 		if (y >= 80 + rowHeight) then
@@ -1456,8 +1356,6 @@ timer.performWithDelay(
 	1000,
 	function()
 		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then
-			--print(musicDuration, duration, prog / duration)
-
 			playBackTimeText:update()
 			songProgressView:updateHandles(musicDuration, musicStreamHandle)
 			songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
@@ -1476,14 +1374,12 @@ local function handleAudioEvents(event)
 	if (type(audioChannels) == "table") then
 		for i = 1, #audioChannels do
 			local channel = audioChannels[i]
+
 			if (channel and not bass.isChannelPlaying(channel) and not bass.isChannelPaused(channel)) then
 				local e = {
 					name = "bass",
 					completed = true
-					--loop = bass.isChannelLooping(musicStreamHandle)
 				}
-				--print(bass.isChannelLooping(musicStreamHandle))
-				--table.remove(audioChannels, i)
 				onAudioComplete(e)
 			end
 		end
@@ -1549,7 +1445,6 @@ display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
 local function onSystemEvent(event)
-	print(event.type)
 	if (event.type == "applicationExit") then
 		bass.stop()
 
