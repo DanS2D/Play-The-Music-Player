@@ -11,6 +11,7 @@ local mousecursor = require("plugin.mousecursor")
 local bass = require("plugin.bass")
 local strict = require("strict")
 local utils = require("libs.file-utils")
+local sort = require("libs.sort")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local tableView = require("libs.ui.music-tableview")
 local progressView = require("libs.ui.progress-view")
@@ -210,76 +211,6 @@ local function populateMusicTableView()
 	end
 end
 
-local function sortByTitleAToZ(a, b)
-	local tagA = a.tags.title:len() > 1 and a.tags.title or "z"
-	local tagB = b.tags.title:len() > 1 and b.tags.title or "z"
-
-	return tagA < tagB
-end
-
-local function sortByTitleZToA(a, b)
-	local tagA = a.tags.title:len() > 1 and a.tags.title or "a"
-	local tagB = b.tags.title:len() > 1 and b.tags.title or "a"
-
-	return tagA > tagB
-end
-
-local function sortByArtistAToZ(a, b)
-	local tagA = a.tags.artist:len() > 1 and a.tags.artist or "z"
-	local tagB = b.tags.artist:len() > 1 and b.tags.artist or "z"
-
-	return tagA < tagB
-end
-
-local function sortByArtistZToA(a, b)
-	local tagA = a.tags.artist:len() > 1 and a.tags.artist or "a"
-	local tagB = b.tags.artist:len() > 1 and b.tags.artist or "a"
-
-	return tagA > tagB
-end
-
-local function sortByAlbumAToZ(a, b)
-	local tagA = a.tags.album:len() > 1 and a.tags.album or "z"
-	local tagB = b.tags.album:len() > 1 and b.tags.album or "z"
-
-	return tagA < tagB
-end
-
-local function sortByAlbumZToA(a, b)
-	local tagA = a.tags.album:len() > 1 and a.tags.album or "a"
-	local tagB = b.tags.album:len() > 1 and b.tags.album or "a"
-
-	return tagA > tagB
-end
-
-local function sortByGenreAToZ(a, b)
-	local tagA = a.tags.genre:len() > 1 and a.tags.genre or "z"
-	local tagB = b.tags.genre:len() > 1 and b.tags.genre or "z"
-
-	return tagA < tagB
-end
-
-local function sortByGenreZToA(a, b)
-	local tagA = a.tags.genre:len() > 1 and a.tags.genre or "a"
-	local tagB = b.tags.genre:len() > 1 and b.tags.genre or "a"
-
-	return tagA > tagB
-end
-
-local function sortByDurationAToZ(a, b)
-	local tagA = a.tags.duration:len() > 1 and a.tags.duration or "z"
-	local tagB = b.tags.duration:len() > 1 and b.tags.duration or "z"
-
-	return tagA < tagB
-end
-
-local function sortByDurationZToA(a, b)
-	local tagA = a.tags.duration:len() > 1 and a.tags.duration or "a"
-	local tagB = b.tags.duration:len() > 1 and b.tags.duration or "a"
-
-	return tagA > tagB
-end
-
 local function isMusicFile(fileName)
 	local fileExtension = fileName:match("^.+(%..+)$")
 	local isMusic = false
@@ -364,7 +295,7 @@ local function gatherMusic(path)
 	if (foundMusic) then
 		print("found music")
 
-		tSort(musicFiles, sortByTitleAToZ)
+		tSort(musicFiles, sort.byTitleAToZ)
 		populateMusicTableView()
 	else
 		native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
@@ -1327,15 +1258,15 @@ for i = 1, #listOptions do
 			self.sortIndicator.text = self.sortAToZ and "⌃" or "⌄"
 
 			if (self.text:lower() == "title") then
-				tSort(musicFiles, self.sortAToZ and sortByTitleAToZ or sortByTitleZToA)
+				tSort(musicFiles, self.sortAToZ and sort.byTitleAToZ or sort.byTitleZToA)
 			elseif (self.text:lower() == "artist") then
-				tSort(musicFiles, self.sortAToZ and sortByArtistAToZ or sortByArtistZToA)
+				tSort(musicFiles, self.sortAToZ and sort.byArtistAToZ or sort.byArtistZToA)
 			elseif (self.text:lower() == "album") then
-				tSort(musicFiles, self.sortAToZ and sortByAlbumAToZ or sortByAlbumZToA)
+				tSort(musicFiles, self.sortAToZ and sort.byAlbumAToZ or sort.byAlbumZToA)
 			elseif (self.text:lower() == "genre") then
-				tSort(musicFiles, self.sortAToZ and sortByGenreAToZ or sortByGenreZToA)
+				tSort(musicFiles, self.sortAToZ and sort.byGenreAToZ or sort.byGenreZToA)
 			elseif (self.text:lower() == "duration") then
-				tSort(musicFiles, self.sortAToZ and sortByDurationAToZ or sortByDurationZToA)
+				tSort(musicFiles, self.sortAToZ and sort.byDurationAToZ or sort.byDurationZToA)
 			end
 
 			for i = 1, #tableViewList do
