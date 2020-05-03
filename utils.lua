@@ -16,7 +16,7 @@ function M:loadTable(filename, location)
 	local file, errorString = io.open(path, "r")
 
 	if not file then
-		print("File error: " .. errorString)
+		print("File error: " .. errorString .. " at path: " .. path)
 		return false
 	else
 		local contents = file:read("*a")
@@ -50,7 +50,10 @@ end
 
 function M:copyFile(filename, destination)
 	assert(type(filename) == "string", "string expected for the first parameter but got " .. type(filename) .. " instead.")
-	assert(type(destination) == "table", "table expected for the second paramter but bot " .. type(destination) .. " instead.")
+	assert(
+		type(destination) == "table",
+		"table expected for the second paramter but got " .. type(destination) .. " instead."
+	)
 	--local sourceDBpath = system.pathForFile(filename, system.ResourceDirectory)
 	-- io.open opens a file at path; returns nil if no file found
 	local readHandle, errorString = io.open(filename, "rb")
