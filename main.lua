@@ -8,7 +8,6 @@ local json = require("json")
 local crypto = require("crypto")
 local tfd = require("plugin.tinyfiledialogs")
 local mousecursor = require("plugin.mousecursor")
-local bass = require("plugin.bass")
 local strict = require("strict")
 local fileUtils = require("libs.file-utils")
 local sort = require("libs.sort")
@@ -42,8 +41,6 @@ local overButtonPath = "img/buttons/over/"
 local settingsFileName = "settings.json"
 local settings = fileUtils:loadTable(settingsFileName)
 local musicFiles = {}
-local musicStreamHandle = nil
-local musicPlayChannel = nil
 local musicDuration = 0
 local currentSongIndex = 0
 local controlButtonsXOffset = 10
@@ -58,16 +55,13 @@ local categoryList = {}
 local tableViewList = {}
 local playbutton = nil
 local pauseButton = nil
-local playAudio = nil
 local volumeOnButton = nil
 local volumeOffButton = nil
 local volumeSlider = nil
 local playBackTimeText = nil
 local albumArtwork = nil
 local previousVolume = 0
-local looping = false
 local updateAlbumArtworkPosition = nil
-local audioChannels = {}
 local leftChannel = {}
 local rightChannel = {}
 local levelVisualizationGroup = display.newGroup()
@@ -142,14 +136,15 @@ local function gatherMusic(path)
 		local fullPath = sFormat("%s\\%s", musicPath, filename)
 
 		if (isMusicFile(fullPath)) then
-			local chan = bass.load(filename, musicPath)
+			audioLib.load({fileName = filename, filePath = musicPath})
+			local tags = audioLib.getTags()
 
-			if (chan) then
-				local playbackDuration = bass.getPlaybackTime(chan).duration
-				musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = bass.getTags(chan)}
+			if (tags) then
+				local playbackDuration = audioLib.getPlaybackTime().duration
+				musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = tags}
 				musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
 				playbackDuration = nil
-				bass.dispose(chan)
+				audioLib.dispose()
 			end
 		end
 	end
@@ -207,32 +202,34 @@ local function resetSongProgress()
 	songProgressView:setOverallProgress(0)
 end
 
-local function cleanupAudio()
-	if (musicPlayChannel ~= nil) then
-		playBackTimeText:update()
-		bass.stop(musicPlayChannel)
-		bass.dispose(musicStreamHandle)
+local function onAudioEvent(event)
+	local phase = event.phase
+
+	if (phase == "started") then
+		if (albumArtwork) then
+			display.remove(albumArtwork)
+			albumArtwork = nil
+		end
+
+		musicDuration = audioLib.getDuration() * 1000
 		resetSongProgress()
-	end
-end
-
-local function onAudioComplete(event)
-	print("audio playback complete?", event.completed)
-
-	if (looping) then
-		print("audio is set to loop, restarting audio")
-		playAudio(currentSongIndex)
-
-		return
-	end
-
-	if (event.completed) then
-		print("cleaning up audio")
-		cleanupAudio()
+		playBackTimeText:update()
+		songTitleText:setText(musicFiles[currentSongIndex].tags.title)
+		songAlbumText:setText(musicFiles[currentSongIndex].tags.album)
+		musicBrainz.getCover(musicFiles[currentSongIndex])
+	elseif (phase == "ended") then
 		currentSongIndex = currentSongIndex + 1
-		playAudio(currentSongIndex)
+
+		playBackTimeText:update()
+		resetSongProgress()
+		audioLib.load(musicFiles[currentSongIndex])
+		audioLib.play(musicFiles[currentSongIndex])
 	end
+
+	return true
 end
+
+Runtime:addEventListener("bass", onAudioEvent)
 
 local function onMusicBrainzDownloadComplete(event)
 	local phase = event.phase
@@ -253,31 +250,6 @@ local function onMusicBrainzDownloadComplete(event)
 end
 
 Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
-
-playAudio = function(index)
-	resetSongProgress()
-	songTitleText:setText(musicFiles[index].tags.title)
-	songAlbumText:setText(musicFiles[index].tags.album)
-
-	if (type(musicStreamHandle) == "number") then
-		if (bass.isChannelPlaying(musicStreamHandle)) then
-			bass.rewind(musicStreamHandle)
-			return
-		end
-	end
-
-	if (albumArtwork) then
-		display.remove(albumArtwork)
-		albumArtwork = nil
-	end
-
-	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
-	musicDuration = bass.getDuration(musicStreamHandle) * 1000
-	musicPlayChannel = bass.play(musicStreamHandle)
-	table.remove(audioChannels)
-	audioChannels[#audioChannels + 1] = musicStreamHandle
-	musicBrainz.getCover(musicFiles[index])
-end
 
 local applicationMainMenuBar =
 	mainMenuBar.new(
@@ -394,8 +366,8 @@ local previousButton =
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
-				cleanupAudio()
-				playAudio(currentSongIndex)
+				audioLib.load(musicFiles[currentSongIndex])
+				audioLib.play(musicFiles[currentSongIndex])
 			end
 		end
 	}
@@ -411,16 +383,16 @@ playButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			if (musicStreamHandle) then
+			if (audioLib.isChannelHandleValid()) then
 				event.target.isVisible = false
 				pauseButton.isVisible = true
 
-				if (bass.isChannelPlaying(musicPlayChannel)) then
+				if (audioLib.isChannelPlaying()) then
 					return
 				end
 
-				if (bass.isChannelPaused(musicPlayChannel)) then
-					bass.resume(musicPlayChannel)
+				if (audioLib.isChannelPaused()) then
+					audioLib.resume()
 					return
 				end
 			end
@@ -438,9 +410,9 @@ pauseButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			if (musicStreamHandle) then
-				if (bass.isChannelPlaying(musicPlayChannel)) then
-					bass.pause(musicPlayChannel)
+			if (audioLib.isChannelHandleValid()) then
+				if (audioLib.isChannelPlaying()) then
+					audioLib.pause()
 					event.target.isVisible = false
 					playButton.isVisible = true
 				end
@@ -465,8 +437,8 @@ local nextButton =
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
-				cleanupAudio()
-				playAudio(currentSongIndex)
+				audioLib.load(musicFiles[currentSongIndex])
+				audioLib.play(musicFiles[currentSongIndex])
 			end
 		end
 	}
@@ -589,7 +561,7 @@ local loopButton =
 		style = "checkbox",
 		id = "loop",
 		onPress = function(event)
-			looping = event.target.isOn
+			audioLib.loopOne = event.target.isOn
 		end
 	}
 )
@@ -604,7 +576,7 @@ songProgressView =
 	{
 		width = dWidth / 2 - 10,
 		musicDuration = musicDuration,
-		musicStreamHandle = musicStreamHandle
+		musicStreamHandle = audioLib.getChannelHandle()
 	}
 )
 songProgressView.anchorX = 0
@@ -619,8 +591,8 @@ volumeOnButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			previousVolume = bass.getVolume()
-			bass.setVolume(0)
+			previousVolume = audioLib.getVolume()
+			audioLib.setVolume(0)
 			volumeSlider:setValue(0)
 			event.target.isVisible = false
 			volumeOffButton.isVisible = true
@@ -638,7 +610,7 @@ volumeOffButton =
 		width = buttonSize,
 		height = buttonSize,
 		onPress = function(event)
-			bass.setVolume(previousVolume)
+			audioLib.setVolume(previousVolume)
 			volumeSlider:setValue(previousVolume * 100)
 			event.target.isVisible = false
 			volumeOnButton.isVisible = true
@@ -655,7 +627,7 @@ volumeSlider =
 		width = 100,
 		value = 100,
 		listener = function(event)
-			bass.setVolume(event.value / 100)
+			audioLib.setVolume(event.value / 100)
 		end
 	}
 )
@@ -706,7 +678,7 @@ playBackTimeText =
 playBackTimeText.x = levelVisualizationGroup.x + levelVisualizationGroup.contentWidth
 playBackTimeText.y = levelVisualizationGroup.y + levelVisualizationGroup.contentHeight + playBackTimeText.contentHeight
 function playBackTimeText:update()
-	local playbackTime = bass.getPlaybackTime(musicPlayChannel)
+	local playbackTime = audioLib.getPlaybackTime()
 	local pbElapsed = playbackTime.elapsed
 	local pbDuration = playbackTime.duration
 	playBackTimeText.text =
@@ -772,8 +744,8 @@ local function createTableView(options)
 
 				if (phase == "press") then
 					currentSongIndex = row.index
-					cleanupAudio()
-					playAudio(currentSongIndex)
+					audioLib.load(musicFiles[currentSongIndex])
+					audioLib.play(musicFiles[currentSongIndex])
 					playButton.isVisible = false
 					pauseButton.isVisible = true
 				end
@@ -1138,8 +1110,8 @@ timer.performWithDelay(
 			ts:highlightPressedIndex(currentSongIndex)
 		end
 
-		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then
-			local leftLevel, rightLevel = bass.getLevel(musicPlayChannel)
+		if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
+			local leftLevel, rightLevel = audioLib.getLevel()
 			local minLevel = 0
 			local maxLevel = 32768
 			local chunk = 2520
@@ -1185,9 +1157,9 @@ timer.performWithDelay(
 timer.performWithDelay(
 	1000,
 	function()
-		if (musicPlayChannel and bass.isChannelPlaying(musicPlayChannel)) then
+		if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
 			playBackTimeText:update()
-			songProgressView:updateHandles(musicDuration, musicStreamHandle)
+			songProgressView:updateHandles(musicDuration, audioLib.getChannelHandle())
 			songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
 			songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
 		end
@@ -1200,24 +1172,6 @@ if (type(settings) == "table" and settings.musicPath) then
 	gatherMusic(settings.musicPath)
 end
 
-local function handleAudioEvents(event)
-	if (type(audioChannels) == "table") then
-		for i = 1, #audioChannels do
-			local channel = audioChannels[i]
-
-			if (channel and not bass.isChannelPlaying(channel) and not bass.isChannelPaused(channel)) then
-				local e = {
-					name = "bass",
-					completed = true
-				}
-				onAudioComplete(e)
-			end
-		end
-	end
-end
-
-Runtime:addEventListener("enterFrame", handleAudioEvents)
-
 local function keyEventListener(event)
 	local keyCode = event.nativeKeyCode
 	local phase = event.phase
@@ -1229,18 +1183,18 @@ local function keyEventListener(event)
 
 		-- pause/resume toggle
 		if (keyCode == 65539) then
-			if (musicPlayChannel) then
-				if (bass.isChannelPaused(musicPlayChannel)) then
+			if (audioLib.isChannelHandleValid()) then
+				if (audioLib.isChannelPaused()) then
 					playButton.isVisible = false
 					pauseButton.isVisible = true
 
-					bass.resume(musicPlayChannel)
+					audioLib.resume()
 				else
-					if (bass.isChannelPlaying(musicPlayChannel)) then
+					if (audioLib.isChannelPlaying()) then
 						playButton.isVisible = true
 						pauseButton.isVisible = false
 
-						bass.pause(musicPlayChannel)
+						audioLib.pause()
 					end
 				end
 			end
@@ -1251,8 +1205,7 @@ local function keyEventListener(event)
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
-				cleanupAudio()
-				playAudio(currentSongIndex)
+				audioLib.play(musicFiles[currentSongIndex])
 			end
 		elseif (keyCode == 65541) then
 			-- previous
@@ -1261,8 +1214,7 @@ local function keyEventListener(event)
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
-				cleanupAudio()
-				playAudio(currentSongIndex)
+				audioLib.play(musicFiles[currentSongIndex])
 			end
 		end
 	end
@@ -1270,17 +1222,14 @@ local function keyEventListener(event)
 	return false
 end
 
-bass.setVolume(1.0)
+audioLib.setVolume(1.0)
 display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
 local function onSystemEvent(event)
 	if (event.type == "applicationExit") then
-		bass.stop()
-
-		if (musicStreamHandle) then
-			bass.dispose(musicStreamHandle)
-		end
+		audioLib.stop()
+		audioLib.dispose()
 	end
 end
 

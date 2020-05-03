@@ -8,6 +8,7 @@ local urlRequestListener = nil
 local downloadListener = nil
 local requestedSong = nil
 local currentCoverFileName = nil
+local tryAgain = true
 local coverArtUrl = "http://coverartarchive.org/release-group/"
 local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
 local musicBrainzParams = {
@@ -49,8 +50,6 @@ downloadListener = function(event)
 	print("download callback")
 
 	if (event.status ~= 200) then
-		local tryAgain = true
-
 		if (tryAgain) then
 			local songTitle = requestedSong.tags.title
 			local artistTitle = requestedSong.tags.artist
@@ -92,6 +91,7 @@ function M.getCover(song)
 		--print("artwork exists for " .. requestedSong.tags.artist .. " / " .. requestedSong.tags.album)
 		dispatchCoverEvent()
 	else
+		tryAgain = true
 		print("REQUESTING artwork for " .. requestedSong.tags.title .. " (artist, album) from musicbrainz")
 		network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
 	end
