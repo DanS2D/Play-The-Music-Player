@@ -74,4 +74,17 @@ function M:copyFile(filename, destination)
 	return true
 end
 
+function M:fileExists(filePath, baseDir)
+	local path = system.pathForFile(filePath, baseDir or system.DocumentsDirectory)
+	local file = io.open(path, "r")
+	local exists = false
+
+	if (file) then
+		exists = true
+		io.close(file)
+	end
+
+	return exists
+end
+
 return M

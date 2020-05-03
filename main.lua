@@ -10,8 +10,10 @@ local tfd = require("plugin.tinyfiledialogs")
 local mousecursor = require("plugin.mousecursor")
 local bass = require("plugin.bass")
 local strict = require("strict")
-local utils = require("libs.file-utils")
+local fileUtils = require("libs.file-utils")
 local sort = require("libs.sort")
+local audioLib = require("libs.audio-lib")
+local musicBrainz = require("libs.music-brainz")
 local stringExt = require("libs.string-ext")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local tableView = require("libs.ui.music-tableview")
@@ -38,7 +40,7 @@ local dSafeHeight = display.safeActualContentHeight
 local defaultButtonPath = "img/buttons/default/"
 local overButtonPath = "img/buttons/over/"
 local settingsFileName = "settings.json"
-local settings = utils:loadTable(settingsFileName)
+local settings = fileUtils:loadTable(settingsFileName)
 local musicFiles = {}
 local musicStreamHandle = nil
 local musicPlayChannel = nil
@@ -75,114 +77,8 @@ local rowHeight = 20
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
-local supportedFormats = {
-	"b",
-	"m",
-	"2sf",
-	"ahx",
-	"as0",
-	"asc",
-	"ay",
-	"ayc",
-	"bin",
-	"cc3",
-	"chi",
-	"cop",
-	"d",
-	"dmm",
-	"dsf",
-	"dsq",
-	"dst",
-	"esv",
-	"fdi",
-	"ftc",
-	"gam",
-	"gamplus",
-	"gbs",
-	"gsf",
-	"gtr",
-	"gym",
-	"hes",
-	"hrm",
-	"hrp",
-	"hvl",
-	"kss",
-	"lzs",
-	"m",
-	"mod",
-	"msp",
-	"mtc",
-	"nsf",
-	"nsfe",
-	"p",
-	"pcd",
-	"psc",
-	"psf",
-	"psf2",
-	"psg",
-	"psm",
-	"pt1",
-	"pt2",
-	"pt3",
-	"rmt",
-	"rsn",
-	"s",
-	"sap",
-	"scl",
-	"sid",
-	"spc",
-	"sqd",
-	"sqt",
-	"ssf",
-	"st1",
-	"st3",
-	"stc",
-	"stp",
-	"str",
-	"szx",
-	"td0",
-	"tf0",
-	"tfc",
-	"tfd",
-	"tfe",
-	"tlz",
-	"tlzp",
-	"trd",
-	"trs",
-	"ts",
-	"usf",
-	"vgm",
-	"vgz",
-	"vtx",
-	"ym",
-	"spx",
-	"mpc",
-	"ape",
-	"ac3",
-	"wav",
-	"aiff",
-	"mp3",
-	"mp2",
-	"mp1",
-	"ogg",
-	"flac",
-	"wav"
-}
 widget.mouseEventsEnabled = true
 widget.setTheme("widget_theme_ios")
-
-local function fileExists(filePath, baseDir)
-	local path = system.pathForFile(filePath, baseDir or system.DocumentsDirectory)
-	local file = io.open(path, "r")
-	local exists = false
-
-	if (file) then
-		exists = true
-		io.close(file)
-	end
-
-	return exists
-end
 
 local function populateMusicTableView()
 	local default = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 0}}
@@ -216,8 +112,10 @@ local function isMusicFile(fileName)
 	local fileExtension = fileName:match("^.+(%..+)$")
 	local isMusic = false
 
-	for i = 1, #supportedFormats do
-		if (fileExtension == sFormat(".%s", supportedFormats[i])) then
+	for i = 1, #audioLib.supportedFormats do
+		local currentFormat = audioLib.supportedFormats[i]
+
+		if (fileExtension == sFormat(".%s", currentFormat)) then
 			isMusic = true
 			break
 		end
@@ -336,6 +234,26 @@ local function onAudioComplete(event)
 	end
 end
 
+local function onMusicBrainzDownloadComplete(event)
+	local phase = event.phase
+	local coverFileName = event.fileName
+
+	if (phase == "downloaded") then
+		if (albumArtwork) then
+			display.remove(albumArtwork)
+			albumArtwork = nil
+		end
+
+		albumArtwork = display.newImageRect(coverFileName, system.DocumentsDirectory, 30, 30)
+		albumArtwork.anchorX = 0
+		updateAlbumArtworkPosition()
+	end
+
+	return true
+end
+
+Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
+
 playAudio = function(index)
 	resetSongProgress()
 	songTitleText:setText(musicFiles[index].tags.title)
@@ -348,105 +266,17 @@ playAudio = function(index)
 		end
 	end
 
-	local hash = crypto.digest(crypto.md5, musicFiles[index].tags.title .. musicFiles[index].tags.album)
-	local coverRequests = {}
-	local artworkDownloadListener = nil
-	local songTitle = musicFiles[index].tags.title
-	local artistTitle = musicFiles[index].tags.artist
-	local albumTitle = musicFiles[index].tags.album
-	local coverArtUrl = "http://coverartarchive.org/release-group/"
-	local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
-	local fullMusicBrainzUrl =
-		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
-	local musicBrainzParams = {
-		headers = {
-			["User-Agent"] = "Play The Music Player/1.0"
-		}
-	}
-	local tryAgain = true
-	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
-
-	local function musicBrainzUrlRequestListener(event)
-		if (event.isError) then
-			print("Network error: ", event.response)
-		else
-			--print("RESPONSE: " .. event.response)
-			local response = json.decode(event.response)
-
-			if
-				(response and response["release-groups"] and response["release-groups"][1] and
-					response["release-groups"][1].releases)
-			 then
-				local releases = response["release-groups"][1]
-
-				local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, releases.id)
-				print("FOUND entry for " .. musicFiles[index].tags.title .. " at musicbrainz - url:", imageUrl)
-				network.download(imageUrl, "GET", artworkDownloadListener, {}, hash .. ".png", system.DocumentsDirectory)
-			else
-				print("FAILED to get song info for " .. musicFiles[index].tags.title .. " at musicbrainz")
-			end
-		end
-	end
-
-	artworkDownloadListener = function(event)
-		print("download callback")
-
-		if (event.status ~= 200) then
-			if (tryAgain) then
-				if (albumArtwork ~= nil) then
-					display.remove(albumArtwork)
-					albumArtwork = nil
-				end
-
-				print("FAILED to get artwork for " .. musicFiles[index].tags.title .. " from coverarchive.org")
-				print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (song title, artist) from musicbrainz")
-				fullMusicBrainzUrl =
-					sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, songTitle:urlEncode(), artistTitle:urlEncode())
-				network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
-				tryAgain = false
-			end
-
-			return
-		end
-
-		if (event.isError) then
-			print("Network error - download failed: ", event.response)
-		elseif (event.phase == "began") then
-			print("Progress Phase: began")
-		elseif (event.phase == "ended") then
-			--print(event.response)
-			if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
-				print("GOT artwork for " .. musicFiles[index].tags.title .. " from opencoverart.org")
-				albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
-				albumArtwork.anchorX = 0
-				albumArtwork.isVisible = true
-				albumArtwork.alpha = 0
-				updateAlbumArtworkPosition()
-				transition.to(albumArtwork, {alpha = 1, transition = easing.inOutQuad})
-			end
-		end
-	end
-
-	if (albumArtwork ~= nil) then
+	if (albumArtwork) then
 		display.remove(albumArtwork)
 		albumArtwork = nil
 	end
 
-	if (fileExists(hash .. ".png", system.DocumentsDirectory)) then
-		--print("artwork exists for " .. musicFiles[index].tags.artist .. " / " .. musicFiles[index].tags.album)
-		albumArtwork = display.newImageRect(hash .. ".png", system.DocumentsDirectory, 30, 30)
-		albumArtwork.anchorX = 0
-		albumArtwork.isVisible = true
-		updateAlbumArtworkPosition()
-	else
-		print("REQUESTING artwork for " .. musicFiles[index].tags.title .. " (artist, album) from musicbrainz")
-		network.request(fullMusicBrainzUrl, "GET", musicBrainzUrlRequestListener, musicBrainzParams)
-	end
-
+	musicStreamHandle = bass.load(musicFiles[index].fileName, musicFiles[index].filePath)
 	musicDuration = bass.getDuration(musicStreamHandle) * 1000
 	musicPlayChannel = bass.play(musicStreamHandle)
 	table.remove(audioChannels)
 	audioChannels[#audioChannels + 1] = musicStreamHandle
+	musicBrainz.getCover(musicFiles[index])
 end
 
 local applicationMainMenuBar =
@@ -472,7 +302,7 @@ local applicationMainMenuBar =
 								end
 
 								settings.musicPath = selectedPath
-								utils:saveTable(settings, settingsFileName)
+								fileUtils:saveTable(settings, settingsFileName)
 								gatherMusic(settings.musicPath)
 							end
 						end
@@ -644,7 +474,7 @@ local nextButton =
 nextButton.x = (pauseButton.x + pauseButton.contentWidth + controlButtonsXOffset)
 nextButton.y = previousButton.y
 
-local emitterParams = utils:loadTable("my_galaxy.json", system.ResourceDirectory)
+local emitterParams = fileUtils:loadTable("my_galaxy.json", system.ResourceDirectory)
 local emitter = display.newEmitter(emitterParams)
 emitter.x = display.contentCenterX
 emitter.y = nextButton.y - 5
