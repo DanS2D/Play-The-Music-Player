@@ -1,4 +1,5 @@
 local bass = require("plugin.bass")
+local audioLib = require("libs.audio-lib")
 local M = {}
 
 function M.new(options)
@@ -6,13 +7,11 @@ function M.new(options)
 	local height = options.height or 6
 	local outerColor = options.innerColor or {0.28, 0.28, 0.28, 1}
 	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
-	local musicDuration = options.musicDuration
-	local musicStreamHandle = options.musicStreamHandle
 	local seekPosition = 0
-	local progress = 0
 	local group = display.newGroup()
 	local outerBox = nil
 	local innerBox = nil
+	local progress = 0
 	group.actualWidth = width
 
 	local outerBox = display.newRect(0, 0, width, height)
@@ -34,22 +33,21 @@ function M.new(options)
 			local valueX, valueY = self:contentToLocal(event.x, event.y)
 			local onePercent = width / 100
 			local currentPercent = valueX / onePercent
-			local duration = musicDuration
-			seekPosition = ((currentPercent / 10) * musicDuration / 10)
+			local duration = audioLib.getDuration() * 1000
+			seekPosition = ((currentPercent / 10) * duration / 10)
 			--print(seekPosition)
 
-			if (bass.isChannelPlaying(musicStreamHandle)) then
+			if (audioLib.isChannelPlaying()) then
 				progress = seekPosition
 				self:setOverallProgress(progress / duration)
-				bass.seek(musicStreamHandle, progress / 1000)
+				audioLib.seek(seekPosition / 1000)
 			end
 		end
 	end
 	group:addEventListener("touch")
 
-	function group:updateHandles(duration, streamHandle)
-		musicDuration = duration
-		musicStreamHandle = streamHandle
+	function group:setOverallProgress(newProgress)
+		innerBox.width = (width / 100) * (newProgress * 100)
 	end
 
 	function group:getElapsedProgress()
@@ -58,10 +56,6 @@ function M.new(options)
 
 	function group:setElapsedProgress(newProgress)
 		progress = newProgress
-	end
-
-	function group:setOverallProgress(newProgress)
-		innerBox.width = (width / 100) * (newProgress * 100)
 	end
 
 	return group

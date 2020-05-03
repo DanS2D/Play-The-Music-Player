@@ -110,6 +110,7 @@ local bassPause = bass.pause
 local bassPlay = bass.play
 local bassResume = bass.resume
 local bassRewind = bass.rewind
+local bassSeek = bass.seek
 local bassSetVolume = bass.setVolume
 local bassStop = bass.stop
 local channelHandle = nil
@@ -301,6 +302,12 @@ end
 function M.rewind()
 	if (channelHandle ~= nil) then
 		bassRewind(channelHandle)
+	end
+end
+
+function M.seek(position)
+	if (channelHandle ~= nil) then
+		bassSeek(channelHandle, position)
 	end
 end
 
