@@ -316,11 +316,14 @@ local function gatherMusic(path)
 
 		if (isMusicFile(fullPath)) then
 			local chan = bass.load(filename, musicPath)
-			local playbackDuration = bass.getPlaybackTime(chan).duration
-			musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = bass.getTags(chan)}
-			musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
-			playbackDuration = nil
-			bass.dispose(chan)
+
+			if (chan) then
+				local playbackDuration = bass.getPlaybackTime(chan).duration
+				musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = bass.getTags(chan)}
+				musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
+				playbackDuration = nil
+				bass.dispose(chan)
+			end
 		end
 	end
 
@@ -479,7 +482,10 @@ playAudio = function(index)
 			--print("RESPONSE: " .. event.response)
 			local response = json.decode(event.response)
 
-			if (response and response["release-groups"] and response["release-groups"][1].releases) then
+			if
+				(response and response["release-groups"] and response["release-groups"][1] and
+					response["release-groups"][1].releases)
+			 then
 				local releases = response["release-groups"][1]
 
 				--for i = 1, #releases do
@@ -760,12 +766,17 @@ local nextButton =
 nextButton.x = (pauseButton.x + pauseButton.contentWidth + controlButtonsXOffset)
 nextButton.y = previousButton.y
 
+local emitterParams = utils:loadTable("my_galaxy.json", system.ResourceDirectory)
+local emitter = display.newEmitter(emitterParams)
+emitter.x = display.contentCenterX
+emitter.y = nextButton.y - 5
+
 local songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
 songContainerBox.anchorX = 0
 songContainerBox.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset + 29)
 songContainerBox.y = nextButton.y - 5
 songContainerBox.strokeWidth = 1
-songContainerBox:setFillColor(0, 0, 0, 0)
+songContainerBox:setFillColor(0, 0, 0, 1)
 songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 
 local songContainer = display.newContainer(songContainerBox.contentWidth - 80, 50)
@@ -1517,6 +1528,26 @@ timer.performWithDelay(
 			local minLevel = 0
 			local maxLevel = 32768
 			local chunk = 2520
+
+			emitter.radialAcceleration = (leftLevel / 1000) * (rightLevel / 1000)
+			emitter.startParticleSize = 1
+			emitter.finishParticleSizeVariance = emitter.startParticleSize
+			emitter.startColorAlpha = 0
+			emitter.finishColorAlpha = 1
+			--emitter.startColorRed = 1
+			--emitter.startColorBlue = 1
+			--emitter.startColorGreen = 1
+			--emitter.startColorVarianceAlpha = (leftLevel / 100000 * 2)
+			--emitter.startColorVarianceRed = (leftLevel / 100000 * 3)
+			--emitter.startColorVarianceBlue = (leftLevel / 100000 * 3)
+			--emitter.startColorVarianceGreen = (leftLevel / 100000 * 3)
+			--emitter.gravityx = leftLevel / 100
+			--emitter.gravityy = leftLevel / 100
+			--emitter.sourcePositionVariancex = leftLevel / 200
+			--emitter.sourcePositionVariancey = -(leftLevel / 200)
+			--emitter.speedVariance = leftLevel / 50
+			--emitter.startParticleSize = leftLevel / 3200
+			--emitter.radialAccelVariance = leftLevel / 300
 
 			for i = 1, #leftChannel do
 				if (leftLevel > chunk * (14 - i)) then
