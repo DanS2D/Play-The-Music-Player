@@ -673,16 +673,13 @@ if (type(settings) == "table" and settings.musicPath) then
 end
 
 local function keyEventListener(event)
-	local keyCode = event.nativeKeyCode
 	local phase = event.phase
 
 	if (phase == "down") then
-		--print("event name:", event.name)
-		--print("keyname:", event.keyName)
-		print("keycode:", event.nativeKeyCode)
+		local keyDescriptor = event.descriptor:lower()
 
 		-- pause/resume toggle
-		if (keyCode == 65539) then
+		if (keyDescriptor == "mediaplaypause") then
 			if (audioLib.isChannelHandleValid()) then
 				if (audioLib.isChannelPaused()) then
 					playButton.isVisible = false
@@ -698,24 +695,28 @@ local function keyEventListener(event)
 					end
 				end
 			end
-		elseif (keyCode == 65542) then
+		elseif (keyDescriptor == "medianext") then
 			-- next
 			if (audioLib.currentSongIndex + 1 <= #musicFiles) then
 				audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
+				audioLib.load(musicFiles[audioLib.currentSongIndex])
 				audioLib.play(musicFiles[audioLib.currentSongIndex])
 			end
-		elseif (keyCode == 65541) then
+		elseif (keyDescriptor == "mediaprevious") then
 			-- previous
 			if (audioLib.currentSongIndex - 1 > 0) then
 				audioLib.currentSongIndex = audioLib.currentSongIndex - 1
 				playButton.isVisible = false
 				pauseButton.isVisible = true
 
+				audioLib.load(musicFiles[audioLib.currentSongIndex])
 				audioLib.play(musicFiles[audioLib.currentSongIndex])
 			end
+		elseif (keyDescriptor == "mediastop") then
+		-- stop audio
 		end
 	end
 
