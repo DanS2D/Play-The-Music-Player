@@ -17,6 +17,7 @@ local stringExt = require("libs.string-ext")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local tableView = require("libs.ui.music-tableview")
 local progressView = require("libs.ui.progress-view")
+local levelVisualization = require("libs.ui.level-visualizer")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -61,9 +62,6 @@ local volumeSlider = nil
 local playBackTimeText = nil
 local albumArtwork = nil
 local updateAlbumArtworkPosition = nil
-local leftChannel = {}
-local rightChannel = {}
-local levelVisualizationGroup = display.newGroup()
 local buttonSize = 20
 local rowFontSize = 10
 local rowHeight = 20
@@ -633,36 +631,10 @@ volumeSlider.height = volumeSlider.height / 1.5
 volumeSlider.x = (volumeOnButton.x + (volumeOnButton.contentWidth) + 2)
 volumeSlider.y = previousButton.y - 4
 
-for i = 1, 13 do
-	leftChannel[i] = display.newRect(50, 0, 2, 30)
-	rightChannel[i] = display.newRect(50, 0, 2, 30)
-
-	if (i == 1) then
-		leftChannel[i].x = 50
-		leftChannel[i].origHeight = mFloor(28 - (i * 2))
-		rightChannel[i].x = 104
-		rightChannel[i].origHeight = 2
-	else
-		leftChannel[i].x = mFloor(leftChannel[i - 1].x + 4)
-		leftChannel[i].origHeight = mFloor(28 - (i * 2))
-		rightChannel[i].x = mFloor(rightChannel[i - 1].x + 4)
-		rightChannel[i].origHeight = mFloor(rightChannel[i - 1].origHeight + 2)
-	end
-
-	leftChannel[i]:setFillColor((255 - (21 * i - 1)) / 255, (21 * i - 1) / 255, 0)
-	rightChannel[i]:setFillColor((21 * i - 1) / 255, (255 - (21 * i - 1)) / 255, 0)
-
-	leftChannel[i].anchorY = 1
-	rightChannel[i].anchorY = 1
-	rightChannel[i].height = 1
-	leftChannel[i].height = 1
-	levelVisualizationGroup:insert(leftChannel[i])
-	levelVisualizationGroup:insert(rightChannel[i])
-end
-
-levelVisualizationGroup.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
-levelVisualizationGroup.y = volumeOnButton.y
-display.getCurrentStage():insert(levelVisualizationGroup)
+local levelVisualizer = levelVisualization.new()
+levelVisualizer.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
+levelVisualizer.y = volumeOnButton.y
+display.getCurrentStage():insert(levelVisualizer)
 
 playBackTimeText =
 	display.newText(
@@ -673,8 +645,8 @@ playBackTimeText =
 		align = "left"
 	}
 )
-playBackTimeText.x = levelVisualizationGroup.x + levelVisualizationGroup.contentWidth
-playBackTimeText.y = levelVisualizationGroup.y + levelVisualizationGroup.contentHeight + playBackTimeText.contentHeight
+playBackTimeText.x = levelVisualizer.x + levelVisualizer.contentWidth
+playBackTimeText.y = levelVisualizer.y + levelVisualizer.contentHeight + playBackTimeText.contentHeight
 function playBackTimeText:update()
 	local playbackTime = audioLib.getPlaybackTime()
 	local pbElapsed = playbackTime.elapsed
@@ -1119,34 +1091,20 @@ timer.performWithDelay(
 			emitter.finishParticleSizeVariance = emitter.startParticleSize
 			emitter.startColorAlpha = 0
 			emitter.finishColorAlpha = 1
-			--emitter.startColorRed = 1
-			--emitter.startColorBlue = 1
-			--emitter.startColorGreen = 1
-			--emitter.startColorVarianceAlpha = (leftLevel / 100000 * 2)
-			--emitter.startColorVarianceRed = (leftLevel / 100000 * 3)
-			--emitter.startColorVarianceBlue = (leftLevel / 100000 * 3)
-			--emitter.startColorVarianceGreen = (leftLevel / 100000 * 3)
-			--emitter.gravityx = leftLevel / 100
-			--emitter.gravityy = leftLevel / 100
-			--emitter.sourcePositionVariancex = leftLevel / 200
-			--emitter.sourcePositionVariancey = -(leftLevel / 200)
-			--emitter.speedVariance = leftLevel / 50
-			--emitter.startParticleSize = leftLevel / 3200
-			--emitter.radialAccelVariance = leftLevel / 300
-
-			for i = 1, #leftChannel do
-				if (leftLevel > chunk * (14 - i)) then
-					leftChannel[i].height = leftChannel[i].origHeight
-				else
-					leftChannel[i].height = 1
-				end
-
-				if (rightLevel > chunk * (1 + (i - 1))) then
-					rightChannel[i].height = rightChannel[i].origHeight
-				else
-					rightChannel[i].height = 1
-				end
-			end
+		--emitter.startColorRed = 1
+		--emitter.startColorBlue = 1
+		--emitter.startColorGreen = 1
+		--emitter.startColorVarianceAlpha = (leftLevel / 100000 * 2)
+		--emitter.startColorVarianceRed = (leftLevel / 100000 * 3)
+		--emitter.startColorVarianceBlue = (leftLevel / 100000 * 3)
+		--emitter.startColorVarianceGreen = (leftLevel / 100000 * 3)
+		--emitter.gravityx = leftLevel / 100
+		--emitter.gravityy = leftLevel / 100
+		--emitter.sourcePositionVariancex = leftLevel / 200
+		--emitter.sourcePositionVariancey = -(leftLevel / 200)
+		--emitter.speedVariance = leftLevel / 50
+		--emitter.startParticleSize = leftLevel / 3200
+		--emitter.radialAccelVariance = leftLevel / 300
 		end
 	end,
 	0
