@@ -45,6 +45,10 @@ end
 
 Runtime:addEventListener("enterFrame", highlightPressedIndex)
 
+local function hasValidMusicData()
+	return (type(musicData) == "table" and #musicData <= 0)
+end
+
 local function createTableView(options)
 	local tView =
 		tableView.new(
@@ -142,6 +146,10 @@ end
 local function moveColumns(event)
 	local phase = event.phase
 
+	if (not hasValidMusicData()) then
+		return
+	end
+
 	if (tableViewTarget) then
 		if (phase == "moved") then
 			tableViewTarget.x = mFloor(event.x + tableViewTarget.contentWidth * 0.5)
@@ -167,6 +175,10 @@ local function onMouseEvent(event)
 	local eventType = event.type
 	local x = event.x
 	local y = event.y
+
+	if (not hasValidMusicData()) then
+		return
+	end
 
 	if (eventType == "move") then
 		-- handle main menu buttons
@@ -335,6 +347,10 @@ function M.new()
 			local yStart = target.y - target.contentHeight * 0.5
 			local yEnd = target.y + target.contentHeight * 0.5
 			local x, y = event.x, event.y
+
+			if (not hasValidMusicData()) then
+				return
+			end
 
 			if (phase == "began") then
 				local thisTableView = tableViewList[self.parent.index]

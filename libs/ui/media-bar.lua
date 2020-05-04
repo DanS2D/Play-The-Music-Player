@@ -48,6 +48,10 @@ end
 
 timer.performWithDelay(1000, updateMediaBar, 0)
 
+local function hasValidMusicData()
+	return (type(musicData) == "table" and #musicData <= 0)
+end
+
 function M.new(options)
 	local group = display.newGroup()
 
@@ -59,6 +63,10 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
+				if (not hasValidMusicData()) then
+					return
+				end
+
 				if (audioLib.currentSongIndex - 1 > 0) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
 					playButton.isVisible = false
@@ -133,6 +141,10 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
+				if (not hasValidMusicData()) then
+					return
+				end
+
 				if (audioLib.currentSongIndex + 1 <= #musicData) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 					playButton.isVisible = false
@@ -288,6 +300,10 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
+				if (not hasValidMusicData()) then
+					return
+				end
+
 				audioLib.setVolume(0)
 				volumeSlider:setValue(0)
 				event.target.isVisible = false
@@ -307,6 +323,10 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
+				if (not hasValidMusicData()) then
+					return
+				end
+
 				audioLib.setVolume(audioLib.getPreviousVolume())
 				volumeSlider:setValue(audioLib.getVolume() * 100)
 				event.target.isVisible = false
