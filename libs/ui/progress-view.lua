@@ -5,6 +5,7 @@ local M = {}
 function M.new(options)
 	local width = options.width
 	local height = options.height or 6
+	local allowTouch = options.allowTouch or nil
 	local outerColor = options.innerColor or {0.28, 0.28, 0.28, 1}
 	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
 	local seekPosition = 0
@@ -44,7 +45,10 @@ function M.new(options)
 			end
 		end
 	end
-	group:addEventListener("touch")
+
+	if (allowTouch) then
+		group:addEventListener("touch")
+	end
 
 	function group:setOverallProgress(newProgress)
 		innerBox.width = (width / 100) * (newProgress * 100)

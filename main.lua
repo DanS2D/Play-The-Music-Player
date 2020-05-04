@@ -10,6 +10,7 @@ local stringExt = require("libs.string-ext")
 local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
+local musicImporter = require("libs.music-importer")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
@@ -72,41 +73,8 @@ local function gatherMusic(path)
 		end
 	end
 
-	local function iterateDirectory(path)
-		local paths = {}
-		paths[#paths + 1] = path
-		local count = 0
-
-		repeat
-			count = count + 1
-			--print(paths[#paths])
-
-			for file in lfs.dir(paths[1]) do
-				if (file:sub(-1) ~= ".") then
-					local fullPath = paths[1] .. "\\" .. file
-					local isDir = lfs.attributes(fullPath, "mode") == "directory"
-					--print(file .. " attr: ", lfs.attributes(fullPath, "mode"))
-
-					if (isMusicFile(fullPath)) then
-						--print(fullPath)
-						--print(paths[1] .. "\\" .. file)
-						foundMusic = true
-						getMusic(file, paths[1])
-					end
-
-					if (isDir) then
-						--print(fullPath .. " attr: ", lfs.attributes(fullPath, "mode"))
-						tInsert(paths, fullPath)
-					end
-				end
-			end
-
-			tRemove(paths, 1)
-		until #paths == 0
-	end
-
 	if (path) then
-		iterateDirectory(path)
+		musicImporter.getFolderList(path)
 	end
 
 	if (foundMusic) then
@@ -115,7 +83,7 @@ local function gatherMusic(path)
 		musicList.populate(musicFiles)
 		mediaBarLib.setMusicData(musicFiles)
 	else
-		native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
+		--native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
 	end
 end
 
@@ -260,6 +228,7 @@ local applicationMainMenuBar =
 
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
+musicImporter.pushProgessToFront()
 
 if (type(settings) == "table" and settings.musicPath) then
 	print("gathering music")
