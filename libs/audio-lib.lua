@@ -118,19 +118,21 @@ local currentSong = nil
 local previousVolume = 0
 local audioChannels = {}
 
-local function dispatchPlayEvent()
+local function dispatchPlayEvent(song)
 	local event = {
 		name = "bass",
-		phase = "started"
+		phase = "started",
+		song = song
 	}
 
 	Runtime:dispatchEvent(event)
 end
 
-local function dispatchCompleteEvent()
+local function dispatchCompleteEvent(song)
 	local event = {
 		name = "bass",
-		phase = "ended"
+		phase = "ended",
+		song = song
 	}
 
 	Runtime:dispatchEvent(event)
@@ -168,7 +170,7 @@ local function playAudio(song)
 	bassPlay(channelHandle)
 	tRemove(audioChannels)
 	audioChannels[#audioChannels + 1] = channelHandle
-	dispatchPlayEvent()
+	dispatchPlayEvent(currentSong)
 end
 
 local function onAudioComplete(event)
@@ -182,7 +184,7 @@ local function onAudioComplete(event)
 
 	if (event.completed) then
 		cleanupAudio()
-		dispatchCompleteEvent()
+		dispatchCompleteEvent(currentSong)
 	end
 end
 
@@ -322,6 +324,15 @@ function M.stop()
 	if (channelHandle ~= nil) then
 		bassStop(channelHandle)
 	end
+end
+
+function M.reset()
+	for i = 1, #audioChannels do
+		bassStop(audioChannels[i])
+		bassDispose(audioChannels[i])
+	end
+
+	tRemove(audioChannels)
 end
 
 return M

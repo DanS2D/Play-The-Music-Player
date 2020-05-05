@@ -229,7 +229,7 @@ local function createTableView(tableView, options)
 	function tableView:mouse(event)
 		if (event.scrollY ~= 0 and event.type == "scroll" and not self._view._isUsedInPickerWheel) then
 			local y = self:getContentPosition()
-			y = y - event.scrollY
+			y = y - math.floor(event.scrollY / 2)
 
 			if not self._view._isUsedInPickerWheel then
 				-- stop the view at the bottom limit

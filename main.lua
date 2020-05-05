@@ -2,45 +2,29 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
-local lfs = require("lfs")
 local widget = require("widget")
 local tfd = require("plugin.tinyfiledialogs")
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
-local fileUtils = require("libs.file-utils")
+local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
+local settings = require("libs.settings")
 local musicImporter = require("libs.music-importer")
+local musicVisualizer = require("libs.ui.music-visualizer")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local sFormat = string.format
-local tInsert = table.insert
-local tRemove = table.remove
-local settingsFileName = "settings.json"
-local settings = fileUtils:loadTable(settingsFileName)
+local wasSongPlaying = false
+local interruptedSongPosition = {}
 local musicFiles = {}
 local mediaBar = nil
 local musicTableView = nil
+local background = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 widget.setTheme("widget_theme_ios")
-
-local function isMusicFile(fileName)
-	local fileExtension = fileName:match("^.+(%..+)$")
-	local isMusic = false
-
-	for i = 1, #audioLib.supportedFormats do
-		local currentFormat = audioLib.supportedFormats[i]
-
-		if (fileExtension == sFormat(".%s", currentFormat)) then
-			isMusic = true
-			break
-		end
-	end
-
-	return isMusic
-end
 
 --local devices = bass.getDevices()
 --print(type(devices), "num elements", #devices)
@@ -52,64 +36,46 @@ for i = 1, #devices do
 	--bass.setDevice(devices[i].index)
 	end
 end--]]
-local function gatherMusic(path)
-	local foundMusic = false
-	musicFiles = {}
-
-	local function getMusic(filename, musicPath)
-		local fullPath = sFormat("%s\\%s", musicPath, filename)
-
-		if (isMusicFile(fullPath)) then
-			audioLib.load({fileName = filename, filePath = musicPath})
-			local tags = audioLib.getTags()
-
-			if (tags) then
-				local playbackDuration = audioLib.getPlaybackTime().duration
-				musicFiles[#musicFiles + 1] = {fileName = filename, filePath = musicPath, tags = tags}
-				musicFiles[#musicFiles].tags.duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
-				playbackDuration = nil
-				audioLib.dispose()
-			end
-		end
-	end
-
-	if (path) then
-		musicImporter.getFolderList(path)
-	end
-
-	if (foundMusic) then
-		print("found music")
-
-		musicList.populate(musicFiles)
-		mediaBarLib.setMusicData(musicFiles)
-	else
-		--native.showAlert("No Music Found", "I didn't find any music in the selected folder path", {"OK"})
-	end
-end
-
 local function onAudioEvent(event)
 	local phase = event.phase
+	local song = event.song
 
 	if (phase == "started") then
 		mediaBarLib.updatePlayPauseState(true)
 		mediaBarLib.removeAlbumArtwork()
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
-		mediaBarLib.updateSongText()
-		musicBrainz.getCover(musicFiles[audioLib.currentSongIndex])
+		mediaBarLib.updateSongText(song)
+		musicBrainz.getCover(song)
+		musicVisualizer.start()
 	elseif (phase == "ended") then
 		audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+		local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
 
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
-		audioLib.load(musicFiles[audioLib.currentSongIndex])
-		audioLib.play(musicFiles[audioLib.currentSongIndex])
+		audioLib.load(nextSong)
+		audioLib.play(nextSong)
+		musicVisualizer.start()
 	end
 
 	return true
 end
 
 Runtime:addEventListener("bass", onAudioEvent)
+
+local function playInterruptedSong()
+	if (wasSongPlaying) then
+		local previousSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
+		audioLib.load(previousSong)
+		audioLib.play(previousSong)
+
+		local songPosition = interruptedSongPosition
+		audioLib.seek(songPosition / 1000)
+		mediaBarLib.setSongProgress(songPosition)
+		wasSongPlaying = false
+	end
+end
 
 local function onMusicBrainzDownloadComplete(event)
 	local phase = event.phase
@@ -124,6 +90,15 @@ end
 
 Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 
+local function populateTableViews()
+	if (sqlLib.musicCount() > 0) then
+		musicImporter.pushProgessToFront()
+		musicImporter.showProgressBar()
+		musicList.populate()
+		playInterruptedSong()
+	end
+end
+
 local applicationMainMenuBar =
 	mainMenuBar.new(
 	{
@@ -135,20 +110,50 @@ local applicationMainMenuBar =
 					{
 						title = "Add Music Folder",
 						onClick = function()
+							wasSongPlaying = audioLib.isChannelPlaying()
+							interruptedSongPosition = mediaBarLib.getSongProgress()
+							audioLib.reset()
+							musicVisualizer.pause()
 							local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
+							local previousPaths = settings.item.musicFolderPaths
+							local hasUsedPath = false
 
-							if (selectedPath ~= nil) then
-								if (type(settings) ~= "table") then
-									settings = {}
+							if (selectedPath ~= nil and type(selectedPath) == "string") then
+								if (#previousPaths > 0) then
+									for i = 1, #previousPaths do
+										if (selectedPath == previousPaths[i]) then
+											hasUsedPath = true
+											break
+										end
+									end
 								end
 
-								for i = 1, #musicTableView do
-									musicTableView[i]:deleteAllRows()
-								end
+								if (not hasUsedPath) then
+									previousPaths[#previousPaths + 1] = selectedPath
+									settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = selectedPath
+									settings.save()
 
-								settings.musicPath = selectedPath
-								fileUtils:saveTable(settings, settingsFileName)
-								gatherMusic(settings.musicPath)
+									for i = 1, #musicList.rowCreationTimers do
+										if (musicList.rowCreationTimers[i] ~= nil) then
+											timer.cancel(musicList.rowCreationTimers[i])
+										end
+
+										table.remove(musicList.rowCreationTimers, i)
+									end
+
+									for i = 1, #musicTableView do
+										musicTableView[i]:deleteAllRows()
+									end
+
+									background:toFront()
+									musicImporter.pushProgessToFront()
+									musicImporter.showProgressBar()
+									musicImporter.getFolderList(selectedPath, populateTableViews)
+								else
+									playInterruptedSong()
+								end
+							else
+								playInterruptedSong()
 							end
 						end
 					},
@@ -226,20 +231,23 @@ local applicationMainMenuBar =
 	}
 )
 
+background = display.newRect(0, 0, display.contentWidth, display.contentHeight)
+background.anchorY = 0
+background.x = display.contentCenterX
+background.y = 100
+background:setFillColor(0.10, 0.10, 0.10, 1)
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
+background:toFront()
 musicImporter.pushProgessToFront()
-
-if (type(settings) == "table" and settings.musicPath) then
-	print("gathering music")
-	gatherMusic(settings.musicPath)
-end
+settings.load()
 
 local function keyEventListener(event)
 	local phase = event.phase
 
 	if (phase == "down") then
 		local keyDescriptor = event.descriptor:lower()
+		-- TODO: only execute the below IF there is music data
 
 		-- pause/resume toggle
 		if (keyDescriptor == "mediaplaypause") then
@@ -284,9 +292,15 @@ Runtime:addEventListener("key", keyEventListener)
 
 local function onSystemEvent(event)
 	if (event.type == "applicationExit") then
-		audioLib.stop()
-		audioLib.dispose()
+		audioLib.reset()
+		transition.cancel()
+
+		for id, value in pairs(timer._runlist) do
+			timer.cancel(value)
+		end
 	end
 end
 
 Runtime:addEventListener("system", onSystemEvent)
+
+populateTableViews()

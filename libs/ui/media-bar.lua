@@ -1,6 +1,8 @@
 local M = {}
 local widget = require("widget")
+local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
+local musicList = require("libs.ui.music-list")
 local levelVisualization = require("libs.ui.level-visualizer")
 local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
@@ -17,7 +19,6 @@ local buttonSize = 20
 local controlButtonsXOffset = 10
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
-local musicData = nil
 local songTitleText = nil
 local songAlbumText = nil
 local songProgressView = nil
@@ -49,7 +50,7 @@ end
 timer.performWithDelay(1000, updateMediaBar, 0)
 
 local function hasValidMusicData()
-	return (type(musicData) == "table" and #musicData <= 0)
+	return sqlLib.musicCount() > 0
 end
 
 function M.new(options)
@@ -71,9 +72,10 @@ function M.new(options)
 					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
+					local previousSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
 
-					audioLib.load(musicData[audioLib.currentSongIndex])
-					audioLib.play(musicData[audioLib.currentSongIndex])
+					audioLib.load(previousSong)
+					audioLib.play(previousSong)
 				end
 			end
 		}
@@ -100,6 +102,7 @@ function M.new(options)
 
 					if (audioLib.isChannelPaused()) then
 						audioLib.resume()
+						musicVisualizer.start()
 						return
 					end
 				end
@@ -121,6 +124,7 @@ function M.new(options)
 				if (audioLib.isChannelHandleValid()) then
 					if (audioLib.isChannelPlaying()) then
 						audioLib.pause()
+						musicVisualizer.pause()
 						event.target.isVisible = false
 						playButton.isVisible = true
 					end
@@ -145,13 +149,14 @@ function M.new(options)
 					return
 				end
 
-				if (audioLib.currentSongIndex + 1 <= #musicData) then
+				if (audioLib.currentSongIndex + 1 <= sqlLib.musicCount()) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
+					local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
 
-					audioLib.load(musicData[audioLib.currentSongIndex])
-					audioLib.play(musicData[audioLib.currentSongIndex])
+					audioLib.load(nextSong)
+					audioLib.play(nextSong)
 				end
 			end
 		}
@@ -284,7 +289,8 @@ function M.new(options)
 	songProgressView =
 		progressView.new(
 		{
-			width = dWidth / 2 - 10
+			width = dWidth / 2 - 10,
+			allowTouch = true
 		}
 	)
 	songProgressView.anchorX = 0
@@ -383,14 +389,18 @@ function M.new(options)
 	return group
 end
 
-function M.setMusicData(songData)
-	musicData = songData
-end
-
 function M.resetSongProgress()
 	playBackTimeText.text = "00:00/00:00"
 	songProgressView:setElapsedProgress(0)
 	songProgressView:setOverallProgress(0)
+end
+
+function M.getSongProgress()
+	return songProgressView:getElapsedProgress()
+end
+
+function M.setSongProgress(progress)
+	songProgressView:setElapsedProgress(progress)
 end
 
 function M.removeAlbumArtwork()
@@ -422,11 +432,9 @@ function M.updatePlayPauseState(playing)
 	end
 end
 
-function M.updateSongText(songTitle, songAlbum)
-	if (musicData ~= nil) then
-		songTitleText:setText(musicData[audioLib.currentSongIndex].tags.title)
-		songAlbumText:setText(musicData[audioLib.currentSongIndex].tags.album)
-	end
+function M.updateSongText(song)
+	songTitleText:setText(song.title)
+	songAlbumText:setText(song.album)
 end
 
 function M.updatePlaybackTime()

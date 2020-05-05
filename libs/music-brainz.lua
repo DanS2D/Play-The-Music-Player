@@ -1,9 +1,7 @@
 local M = {}
 local json = require("json")
-local crypto = require("crypto")
 local fileUtils = require("libs.file-utils")
 local sFormat = string.format
-local cDigest = crypto.digest
 local urlRequestListener = nil
 local downloadListener = nil
 local requestedSong = nil
@@ -38,10 +36,10 @@ urlRequestListener = function(event)
 
 		if (response and releaseGroups and release) then
 			local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, release.id)
-			print("FOUND entry for " .. requestedSong.tags.title .. " at musicbrainz - url:", imageUrl)
+			print("FOUND entry for " .. requestedSong.title .. " at musicbrainz - url:", imageUrl)
 			network.download(imageUrl, "GET", downloadListener, {}, currentCoverFileName, system.DocumentsDirectory)
 		else
-			print("FAILED to get song info for " .. requestedSong.tags.title .. " at musicbrainz")
+			print("FAILED to get song info for " .. requestedSong.title .. " at musicbrainz")
 		end
 	end
 end
@@ -51,11 +49,11 @@ downloadListener = function(event)
 
 	if (event.status ~= 200) then
 		if (tryAgain) then
-			local songTitle = requestedSong.tags.title
-			local artistTitle = requestedSong.tags.artist
+			local songTitle = requestedSong.title
+			local artistTitle = requestedSong.artist
 
-			print("FAILED to get artwork for " .. requestedSong.tags.title .. " from coverarchive.org")
-			print("REQUESTING artwork for " .. requestedSong.tags.title .. " (song title, artist) from musicbrainz")
+			print("FAILED to get artwork for " .. requestedSong.title .. " from coverarchive.org")
+			print("REQUESTING artwork for " .. requestedSong.title .. " (song title, artist) from musicbrainz")
 			local fullMusicBrainzUrl =
 				sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, songTitle:urlEncode(), artistTitle:urlEncode())
 			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
@@ -72,27 +70,27 @@ downloadListener = function(event)
 	elseif (event.phase == "ended") then
 		--print(event.response)
 		if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
-			print("GOT artwork for " .. requestedSong.tags.title .. " from opencoverart.org")
+			print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
 		end
 	end
 end
 
 function M.getCover(song)
-	local hash = cDigest(crypto.md5, song.tags.title .. song.tags.album)
-	local artistTitle = song.tags.artist
-	local albumTitle = song.tags.album
+	local hash = song.md5
+	local artistTitle = song.artist
+	local albumTitle = song.album
 	local fullMusicBrainzUrl =
 		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
 	requestedSong = song
 	currentCoverFileName = sFormat("%s.png", hash)
 
 	if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
-		--print("artwork exists for " .. requestedSong.tags.artist .. " / " .. requestedSong.tags.album)
+		--print("artwork exists for " .. requestedSong.artist .. " / " .. requestedSong.album)
 		dispatchCoverEvent()
 	else
 		tryAgain = true
-		print("REQUESTING artwork for " .. requestedSong.tags.title .. " (artist, album) from musicbrainz")
+		print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
 		network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
 	end
 end

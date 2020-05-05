@@ -44,8 +44,21 @@ function M.new(options)
 	local emitterParams = fileUtils:loadTable(sFormat("%s%s", visualizerDataPath, fileName), system.ResourceDirectory)
 	emitter = display.newEmitter(emitterParams)
 	emitterParams = nil
+	emitter:stop()
 
 	return emitter
+end
+
+function M.pause()
+	emitter:pause()
+end
+
+function M.start()
+	emitter:start()
+end
+
+function M.stop()
+	emitter:stop()
 end
 
 function M.remove()

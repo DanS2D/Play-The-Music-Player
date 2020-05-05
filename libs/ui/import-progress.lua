@@ -16,7 +16,7 @@ function M.new()
 	headingText =
 		display.newText(
 		{
-			text = "HELLO",
+			text = "Welcome To Play!",
 			font = titleFont,
 			width = dWidth - 20,
 			align = "center",
@@ -31,7 +31,7 @@ function M.new()
 	subHeadingText =
 		display.newText(
 		{
-			text = "HAI",
+			text = "To get started, click `file > add music folder` to import your music",
 			font = subTitleFont,
 			width = dWidth - 20,
 			align = "center",
@@ -52,6 +52,7 @@ function M.new()
 	)
 	importProgressView.x = dCenterX - importProgressView.contentWidth * 0.5
 	importProgressView.y = subHeadingText.y + subHeadingText.contentHeight + 5
+	importProgressView.isVisible = false
 	group:insert(importProgressView)
 
 	function group:updateHeading(text)
@@ -68,6 +69,18 @@ function M.new()
 
 	function group:hide()
 		self.isVible = false
+	end
+
+	function group:show()
+		self.isVible = true
+	end
+
+	function group:hideProgressBar()
+		importProgressView.isVisible = false
+	end
+
+	function group:showProgressBar()
+		importProgressView.isVisible = true
 	end
 
 	return group
