@@ -16,8 +16,10 @@ local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local sFormat = string.format
+local mMin = math.min
 local wasSongPlaying = false
 local interruptedSongPosition = {}
+local lastChosenPath = nil
 local musicFiles = {}
 local mediaBar = nil
 local musicTableView = nil
@@ -49,8 +51,9 @@ local function onAudioEvent(event)
 		musicBrainz.getCover(song)
 		musicVisualizer.start()
 	elseif (phase == "ended") then
-		audioLib.currentSongIndex = audioLib.currentSongIndex + 1
-		local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
+		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList.musicCount)
+
+		local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
@@ -66,7 +69,8 @@ Runtime:addEventListener("bass", onAudioEvent)
 
 local function playInterruptedSong()
 	if (wasSongPlaying) then
-		local previousSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
+		local previousSong =
+			musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 		audioLib.load(previousSong)
 		audioLib.play(previousSong)
 
@@ -92,10 +96,13 @@ Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 
 local function populateTableViews()
 	if (sqlLib.musicCount() > 0) then
+		settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = lastChosenPath
+		settings.save()
 		musicImporter.pushProgessToFront()
 		musicImporter.showProgressBar()
 		musicList.populate()
-		playInterruptedSong()
+		mainMenuBar.setEnabled(true)
+	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
 end
 
@@ -114,6 +121,7 @@ local applicationMainMenuBar =
 							interruptedSongPosition = mediaBarLib.getSongProgress()
 							audioLib.reset()
 							musicVisualizer.pause()
+							mainMenuBar.setEnabled(false)
 							local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
 							local previousPaths = settings.item.musicFolderPaths
 							local hasUsedPath = false
@@ -129,26 +137,12 @@ local applicationMainMenuBar =
 								end
 
 								if (not hasUsedPath) then
-									previousPaths[#previousPaths + 1] = selectedPath
-									settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = selectedPath
-									settings.save()
-
-									for i = 1, #musicList.rowCreationTimers do
-										if (musicList.rowCreationTimers[i] ~= nil) then
-											timer.cancel(musicList.rowCreationTimers[i])
-										end
-
-										table.remove(musicList.rowCreationTimers, i)
-									end
-
-									for i = 1, #musicTableView do
-										musicTableView[i]:deleteAllRows()
-									end
-
+									lastChosenPath = selectedPath
 									background:toFront()
+									musicList.removeAllRows()
 									musicImporter.pushProgessToFront()
 									musicImporter.showProgressBar()
-									musicImporter.getFolderList(selectedPath, populateTableViews)
+									musicImporter.getFolderList(lastChosenPath, populateTableViews)
 								else
 									playInterruptedSong()
 								end

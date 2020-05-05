@@ -1,5 +1,7 @@
 local M = {}
 local widget = require("widget")
+local sqlLib = require("libs.sql-lib")
+local musicList = require("libs.ui.music-list")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -21,7 +23,7 @@ local dSafeWidth = display.safeActualContentWidth
 local dSafeHeight = display.safeActualContentHeight
 local defaultButtonPath = "img/buttons/default/"
 local overButtonPath = "img/buttons/over/"
-local settingsFileName = "settings.json"
+local isDisabled = false
 
 function M.new(options)
 	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
@@ -35,12 +37,28 @@ function M.new(options)
 	local parentGroup = options.parentGroup or display.currentStage
 	local group = display.newGroup()
 	local isItemOpen = false
+	local oldMusicSearchFunction = musicList.musicFunction
+	local oldMusicSortAToZ = musicList.musicSortAToZ
 	local menuButtons = {}
+
+	local function restoreMusicFunction()
+		musicList.musicFunction = oldMusicSearchFunction
+		musicList.musicSortAToZ = oldMusicSortAToZ
+		musicList.musicSearch = nil
+	end
 
 	local background = display.newRect(0, 0, dWidth, menuBarHeight)
 	background.x = display.contentCenterX
 	background.y = background.contentHeight * 0.5
 	background:setFillColor(unpack(menuBarColor))
+	background:addEventListener(
+		"touch",
+		function()
+			restoreMusicFunction()
+			native.setKeyboardFocus(nil)
+			return true
+		end
+	)
 	group:insert(background)
 
 	local function closeSubmenus(excludingTarget)
@@ -52,6 +70,9 @@ function M.new(options)
 				menuButtons[j]:closeSubmenu()
 			end
 		end
+
+		restoreMusicFunction()
+		native.setKeyboardFocus(nil)
 	end
 
 	function group:close()
@@ -81,6 +102,11 @@ function M.new(options)
 				},
 				onPress = function(event)
 					local target = event.target
+
+					if (isDisabled) then
+						return
+					end
+
 					isItemOpen = not isItemOpen
 
 					if (not isItemOpen) then
@@ -147,6 +173,10 @@ function M.new(options)
 					local params = row.params
 
 					if (phase == "release") then
+						if (isDisabled) then
+							return
+						end
+
 						isItemOpen = false
 						closeSubmenus()
 
@@ -178,8 +208,58 @@ function M.new(options)
 		group:insert(mainButton.mainTableView)
 	end
 
+	local function onSearchInput(event)
+		local phase = event.phase
+		local target = event.target
+
+		if (sqlLib.musicCount() <= 0 or isDisabled) then
+			target.text = ""
+			return
+		end
+
+		if (phase == "began") then
+			if (target.text:len() <= 0) then
+				--print("setting old music search ref")
+				oldMusicSearchFunction = musicList.musicFunction
+				oldMusicSortAToZ = musicList.musicSortAToZ
+			end
+
+			if (musicList.musicSearch == nil) then
+				restoreMusicFunction()
+			end
+		elseif (phase == "editing") then
+			local currentText = event.text
+
+			if (currentText:len() <= 0) then
+				--print(">>>>>>> cancelling music search <<<<<<<<<<<<<<")
+				musicList.musicSearch = nil
+				musicList.musicCount = sqlLib.musicCount()
+				restoreMusicFunction()
+				musicList.reloadData()
+			else
+				musicList.musicSearch = currentText
+				musicList.musicFunction = sqlLib.getMusicRowBySearch
+				musicList.musicSortAToZ = true
+				musicList.reloadData()
+			end
+		end
+
+		return true
+	end
+
+	local searchBar = native.newTextField(0, 0, 100, menuBarHeight - 5)
+	searchBar.anchorX = 1
+	searchBar.x = dWidth - 4
+	searchBar.y = menuBarHeight / 2
+	searchBar.placeholder = "search..."
+	searchBar:addEventListener("userInput", onSearchInput)
+
 	local function onMouseEvent(event)
 		local eventType = event.type
+
+		if (isDisabled) then
+			return
+		end
 
 		if (eventType == "move") then
 			for i = 1, #menuButtons do
@@ -240,6 +320,10 @@ function M.new(options)
 	parentGroup:insert(group)
 
 	return group
+end
+
+function M.setEnabled(enabled)
+	isDisabled = not enabled
 end
 
 return M

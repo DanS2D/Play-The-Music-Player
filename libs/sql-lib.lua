@@ -3,7 +3,8 @@ local M = {
 		settings = "settings",
 		music = "music",
 		playlists = "playlists"
-	}
+	},
+	lastSearchQuery = nil
 }
 local sqlite3 = require("sqlite3")
 local json = require("json")
@@ -12,35 +13,41 @@ local jEncode = json.encode
 local jDecode = json.decode
 local cDigest = crypto.digest
 local sFormat = string.format
+local tInsert = table.insert
 local database = nil
 
 local function createTables()
-	local settingsTable =
-		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT);]]
-	local musicTable =
-		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, rating REAL, md5 TEXT, album TEXT, artist TEXT, genre TEXT, publisher TEXT, title TEXT, track TEXT, duration TEXT);]]
-	local playlistsTable = [[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, key INTEGER);]]
 	-- the playlist table simply holds the name and id of the playlists. Each playlist should be
 	-- it's own table. When adding a playlist, add it's name and primary key to the playlists table so it can be referenced.
 	-- when removing it, also remove its entry from the playlists master table.
-	database:exec(settingsTable)
-	database:exec(musicTable)
-	database:exec(playlistsTable)
+	database:exec(
+		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT);]]
+	)
+	database:exec(
+		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, rating REAL, md5 TEXT, album TEXT, artist TEXT, genre TEXT, publisher TEXT, title TEXT, track TEXT, duration TEXT);]]
+	)
+	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, key INTEGER);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS musicIndex on music (album, artist, genre, title);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS musicAlbumIndex on music (album);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS musicArtistIndex on music (artist);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS musicTitleIndex on music (title);]])
 end
 
 function M.open()
-	local databasePath = system.pathForFile("music.db", system.DocumentsDirectory)
-	database = sqlite3.open(databasePath)
+	if (database == nil) then
+		local databasePath = system.pathForFile("music.db", system.DocumentsDirectory)
+		database = sqlite3.open(databasePath)
 
-	if (database) then
-		createTables()
-	else
-		print("ERROR: there was a problem opening the database")
+		if (database) then
+			createTables()
+		else
+			print("ERROR: there was a problem opening the database")
+		end
 	end
 end
 
 function M.selectKey(key, tbl)
-	return database:nrows(sFormat("SELECT * FROM %s", tbl))
+	return database:nrows(sFormat("SELECT * FROM %s;", tbl))
 end
 
 local function createOrReplaceSettings(settings, replace)
@@ -49,12 +56,12 @@ local function createOrReplaceSettings(settings, replace)
 	if (replace) then
 		stmt =
 			database:prepare(
-			[[ REPLACE INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView) ]]
+			[[ REPLACE INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView); ]]
 		)
 	else
 		stmt =
 			database:prepare(
-			[[ INSERT INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView) ]]
+			[[ INSERT INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView); ]]
 		)
 	end
 
@@ -94,7 +101,7 @@ function M.updateSettings(settings)
 end
 
 function M.getSettings()
-	local stmt = database:prepare([[ SELECT * FROM `settings` ]])
+	local stmt = database:prepare([[ SELECT * FROM `settings`; ]])
 	local settings = nil
 
 	for row in stmt:nrows() do
@@ -129,7 +136,7 @@ function M.insertMusic(musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
 	local stmt =
 		database:prepare(
-		[[ INSERT INTO `music` VALUES (:key, :fileName, :filePath, :rating, :md5, :album, :artist, :genre, :publisher, :title, :track, :duration) ]]
+		[[ INSERT INTO `music` VALUES (:key, :fileName, :filePath, :rating, :md5, :album, :artist, :genre, :publisher, :title, :track, :duration); ]]
 	)
 
 	stmt:bind_names(
@@ -153,7 +160,7 @@ function M.insertMusic(musicData)
 end
 
 function M.getMusicRow(index)
-	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id=%d ]], index))
+	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id=%d; ]], index))
 	local music = nil
 
 	for row in stmt:nrows() do
@@ -185,9 +192,11 @@ local function getMusicRowBy(index, ascending, filter)
 
 	if (index > 1) then
 		stmt =
-			database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1 OFFSET %d ]], filter, orderType, index - 1))
+			database:prepare(
+			sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1 OFFSET %d; ]], filter, orderType, index - 1)
+		)
 	else
-		stmt = database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1]], filter, orderType))
+		stmt = database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1;]], filter, orderType))
 	end
 
 	for row in stmt:nrows() do
@@ -232,8 +241,85 @@ function M.getMusicRowByDuration(index, ascending)
 	return getMusicRowBy(index, ascending, "duration")
 end
 
+function M.getMusicRowBySearch(index, ascending, search)
+	local stmt = nil
+	local orderType = ascending and "ASC" or "DESC"
+	local music = nil
+	-- %% SEARCH %% == anywhere in the string
+	-- SEARCH %% == begins with string
+	-- %% SEARCH == ends with string
+	local likeQuery = sFormat("LIKE '%%%s%%'", search)
+	local artistQuery = sFormat("OR artist %s", likeQuery)
+	local titleQuery = sFormat("OR title %s", likeQuery)
+	M.lastSearchQuery = sFormat([[WHERE album %s %s %s; ]], likeQuery, artistQuery, titleQuery)
+
+	if (index > 1) then
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT 1 OFFSET %d; ]],
+				likeQuery,
+				artistQuery,
+				titleQuery,
+				orderType,
+				index - 1
+			)
+		)
+	else
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT 1; ]],
+				likeQuery,
+				artistQuery,
+				titleQuery,
+				orderType
+			)
+		)
+	end
+
+	for row in stmt:nrows() do
+		music = {
+			id = row.id,
+			fileName = row.fileName,
+			filePath = row.filePath,
+			rating = row.rating,
+			md5 = row.md5,
+			album = row.album,
+			artist = row.artist,
+			genre = row.genre,
+			publisher = row.publisher,
+			title = row.title,
+			track = row.track,
+			duration = row.duration
+		}
+	end
+
+	stmt:finalize()
+
+	return music
+end
+
 function M.musicCount()
-	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `music` ]])
+	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `music`; ]])
+	local count = 0
+
+	for row in stmt:nrows() do
+		count = row.count
+		break
+	end
+
+	stmt:finalize()
+
+	return count
+end
+
+function M.searchCount()
+	if (M.lastSearchQuery == nil) then
+		return 0
+	end
+
+	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `music` %s ]], M.lastSearchQuery))
 	local count = 0
 
 	for row in stmt:nrows() do

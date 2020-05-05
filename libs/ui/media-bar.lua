@@ -50,7 +50,7 @@ end
 timer.performWithDelay(1000, updateMediaBar, 0)
 
 local function hasValidMusicData()
-	return sqlLib.musicCount() > 0
+	return musicList.musicCount > 0
 end
 
 function M.new(options)
@@ -72,7 +72,8 @@ function M.new(options)
 					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
-					local previousSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
+					local previousSong =
+						musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 
 					audioLib.load(previousSong)
 					audioLib.play(previousSong)
@@ -149,11 +150,11 @@ function M.new(options)
 					return
 				end
 
-				if (audioLib.currentSongIndex + 1 <= sqlLib.musicCount()) then
+				if (audioLib.currentSongIndex + 1 <= musicList.musicCount) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
-					local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ)
+					local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 
 					audioLib.load(nextSong)
 					audioLib.play(nextSong)

@@ -8,7 +8,7 @@ local M = {
 		"asc",
 		"ay",
 		"ayc",
-		"bin",
+		--"bin",
 		"cc3",
 		"chi",
 		"cop",
