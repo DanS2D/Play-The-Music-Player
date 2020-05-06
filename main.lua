@@ -96,12 +96,12 @@ Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 
 local function populateTableViews()
 	if (sqlLib.musicCount() > 0) then
+		mainMenuBar.setEnabled(true)
 		settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = lastChosenPath
 		settings.save()
 		musicImporter.pushProgessToFront()
 		musicImporter.showProgressBar()
 		musicList.populate()
-		mainMenuBar.setEnabled(true)
 	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
 end
@@ -144,9 +144,11 @@ local applicationMainMenuBar =
 									musicImporter.showProgressBar()
 									musicImporter.getFolderList(lastChosenPath, populateTableViews)
 								else
+									mainMenuBar.setEnabled(true)
 									playInterruptedSong()
 								end
 							else
+								mainMenuBar.setEnabled(true)
 								playInterruptedSong()
 							end
 						end

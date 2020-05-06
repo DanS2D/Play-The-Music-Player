@@ -27,24 +27,43 @@ local function isMusicFile(fileName)
 end
 
 function M.getFolderList(path, onComplete)
-	local paths = {}
-	paths[#paths + 1] = path
+	local paths = {path}
 	local count = 0
+	local iterationDelay = 25
+	local scanTimer = nil
+	M.setTotalProgress(0)
+	M.pushProgessToFront()
 	importProgress:show()
+	importProgress:showProgressBar()
+	M.showProgress()
 	importProgress:updateHeading("Searching folder hierarchy")
 	sqlLib.open()
 	onFinished = onComplete
+	tRemove(musicFolders)
 
-	repeat
-		count = count + 1
+	local function gatherFolders()
+		if (#paths == 0) then
+			if (scanTimer) then
+				timer.cancel(scanTimer)
+				scanTimer = nil
+			end
+
+			importProgress:setTotalProgress(100)
+			importProgress:updateHeading("Retrieved folder list")
+			importProgress:updateSubHeading("Now finding music...")
+			M.scanFolders()
+
+			return
+		end
 
 		for file in lfs.dir(paths[1]) do
-			if (file:sub(-1) ~= ".") then
+			if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
 				local fullPath = paths[1] .. "\\" .. file
 				local isDir = lfs.attributes(fullPath, "mode") == "directory"
 
 				if (isDir) then
-					tInsert(paths, fullPath)
+					--print(fullPath)
+					paths[#paths + 1] = fullPath
 				end
 			end
 		end
@@ -52,18 +71,19 @@ function M.getFolderList(path, onComplete)
 		-- add this folder to the folder list
 		musicFolders[#musicFolders + 1] = paths[1]
 		importProgress:updateSubHeading(sFormat("Added folder: %s to search list", paths[1]))
-
 		tRemove(paths, 1)
-	until #paths == 0
+		scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
+	end
 
-	M.scanFolders()
+	scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
 end
 
 function M.scanFolders()
-	local iterationDelay = 100
+	local iterationDelay = 25
 	local currentIndex = 0
 	local totalFiles = 0
 	local scanTimer = nil
+	M.setTotalProgress(0)
 	M.pushProgessToFront()
 	importProgress:show()
 	importProgress:showProgressBar()
@@ -74,9 +94,14 @@ function M.scanFolders()
 		importProgress:setTotalProgress((currentIndex - 1) / #musicFolders)
 
 		if (currentIndex > #musicFolders) then
-			scanTimer = nil
-			importProgress:updateHeading(sFormat("All done! I found %s music files", totalFiles))
+			print(">>>>>>>>>>FINISHED IMPORTING")
+			if (scanTimer) then
+				timer.cancel(scanTimer)
+				scanTimer = nil
+			end
+			importProgress:updateHeading(sFormat("All done! I found %d music files", totalFiles))
 			importProgress:updateSubHeading("Thank you for your patience. Enjoy your music :)")
+			tRemove(musicFolders)
 
 			if (type(onFinished) == "function") then
 				onFinished()
@@ -91,7 +116,7 @@ function M.scanFolders()
 			importProgress:updateHeading(sFormat("Scanning %s for music", path))
 
 			for file in lfs.dir(path) do
-				if (file:sub(-1) ~= ".") then
+				if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
 					local fullPath = path .. "\\" .. file
 
 					if (isMusicFile(fullPath)) then
@@ -100,7 +125,6 @@ function M.scanFolders()
 
 						if (tags) then
 							local playbackDuration = audioLib.getPlaybackTime().duration
-							local musicTags = tags
 							local duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
 							playbackDuration = nil
 							audioLib.dispose()
@@ -109,24 +133,25 @@ function M.scanFolders()
 								fileName = file,
 								filePath = path,
 								rating = 0.0,
-								album = musicTags.album,
-								artist = musicTags.artist,
-								genre = musicTags.genre,
-								publisher = musicTags.publisher,
-								title = musicTags.title,
-								track = musicTags.track,
+								album = tags.album,
+								artist = tags.artist,
+								genre = tags.genre,
+								publisher = tags.publisher,
+								title = tags.title,
+								track = tags.track,
 								duration = duration
 							}
-							fileCount = fileCount + 1
-
+							--print("found file: " .. file)
 							sqlLib.insertMusic(musicData)
 						end
+
+						fileCount = fileCount + 1
 					end
 				end
 			end
 
 			totalFiles = totalFiles + fileCount
-			importProgress:updateSubHeading(sFormat("Found %d music files", fileCount))
+			importProgress:updateSubHeading(sFormat("Found %d music files", totalFiles))
 			scanTimer = timer.performWithDelay(iterationDelay, checkContents)
 		end
 	end
