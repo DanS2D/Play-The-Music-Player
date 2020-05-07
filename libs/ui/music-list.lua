@@ -9,6 +9,7 @@ local M = {
 local widget = require("widget")
 local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
+local desktopTableView = require("libs.ui.desktop-table-view")
 local tableView = require("libs.ui.music-tableview")
 local musicImporter = require("libs.music-importer")
 local dWidth = display.contentWidth
@@ -69,20 +70,83 @@ local function highlightPressedIndex()
 				end
 			end
 
-			--if (tableViewList[i]._view._rows[pressedIndex]._view) then
-			--	tableViewList[i]._view._rows[pressedIndex]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
-			--end
+			if (tableViewList[i]._view._rows[pressedIndex]._view) then
+				tableViewList[i]._view._rows[pressedIndex]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
+			end
 		end
 	end
 end
 
-Runtime:addEventListener("enterFrame", highlightPressedIndex)
+--Runtime:addEventListener("enterFrame", highlightPressedIndex)
 
 local function hasValidMusicData()
 	return M.musicCount > 0
 end
 
 local function createTableView(options)
+	local tView =
+		desktopTableView.new(
+		{
+			left = options.left,
+			top = 80 + rowHeight,
+			width = options.width or (dWidth / 5),
+			height = dHeight - 100,
+			isLocked = true,
+			noLines = true,
+			rowTouchDelay = 0,
+			backgroundColor = {0.10, 0.10, 0.10, 1},
+			onRowRender = function(event)
+				local phase = event.phase
+				local row = event.row
+				local rowContentWidth = row.contentWidth
+				local rowContentHeight = row.contentHeight
+				local musicData = M.musicFunction(event.index, M.musicSortAToZ, M.musicSearch)
+				currentRowIndex = event.index
+
+				if (row.parent.parent.index == 1) then
+					print("rendering row: " .. row.index .. " at y = " .. row.y)
+				end
+				--[[
+				if (row.index > M.musicCount) then
+					row.isVisible = false
+				else
+					row.isVisible = true
+
+					if (M.musicSearch ~= nil) then
+						M.musicCount = sqlLib.searchCount()
+					end
+				end--]]
+				local rowTitleText =
+					display.newText(
+					{
+						text = event.index <= M.musicCount and musicData and musicData[options.rowTitle] or "",
+						font = subTitleFont,
+						x = 0,
+						y = (rowContentHeight * 0.5),
+						fontSize = rowFontSize,
+						width = rowContentWidth - 10,
+						align = "left"
+					}
+				)
+				rowTitleText.anchorX = 0
+				rowTitleText.x = 10
+				row:insert(rowTitleText)
+			end,
+			onRowClick = function(event)
+				local phase = event.phase
+				local numTaps = event.numTaps
+				local row = event.row
+
+				if (numTaps > 1) then
+					local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
+					audioLib.currentSongIndex = row.index
+					audioLib.load(musicData)
+					audioLib.play(musicData)
+				end
+			end
+		}
+	)
+	--[[
 	local tView =
 		tableView.new(
 		{
@@ -140,10 +204,11 @@ local function createTableView(options)
 				end
 			end
 		}
-	)
+	)--]]
 	tView.leftPos = options.left
 	tView.topPos = 80
 	tView.orderIndex = options.index
+	tView.index = #tableViewList
 
 	function tView:populate()
 		--print("Creating initial rows")
@@ -181,8 +246,11 @@ local function createTableView(options)
 		end
 
 		if (not cancelRowCreation) then
-			M.rowCreationTimers[#M.rowCreationTimers + 1] = timer.performWithDelay(1000, lazyCreateRows)
+			--M.rowCreationTimers[#M.rowCreationTimers + 1] = timer.performWithDelay(1000, lazyCreateRows)
 
+			tView:createRows()
+
+		--[[
 			for i = 1, mMin(60, sqlLib.musicCount()) do
 				--print("creating initial row: ", i)
 				local rowColor = defaultRowColor
@@ -196,9 +264,8 @@ local function createTableView(options)
 					rowHeight = rowHeight,
 					rowColor = rowColor
 				}
-			end
-
-			resetRowColors()
+			end--]]
+		--resetRowColors()
 		end
 	end
 
@@ -250,11 +317,11 @@ local function onMouseEvent(event)
 		resizeCursor:hide()
 	end
 
-	if (currentRowIndex <= M.musicCount) then
-		for j = 1, #tableViewList do
-			tableViewList[j]:mouse(event)
-		end
-	end
+	--if (currentRowIndex <= M.musicCount) then
+	--	for j = 1, #tableViewList do
+	--tableViewList[j]:mouse(event)
+	--	end
+	--end
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
@@ -316,6 +383,7 @@ function M.new()
 		categoryList[i].x = listOptions[i].left
 		categoryList[i].y = 80
 		categoryList[i].index = i
+		--categoryList[i].isVisible = false -- REMOVE THIS WHEN THE NEW TABLEVIEW WORKS
 
 		local seperatorText =
 			display.newText(
@@ -557,7 +625,7 @@ function M.removeAllRows()
 	M.musicSearch = nil
 
 	for i = 1, #tableViewList do
-		tableViewList[i]:deleteAllRows()
+		--tableViewList[i]:deleteAllRows()
 	end
 end
 
@@ -567,8 +635,10 @@ function M.reloadData()
 	end
 
 	for i = 1, #tableViewList do
-		tableViewList[i]:scrollToIndex(1, 0)
+		--tableViewList[i]:scrollToIndex(1, 0)
 	end
+
+	--resetRowColors()
 end
 
 function M.populate()
