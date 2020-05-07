@@ -75,6 +75,7 @@ function M.new(options)
 					local previousSong =
 						musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 
+					musicList.setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(previousSong)
 					audioLib.play(previousSong)
 				end
@@ -156,6 +157,7 @@ function M.new(options)
 					pauseButton.isVisible = true
 					local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
 
+					musicList.setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(nextSong)
 					audioLib.play(nextSong)
 				end

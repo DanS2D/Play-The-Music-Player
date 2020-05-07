@@ -461,6 +461,12 @@ function M.removeAllRows()
 	end
 end
 
+function M.setSelectedRow(rowIndex)
+	for i = 1, #tableViewList do
+		tableViewList[i]:setRowSelected(rowIndex)
+	end
+end
+
 local prevIndex = 0
 
 function M.reloadData(hardReload)
