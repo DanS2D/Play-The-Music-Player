@@ -48,11 +48,11 @@ function M.new(options)
 
 			local function tap(event)
 				local target = event.target
-				local numTaps = event.numTaps
+				local numClicks = event.numTaps
 				local event = {
 					index = target.index,
 					row = target,
-					numTaps = numTaps
+					numClicks = numClicks
 				}
 
 				onRowClick(event)
@@ -192,6 +192,7 @@ function M.new(options)
 
 	function tableView:reloadData()
 		for i = 1, maxRows do
+			self:deleteRowContents(i)
 			self:dispatchRowEvent(i, i)
 		end
 	end

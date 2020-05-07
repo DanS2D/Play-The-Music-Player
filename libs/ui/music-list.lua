@@ -134,10 +134,10 @@ local function createTableView(options)
 			end,
 			onRowClick = function(event)
 				local phase = event.phase
-				local numTaps = event.numTaps
+				local numClicks = event.numClicks
 				local row = event.row
 
-				if (numTaps > 1) then
+				if (numClicks > 1) then
 					local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
 					audioLib.currentSongIndex = row.index
 					audioLib.load(musicData)
@@ -281,7 +281,7 @@ local function moveColumns(event)
 
 	if (tableViewTarget) then
 		if (phase == "moved") then
-			tableViewTarget.x = mFloor(event.x + tableViewTarget.contentWidth * 0.5)
+			tableViewTarget.x = mFloor(event.x)
 			categoryTarget.x = mFloor(event.x + categoryTarget.contentWidth * 0.5 - 20)
 		end
 
@@ -290,7 +290,7 @@ local function moveColumns(event)
 			tableViewTarget = nil
 
 			for i = 1, #tableViewList do
-				tableViewList[i]:addListeners()
+				--tableViewList[i]:addListeners()
 			end
 		end
 	end
