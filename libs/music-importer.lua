@@ -131,7 +131,7 @@ function M.scanFolders()
 					local fullPath = path .. "\\" .. file
 
 					if (isMusicFile(fullPath)) then
-						local tags = tag.get({fileName = file, filePath = path})
+						local tags = tag.get({fileName = utf8Escape(file), filePath = utf8Escape(path)})
 
 						--if (tags) then
 						--local playbackDuration = audioLib.getPlaybackTime().duration

@@ -1,5 +1,6 @@
 local M = {}
 local json = require("json")
+local lfs = require("lfs")
 local tag = require("plugin.taglib")
 local fileUtils = require("libs.file-utils")
 local sFormat = string.format
@@ -27,10 +28,12 @@ local function dispatchCoverEvent()
 	Runtime:dispatchEvent(event)
 end
 
-local function getCoverFromMp3File(song)
-	local fileExtension = song.title:match("^.+(%..+)$")
+local function isMp3File(song)
+	return (song.fileName:match("^.+(%..+)$") == ".mp3")
+end
 
-	if (fileExtension == ".mp3") then
+local function getMp3CoverFromMp3(song)
+	if (isMp3File(song)) then
 		tag.getArtwork(
 			{
 				fileName = song.fileName,
@@ -42,6 +45,26 @@ local function getCoverFromMp3File(song)
 	end
 end
 
+local function setMp3CoverFromDownload(song, fileName)
+	if (isMp3File(song)) then
+		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
+			print("setting artwork")
+			print(song.fileName)
+			print(song.filePath)
+			print(fileName)
+			print(documentsPath)
+			tag.setArtwork(
+				{
+					fileName = song.fileName,
+					filePath = song.filePath,
+					imageFileName = fileName,
+					imageFilePath = documentsPath
+				}
+			)
+		end
+	end
+end
+
 urlRequestListener = function(event)
 	if (event.isError) then
 		print("MusicBrainz urlRequestListener: Network error ", event.response)
@@ -50,6 +73,10 @@ urlRequestListener = function(event)
 		local response = json.decode(event.response)
 		local releaseGroups = response and response["release-groups"]
 		local release = releaseGroups and releaseGroups[1]
+
+		-- TODO: get this metadata when a song is missing some fields (artist, album, whatever) and
+		-- add the metadata to the files where appropriate. You can do this to all files, not just mp3.
+		-- only cover art stuff is limited to mp3
 
 		if (response and releaseGroups and release) then
 			local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, release.id)
@@ -85,11 +112,55 @@ downloadListener = function(event)
 	elseif (event.phase == "began") then
 		print("Progress Phase: began")
 	elseif (event.phase == "ended") then
-		--print(event.response)
-		if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
+		local fileName = event.response.filename
+		local fileExtension = fileName:sub(fileName:len() - 3)
+		local newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. fileExtension
+		local baseDir = event.response.baseDirectory
+		print("current filename: ", currentCoverFileName, "new name:", newFileName)
+		--local result, reason =
+		--	os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
+
+		local path = system.pathForFile(currentCoverFileName, system.DocumentsDirectory)
+		--local fName = "04cc22c81455179997b2478966005f57.png"
+		local pureMagic = require("libs.pure-magic")
+		local mimetype = pureMagic.via_path(path)
+		print("mime type: ", mimetype)
+
+		if (mimetype == "image/png") then
+			newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. ".png"
+			local result, reason =
+				os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
+		elseif (mimetype == "image/jpeg") then
+			newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. ".jpg"
+			local result, reason =
+				os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
+			print(result)
+		else
+			newFileName = currentCoverFileName
+		end
+
+		if (fileUtils:fileExists(newFileName, system.DocumentsDirectory)) then
+			currentCoverFileName = newFileName
+			setMp3CoverFromDownload(requestedSong, newFileName)
 			print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
 		end
+	end
+end
+
+local function coverExists(song)
+	local baseDir = system.DocumentsDirectory
+	local pngPath = system.pathForFile(song.md5 .. ".png", baseDir)
+	local jpgPath = system.pathForFile(song.md5 .. ".jpg", baseDir)
+	local resultPng = os.rename(pngPath, pngPath)
+	local resultJpg = os.rename(jpgPath, jpgPath)
+
+	if (resultPng) then
+		return true, song.md5 .. ".png"
+	end
+
+	if (resultJpg) then
+		return true, song.md5 .. ".jpg"
 	end
 end
 
@@ -101,10 +172,15 @@ function M.getCover(song)
 		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
 	requestedSong = song
 	currentCoverFileName = sFormat("%s.png", hash)
-	getCoverFromMp3File(song)
+	local coverOnDisk, fileName = coverExists(song)
 
 	local function setOrGetData()
-		if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
+		local docsPath = system.pathForFile("", system.DocumentsDirectory)
+		local foundFile, foundFileName = coverExists(song)
+
+		-- check to see if the cover exists again (it may have still been saving to disk)
+		if (foundFile) then
+			currentCoverFileName = foundFileName
 			--print("artwork exists for " .. requestedSong.artist .. " / " .. requestedSong.album)
 			dispatchCoverEvent()
 		else
@@ -114,7 +190,35 @@ function M.getCover(song)
 		end
 	end
 
-	timer.performWithDelay(100, setOrGetData)
+	-- check if the file exists
+	if (coverOnDisk) then
+		currentCoverFileName = fileName
+		dispatchCoverEvent()
+	else
+		if (isMp3File(song)) then
+			getMp3CoverFromMp3(song)
+			print("trying to get cover from mp3 file")
+
+			local function findFileSavedFromMp3(event)
+				local coverOnDiskExists, coverFileName = coverExists(song)
+
+				if (coverOnDiskExists) then
+					print("found cover, cancelling timer now")
+					currentCoverFileName = coverFileName
+					dispatchCoverEvent()
+					timer.cancel(event.source)
+				end
+
+				if (event.count >= 20) then
+					setOrGetData()
+				end
+			end
+
+			timer.performWithDelay(100, findFileSavedFromMp3, 20)
+		else
+			setOrGetData()
+		end
+	end
 end
 
 return M
