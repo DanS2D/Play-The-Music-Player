@@ -1,4 +1,6 @@
 local M = {}
+local utf8 = require("plugin.utf8")
+local tag = require("plugin.taglib")
 local lfs = require("lfs")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
@@ -6,6 +8,7 @@ local importProgressLib = require("libs.ui.import-progress")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
+local utf8Escape = utf8.escape
 local musicFolders = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
@@ -40,6 +43,9 @@ function M.getFolderList(path, onComplete)
 	sqlLib.open()
 	onFinished = onComplete
 	tRemove(musicFolders)
+	musicFolders = nil
+	musicFolders = {}
+	print("root folder from gather is:" .. paths[1])
 
 	local function gatherFolders()
 		if (#paths == 0) then
@@ -48,6 +54,7 @@ function M.getFolderList(path, onComplete)
 				scanTimer = nil
 			end
 
+			paths = nil
 			importProgress:setTotalProgress(100)
 			importProgress:updateHeading("Retrieved folder list")
 			importProgress:updateSubHeading("Now finding music...")
@@ -63,7 +70,8 @@ function M.getFolderList(path, onComplete)
 
 				if (isDir) then
 					--print(fullPath)
-					paths[#paths + 1] = fullPath
+					--	paths[#paths + 1] = fullPath
+					tInsert(paths, fullPath)
 				end
 			end
 		end
@@ -88,6 +96,7 @@ function M.scanFolders()
 	importProgress:show()
 	importProgress:showProgressBar()
 	M.showProgress()
+	importProgress:updateHeading(sFormat("Scanning %s for music", musicFolders[currentIndex + 1]))
 
 	local function checkContents()
 		currentIndex = currentIndex + 1
@@ -102,6 +111,8 @@ function M.scanFolders()
 			importProgress:updateHeading(sFormat("All done! I found %d music files", totalFiles))
 			importProgress:updateSubHeading("Thank you for your patience. Enjoy your music :)")
 			tRemove(musicFolders)
+			musicFolders = nil
+			musicFolders = {}
 
 			if (type(onFinished) == "function") then
 				onFinished()
@@ -120,30 +131,28 @@ function M.scanFolders()
 					local fullPath = path .. "\\" .. file
 
 					if (isMusicFile(fullPath)) then
-						audioLib.load({fileName = file, filePath = path})
-						local tags = audioLib.getTags()
+						local tags = tag.get({fileName = file, filePath = path})
 
-						if (tags) then
-							local playbackDuration = audioLib.getPlaybackTime().duration
-							local duration = sFormat("%02d:%02d", playbackDuration.minutes, playbackDuration.seconds)
-							playbackDuration = nil
-							audioLib.dispose()
+						--if (tags) then
+						--local playbackDuration = audioLib.getPlaybackTime().duration
+						--local duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
+						--playbackDuration = nil
+						--audioLib.dispose()
 
-							local musicData = {
-								fileName = file,
-								filePath = path,
-								rating = 0.0,
-								album = tags.album,
-								artist = tags.artist,
-								genre = tags.genre,
-								publisher = tags.publisher,
-								title = tags.title,
-								track = tags.track,
-								duration = duration
-							}
-							--print("found file: " .. file)
-							sqlLib.insertMusic(musicData)
-						end
+						local musicData = {
+							fileName = utf8Escape(file),
+							filePath = utf8Escape(path),
+							rating = 0.0,
+							album = utf8Escape(tags.album),
+							artist = utf8Escape(tags.artist),
+							genre = utf8Escape(tags.genre),
+							publisher = "",
+							title = tags.title:len() > 0 and utf8Escape(tags.title) or utf8Escape(file),
+							track = tags.track,
+							duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
+						}
+						--print("found file: " .. file)
+						sqlLib.insertMusic(musicData)
 
 						fileCount = fileCount + 1
 					end

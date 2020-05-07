@@ -1,5 +1,6 @@
 local M = {}
 local json = require("json")
+local tag = require("plugin.taglib")
 local fileUtils = require("libs.file-utils")
 local sFormat = string.format
 local urlRequestListener = nil
@@ -14,6 +15,7 @@ local musicBrainzParams = {
 		["User-Agent"] = "Play The Music Player/1.0"
 	}
 }
+local documentsPath = system.pathForFile("", system.DocumentsDirectory)
 
 local function dispatchCoverEvent()
 	local event = {
@@ -23,6 +25,21 @@ local function dispatchCoverEvent()
 	}
 
 	Runtime:dispatchEvent(event)
+end
+
+local function getCoverFromMp3File(song)
+	local fileExtension = song.title:match("^.+(%..+)$")
+
+	if (fileExtension == ".mp3") then
+		tag.getArtwork(
+			{
+				fileName = song.fileName,
+				filePath = song.filePath,
+				imageFileName = song.md5,
+				imageFilePath = documentsPath
+			}
+		)
+	end
 end
 
 urlRequestListener = function(event)
@@ -84,15 +101,20 @@ function M.getCover(song)
 		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
 	requestedSong = song
 	currentCoverFileName = sFormat("%s.png", hash)
+	getCoverFromMp3File(song)
 
-	if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
-		--print("artwork exists for " .. requestedSong.artist .. " / " .. requestedSong.album)
-		dispatchCoverEvent()
-	else
-		tryAgain = true
-		print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
-		network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
+	local function setOrGetData()
+		if (fileUtils:fileExists(currentCoverFileName, system.DocumentsDirectory)) then
+			--print("artwork exists for " .. requestedSong.artist .. " / " .. requestedSong.album)
+			dispatchCoverEvent()
+		else
+			tryAgain = true
+			print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
+			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
+		end
 	end
+
+	timer.performWithDelay(100, setOrGetData)
 end
 
 return M
