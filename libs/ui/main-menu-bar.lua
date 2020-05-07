@@ -240,7 +240,7 @@ function M.new(options)
 				musicList.musicSearch = currentText
 				musicList.musicFunction = sqlLib.getMusicRowBySearch
 				musicList.musicSortAToZ = true
-				musicList.reloadData()
+				musicList.reloadData(true)
 			end
 		end
 

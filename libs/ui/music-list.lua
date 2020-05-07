@@ -95,17 +95,23 @@ local function createTableView(options)
 			noLines = true,
 			rowTouchDelay = 0,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
+			rowColorDefault = defaultRowColor.default,
+			rowColorAlternate = defaultSecondRowColor.default,
 			onRowRender = function(event)
 				local phase = event.phase
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
-				local musicData = M.musicFunction(event.index, M.musicSortAToZ, M.musicSearch)
-				currentRowIndex = event.index
+				local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
+				currentRowIndex = row.index
 
-				if (row.parent.parent.index == 1) then
-					print("rendering row: " .. row.index .. " at y = " .. row.y)
+				if (row.parent.index == 1) then
+				--print("rendering row: " .. row.index .. " at y = " .. row.y)
 				end
+
+				local rowLimit = M.musicSearch ~= nil and sqlLib.searchCount() or sqlLib.musicCount()
+				row.parent:setRowLimit(rowLimit)
+
 				--[[
 				if (row.index > M.musicCount) then
 					row.isVisible = false
@@ -119,7 +125,7 @@ local function createTableView(options)
 				local rowTitleText =
 					display.newText(
 					{
-						text = event.index <= M.musicCount and musicData and musicData[options.rowTitle] or "",
+						text = row.index <= M.musicCount and musicData and musicData[options.rowTitle] or "",
 						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
@@ -130,6 +136,10 @@ local function createTableView(options)
 				)
 				rowTitleText.anchorX = 0
 				rowTitleText.x = 10
+
+				if (rowTitleText.text:lower() == "lady (hear me tonight)") then
+					rowTitleText:setFillColor(1, 0, 0)
+				end
 				row:insert(rowTitleText)
 			end,
 			onRowClick = function(event)
@@ -249,6 +259,7 @@ local function createTableView(options)
 			--M.rowCreationTimers[#M.rowCreationTimers + 1] = timer.performWithDelay(1000, lazyCreateRows)
 
 			tView:createRows()
+			tView:setRowLimit(M.musicCount)
 
 		--[[
 			for i = 1, mMin(60, sqlLib.musicCount()) do
@@ -629,15 +640,31 @@ function M.removeAllRows()
 	end
 end
 
-function M.reloadData()
+local prevIndex = 0
+
+function M.reloadData(hardReload)
 	for i = 1, #tableViewList do
-		tableViewList[i]:reloadData()
+		if (hardReload) then
+			if (prevIndex == 0) then
+				prevIndex = tableViewList[i]:getRealIndex()
+			end
+			--tableViewList[i].previousIndex = tableViewList[i]:getRealIndex()
+			tableViewList[i]:scrollToIndex(1)
+		else
+			tableViewList[i]:scrollToIndex(prevIndex)
+			print("previous index was: ", prevIndex)
+		end
+
+		--tableViewList[i]:reloadData()
 	end
 
 	for i = 1, #tableViewList do
 		--tableViewList[i]:scrollToIndex(1, 0)
 	end
 
+	if (not hardReload) then
+		prevIndex = 0
+	end
 	--resetRowColors()
 end
 

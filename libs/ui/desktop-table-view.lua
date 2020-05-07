@@ -11,9 +11,11 @@ function M.new(options)
 	local y = options.top or 0
 	local width = options.width or dWidth
 	local height = options.height or error("desktop-table-view() options.height number expect, got ", type(options.height))
-	local maxRows = options.maxRows or 20
+	local maxRows = options.maxRows or 22
+	local visbleRows = maxRows - 1
+	local rowLimit = options.rowLimit or maxRows
 	local backgroundColor = options.backgroundColor or {0, 0, 0}
-	local rowColorDefault = options.rowColor or {0, 0, 0}
+	local rowColorDefault = options.rowColorDefault or {0, 0, 0}
 	local rowColorAlternate = options.rowColorAlternate or nil
 	local rowHeight = options.rowHeight or 20
 	local onRowRender =
@@ -24,24 +26,30 @@ function M.new(options)
 	local lastMouseScrollWasUp = false
 	local didMouseScroll = false
 	local realRowIndex = 0
-	local renderRowsAgain = false
-	local tableView = display.newGroup()
-	tableView.scrollView = display.newGroup()
-	tableView:insert(tableView.scrollView)
+	local tableView = display.newGroup() --display.newContainer(width, height)
 	tableView.x = x
 	tableView.y = y
 
-	--[[ the idea here is that we don't delete rows, we just move them around.
-			for example. If you scroll down, it will move rows[1] to row [10] down to row[40]s position.
-			or something. The idea is to have continuous vertical scrolling from a visual perspective,
-			but in reality, there are only ever MAX_ROWS created.
-	--]]
 	function tableView:createRows(params)
 		for i = 1, maxRows do
-			realRowIndex = 19
+			realRowIndex = visbleRows
 
 			rows[i] = display.newGroup()
-			rows[i].y = i == 1 and 0 or rows[i - 1].y + rows[i - 1].contentHeight
+
+			rows[i]._background = display.newRect(0, 0, width, rowHeight)
+			rows[i]._background.anchorX = 0
+			rows[i]._background.x = 0
+			rows[i]._background.y = rowHeight * 0.5
+			rows[i]._background:setFillColor(unpack(rowColorDefault))
+
+			if (rowColorAlternate and i % 2 == 0) then
+				rows[i]._background:setFillColor(unpack(rowColorAlternate))
+			end
+
+			rows[i]._background._isBackground = true
+			rows[i]:insert(rows[i]._background)
+
+			rows[i].y = i == 1 and 0 or rows[i - 1].y + rowHeight
 			rows[i].index = i
 			rows[i].contentWidth = width
 			rows[i].contentHeight = rowHeight
@@ -50,7 +58,6 @@ function M.new(options)
 				local target = event.target
 				local numClicks = event.numTaps
 				local event = {
-					index = target.index,
 					row = target,
 					numClicks = numClicks
 				}
@@ -62,14 +69,13 @@ function M.new(options)
 
 			--print("row " .. i .. "initial y = " .. rows[i].y)
 
-			self.scrollView:insert(rows[i])
-			self:dispatchRowEvent(i, i)
+			self:insert(rows[i])
+			self:dispatchRowEvent(i)
 		end
 	end
 
-	function tableView:dispatchRowEvent(rowIndex, realIndex)
+	function tableView:dispatchRowEvent(rowIndex)
 		local event = {
-			index = realIndex,
 			row = rows[rowIndex],
 			width = width,
 			height = rowHeight
@@ -80,55 +86,21 @@ function M.new(options)
 
 	function tableView:deleteRowContents(index)
 		for i = 1, rows[index].numChildren do
-			display.remove(rows[index][i])
-		end
-	end
-
-	--[[
-	function tableView:deleteRow(index)
-		if (rows[index]) then
-			for i = 1, rows[index].numChildren do
+			if (not rows[index][i]._isBackground) then
 				display.remove(rows[index][i])
 			end
-
-			self.scrollView:remove(rows[index])
-			dRemove(rows[index])
-			tRemove(rows, index)
 		end
 	end
 
-	function tableView:deleteAllRows()
-		for j = 1, #rows do
-			if (rows[j]) then
-				for i = 1, rows[j].numChildren do
-					self.scrollView:remove(rows[j][i])
-					display.remove(rows[j][i])
-				end
-
-				dRemove(rows[j])
-				tRemove(rows, j)
-			end
-		end
+	function tableView:getRealIndex()
+		return realRowIndex
 	end
 
-	function tableView:insertRow(index)
-		rows[index] = display.newGroup()
-
-		local event = {
-			index = index * realRowIndex,
-			row = rows[index],
-			width = width,
-			height = rowHeight
-		}
-
-		self.scrollView:insert(rows[index])
-		onRowRender(event)
-	end--]]
 	function tableView:isRowOnScreen(index)
 		local row = rows[index]
 		local onScreen = false
 
-		if (row.y + (rowHeight * 0.5) > 0 and row.y - (rowHeight * 0.5) < (rowHeight * 19)) then
+		if (row.y + (rowHeight * 0.5) > 0 and row.y - (rowHeight * 0.5) < (rowHeight * visbleRows)) then
 			onScreen = true
 		end
 
@@ -141,10 +113,7 @@ function M.new(options)
 
 	--- When scrolling UP
 	function tableView:moveAllRowsDown()
-		if (realRowIndex <= maxRows - 1) then
-			for i = 1, maxRows do
-				--self:dispatchRowEvent(i, i)
-			end
+		if (realRowIndex <= visbleRows) then
 			return
 		end
 
@@ -154,22 +123,23 @@ function M.new(options)
 
 		for i = 1, maxRows do
 			if (not self:isRowOnScreen(i)) then
-				--print("moving row " .. i .. " down to the bottom")
 				self:deleteRowContents(i)
 				self:moveRow(i, 0)
-				rows[i].index = realRowIndex - 19
-				--print("moving row " .. i .. " to position " .. -rowHeight)
-				--print("row " .. i .. " is now at position ", rows[i].y)
-				--print("real row index " .. realRowIndex + 1)
-				self:dispatchRowEvent(i, realRowIndex - 19)
+				rows[i].index = realRowIndex - visbleRows
+				self:dispatchRowEvent(i)
 			end
 		end
 	end
 
 	--- When scrolling DOWN
 	function tableView:moveAllRowsUp()
-		if (realRowIndex < 19) then
-			realRowIndex = 20
+		if (realRowIndex > rowLimit + 1) then
+			realRowIndex = rowLimit + 1
+			return
+		end
+
+		if (realRowIndex < visbleRows) then
+			realRowIndex = visbleRows
 		end
 
 		for i = 1, maxRows do
@@ -178,14 +148,10 @@ function M.new(options)
 
 		for i = 1, maxRows do
 			if (not self:isRowOnScreen(i)) then
-				--print("moving row " .. i .. " down to the bottom")
 				self:deleteRowContents(i)
-				self:moveRow(i, 19 * rowHeight)
-				rows[i].index = realRowIndex + 1
-				--print("moving row " .. i .. " to position " .. 19 * rowHeight)
-				--print("row " .. i .. " is now at position ", rows[i].y)
-				--print("real row index " .. realRowIndex + 1)
-				self:dispatchRowEvent(i, realRowIndex + 1)
+				self:moveRow(i, visbleRows * rowHeight)
+				rows[i].index = realRowIndex
+				self:dispatchRowEvent(i)
 			end
 		end
 	end
@@ -193,54 +159,51 @@ function M.new(options)
 	function tableView:reloadData()
 		for i = 1, maxRows do
 			self:deleteRowContents(i)
-			self:dispatchRowEvent(i, i)
+			self:dispatchRowEvent(i)
 		end
+	end
+
+	function tableView:scrollToIndex(index)
+		local newRowIndex = 0
+
+		if (index == 1) then
+			newRowIndex = visbleRows
+		elseif (index >= rowLimit) then
+			newRowIndex = rowLimit - visbleRows
+		else
+			newRowIndex = index - visbleRows
+		end
+
+		for i = 1, maxRows do
+			if (index <= maxRows) then
+				rows[i].index = i
+			elseif (index >= rowLimit) then
+				rows[i].index = mMin(rowLimit + 1, (rowLimit + 1 - maxRows) + i)
+			else
+				rows[i].index = mMin(rowLimit, (index - maxRows) + i)
+			end
+
+			self:moveRow(i, rowHeight * i - 1 - visbleRows)
+			self:deleteRowContents(i)
+			self:dispatchRowEvent(i)
+		end
+
+		realRowIndex = rows[maxRows].index
 	end
 
 	function tableView:scrollToTop()
-		self.scrollView.y = 0
+		self:scrollToIndex(1)
 	end
 
 	function tableView:scrollToBottom()
-		self.scrollView.y = self.scrollView.contentHeight
+		self:scrollToIndex(rowLimit)
+	end
+
+	function tableView:setRowLimit(limit)
+		rowLimit = limit
 	end
 
 	function tableView:enterFrame(event)
-		if (didMouseScroll) then
-			if (lastMouseScrollWasUp) then
-				-- insert row above, remove row below
-				--self:insertRow(1)
-				--self:deleteRow(maxRows)
-				-- move rows down
-			else
-				-- insert row below, remove row above
-				--self:insertRow(maxRows)
-				--self:deleteRow(1)
-				-- move rows up
-				if (renderRowsAgain) then
-					--[[
-					for i = 1, maxRows do
-						if (self:isRowOnScreen(i)) then
-							self:deleteRowContents(i)
-
-							--self:moveRow(i, rows[maxRows].y)
-							local event = {
-								index = realRowIndex,
-								row = rows[i],
-								width = width,
-								height = rowHeight
-							}
-
-							onRowRender(event)
-						else
-							self:deleteRowContents(i)
-						end
-					end--]]
-					renderRowsAgain = false
-				end
-			end
-		end
-
 		return true
 	end
 
@@ -257,14 +220,9 @@ function M.new(options)
 
 			if (lastMouseScrollWasUp) then
 				realRowIndex = realRowIndex - 1
-				--mMax(maxRows - 1, realRowIndex - 1)
-				renderRowsAgain = true
-				--tableView.scrollView.y = mMin(0, tableView.scrollView.y - 20)
 				tableView:moveAllRowsDown()
 			else
-				--tableView.scrollView.y = mMax(tableView.scrollView.contentHeight, tableView.scrollView.y + 20)
-				realRowIndex = realRowIndex + 1 -- todo: should be able to assign the max row index (i.e. total amount of REAL rows) via a function call
-				renderRowsAgain = true
+				realRowIndex = realRowIndex + 1
 				tableView:moveAllRowsUp()
 			end
 		else
