@@ -23,61 +23,11 @@ local categoryList = {}
 local categoryTarget = nil
 local rowFontSize = 10
 local rowHeight = 20
-local cancelRowCreation = false
-local currentRowIndex = 0
-local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 0}}
-local defaultSecondRowColor = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.28, 0.28, 0}}
+local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 1}}
+local defaultSecondRowColor = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.28, 0.28, 1}}
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
-
-local function resetRowColors()
-	local firstTableView = tableViewList[1]
-
-	for i = 1, #tableViewList do
-		for j = 1, firstTableView:getNumRows() do
-			local list = tableViewList[i]._view._rows[j] and tableViewList[i]._view._rows[j]._view
-			local rowColor = defaultRowColor
-
-			if (j % 2 == 0) then
-				rowColor = defaultSecondRowColor
-			end
-
-			if (list) then
-				list._cell:setFillColor(unpack(rowColor.default))
-			end
-		end
-	end
-end
-
-local function highlightPressedIndex()
-	local pressedIndex = audioLib.currentSongIndex
-
-	if (pressedIndex > 0 and #tableViewList > 0) then
-		local firstTableView = tableViewList[1]
-
-		for i = 1, #tableViewList do
-			for j = 1, firstTableView:getNumRows() do
-				local list = tableViewList[i]._view._rows[j] and tableViewList[i]._view._rows[j]._view
-				local rowColor = defaultRowColor
-
-				if (j % 2 == 0) then
-					rowColor = defaultSecondRowColor
-				end
-
-				if (list) then
-					list._cell:setFillColor(unpack(rowColor.default))
-				end
-			end
-
-			if (tableViewList[i]._view._rows[pressedIndex]._view) then
-				tableViewList[i]._view._rows[pressedIndex]._view._cell:setFillColor(0.5, 0.5, 0.5, 1)
-			end
-		end
-	end
-end
-
---Runtime:addEventListener("enterFrame", highlightPressedIndex)
 
 local function hasValidMusicData()
 	return M.musicCount > 0
@@ -95,22 +45,17 @@ local function createTableView(options)
 			noLines = true,
 			rowTouchDelay = 0,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
-			rowColorDefault = defaultRowColor.default,
-			rowColorAlternate = defaultSecondRowColor.default,
+			rowColorDefault = defaultRowColor,
+			rowColorAlternate = defaultSecondRowColor,
 			onRowRender = function(event)
 				local phase = event.phase
+				local parent = event.parent
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
 				local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
-				currentRowIndex = row.index
-
-				if (row.parent.index == 1) then
-				--print("rendering row: " .. row.index .. " at y = " .. row.y)
-				end
-
 				local rowLimit = M.musicSearch ~= nil and sqlLib.searchCount() or sqlLib.musicCount()
-				row.parent:setRowLimit(rowLimit)
+				parent:setRowLimit(rowLimit)
 
 				--[[
 				if (row.index > M.musicCount) then
@@ -145,10 +90,18 @@ local function createTableView(options)
 			onRowClick = function(event)
 				local phase = event.phase
 				local numClicks = event.numClicks
+				local parent = event.parent
 				local row = event.row
 
 				if (numClicks > 1) then
 					local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
+
+					if (musicData == nil) then
+						return
+					end
+
+					parent:setRowSelected(row.index)
+
 					audioLib.currentSongIndex = row.index
 					audioLib.load(musicData)
 					audioLib.play(musicData)
@@ -156,128 +109,16 @@ local function createTableView(options)
 			end
 		}
 	)
-	--[[
-	local tView =
-		tableView.new(
-		{
-			left = options.left,
-			top = 80 + rowHeight,
-			width = options.width or (dWidth / 5),
-			height = dHeight - 100,
-			isLocked = true,
-			noLines = true,
-			rowTouchDelay = 0,
-			backgroundColor = {0.10, 0.10, 0.10, 1},
-			onRowRender = function(event)
-				local phase = event.phase
-				local row = event.row
-				local rowContentWidth = row.contentWidth
-				local rowContentHeight = row.contentHeight
-				local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
-				currentRowIndex = row.index
-
-				if (row.index > M.musicCount) then
-					row.isVisible = false
-				else
-					row.isVisible = true
-
-					if (M.musicSearch ~= nil) then
-						M.musicCount = sqlLib.searchCount()
-					end
-				end
-
-				local rowTitleText =
-					display.newText(
-					{
-						text = row.index <= M.musicCount and musicData and musicData[options.rowTitle] or "",
-						font = subTitleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						width = rowContentWidth - 10,
-						align = "left"
-					}
-				)
-				rowTitleText.anchorX = 0
-				rowTitleText.x = 10
-				row:insert(rowTitleText)
-			end,
-			onRowTouch = function(event)
-				local phase = event.phase
-				local row = event.row
-
-				if (phase == "press") then
-					local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
-					audioLib.currentSongIndex = row.index
-					audioLib.load(musicData)
-					audioLib.play(musicData)
-				end
-			end
-		}
-	)--]]
 	tView.leftPos = options.left
 	tView.topPos = 80
 	tView.orderIndex = options.index
-	tView.index = #tableViewList
 
 	function tView:populate()
 		--print("Creating initial rows")
-
 		M.musicCount = M.musicSearch ~= nil and sqlLib.searchCount() or sqlLib.musicCount()
-		local indx = mMin(60, sqlLib.musicCount())
-		--print("MUSIC COUNT IN POPULATE: ", M.musicCount)
 
-		local function lazyCreateRows(event)
-			local rowColor = defaultRowColor
-			indx = indx + 1
-
-			if (indx > sqlLib.musicCount()) then
-				timer.cancel(event.source)
-				--print("finished creating " .. indx .. " rows")
-				return
-			end
-
-			--print("Creating row: ", indx)
-			--print("creating lazy row: ", indx)
-
-			if (indx % 2 == 0) then
-				rowColor = defaultSecondRowColor
-			end
-
-			tView:insertRow {
-				isCategory = false,
-				rowHeight = rowHeight,
-				rowColor = rowColor
-			}
-
-			if (not cancelRowCreation) then
-				M.rowCreationTimers[#M.rowCreationTimers + 1] = timer.performWithDelay(25, lazyCreateRows)
-			end
-		end
-
-		if (not cancelRowCreation) then
-			--M.rowCreationTimers[#M.rowCreationTimers + 1] = timer.performWithDelay(1000, lazyCreateRows)
-
-			tView:createRows()
-			tView:setRowLimit(M.musicCount)
-
-		--[[
-			for i = 1, mMin(60, sqlLib.musicCount()) do
-				--print("creating initial row: ", i)
-				local rowColor = defaultRowColor
-
-				if (i % 2 == 0) then
-					rowColor = defaultSecondRowColor
-				end
-
-				tView:insertRow {
-					isCategory = false,
-					rowHeight = rowHeight,
-					rowColor = rowColor
-				}
-			end--]]
-		--resetRowColors()
-		end
+		tView:createRows()
+		tView:setRowLimit(M.musicCount)
 	end
 
 	return tView
@@ -299,10 +140,6 @@ local function moveColumns(event)
 		if (phase == "ended" or phase == "cancelled") then
 			resizeCursor:hide()
 			tableViewTarget = nil
-
-			for i = 1, #tableViewList do
-				--tableViewList[i]:addListeners()
-			end
 		end
 	end
 
@@ -327,12 +164,6 @@ local function onMouseEvent(event)
 	elseif (eventType == "up") then
 		resizeCursor:hide()
 	end
-
-	--if (currentRowIndex <= M.musicCount) then
-	--	for j = 1, #tableViewList do
-	--tableViewList[j]:mouse(event)
-	--	end
-	--end
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
@@ -621,16 +452,6 @@ function M.new()
 end
 
 function M.removeAllRows()
-	cancelRowCreation = true
-
-	for i = 1, #M.rowCreationTimers do
-		if (M.rowCreationTimers[i] ~= nil) then
-			timer.cancel(M.rowCreationTimers[i])
-		end
-
-		table.remove(M.rowCreationTimers, i)
-	end
-
 	M.musicFunction = sqlLib.getMusicRowByTitle
 	M.musicSortAToZ = true
 	M.musicSearch = nil
@@ -648,28 +469,19 @@ function M.reloadData(hardReload)
 			if (prevIndex == 0) then
 				prevIndex = tableViewList[i]:getRealIndex()
 			end
-			--tableViewList[i].previousIndex = tableViewList[i]:getRealIndex()
 			tableViewList[i]:scrollToIndex(1)
 		else
 			tableViewList[i]:scrollToIndex(prevIndex)
 			print("previous index was: ", prevIndex)
 		end
-
-		--tableViewList[i]:reloadData()
-	end
-
-	for i = 1, #tableViewList do
-		--tableViewList[i]:scrollToIndex(1, 0)
 	end
 
 	if (not hardReload) then
 		prevIndex = 0
 	end
-	--resetRowColors()
 end
 
 function M.populate()
-	cancelRowCreation = false
 	--print("POPULATE CALLED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	local startSecond = os.date("*t").sec
 	musicImporter.pushProgessToFront()

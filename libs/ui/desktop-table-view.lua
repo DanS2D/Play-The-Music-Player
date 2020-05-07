@@ -5,6 +5,7 @@ local dRemove = display.remove
 local tRemove = table.remove
 local mMin = math.min
 local mMax = math.max
+local selectedRowIndex = 0
 
 function M.new(options)
 	local x = options.left or 0
@@ -15,7 +16,7 @@ function M.new(options)
 	local visbleRows = maxRows - 1
 	local rowLimit = options.rowLimit or maxRows
 	local backgroundColor = options.backgroundColor or {0, 0, 0}
-	local rowColorDefault = options.rowColorDefault or {0, 0, 0}
+	local rowColorDefault = options.rowColorDefault or {default = {0, 0, 0}, over = {0.2, 0.2, 0.2}}
 	local rowColorAlternate = options.rowColorAlternate or nil
 	local rowHeight = options.rowHeight or 20
 	local onRowRender =
@@ -40,10 +41,10 @@ function M.new(options)
 			rows[i]._background.anchorX = 0
 			rows[i]._background.x = 0
 			rows[i]._background.y = rowHeight * 0.5
-			rows[i]._background:setFillColor(unpack(rowColorDefault))
+			rows[i]._background:setFillColor(unpack(rowColorDefault.default))
 
 			if (rowColorAlternate and i % 2 == 0) then
-				rows[i]._background:setFillColor(unpack(rowColorAlternate))
+				rows[i]._background:setFillColor(unpack(rowColorAlternate.default))
 			end
 
 			rows[i]._background._isBackground = true
@@ -51,18 +52,23 @@ function M.new(options)
 
 			rows[i].y = i == 1 and 0 or rows[i - 1].y + rowHeight
 			rows[i].index = i
+			rows[i].realIndex = i
+			rows[i].isSelected = false
 			rows[i].contentWidth = width
 			rows[i].contentHeight = rowHeight
 
 			local function tap(event)
 				local target = event.target
 				local numClicks = event.numTaps
-				local event = {
+				rows[target.realIndex].isSelected = true
+
+				local rowEvent = {
 					row = target,
-					numClicks = numClicks
+					numClicks = numClicks,
+					parent = self
 				}
 
-				onRowClick(event)
+				onRowClick(rowEvent)
 			end
 
 			rows[i]:addEventListener("tap", tap)
@@ -78,7 +84,8 @@ function M.new(options)
 		local event = {
 			row = rows[rowIndex],
 			width = width,
-			height = rowHeight
+			height = rowHeight,
+			parent = self
 		}
 
 		onRowRender(event)
@@ -203,7 +210,35 @@ function M.new(options)
 		rowLimit = limit
 	end
 
+	function tableView:setRowSelected(rowIndex, viaScroll)
+		local color = rowIndex % 2 == 0 and rowColorAlternate.over or rowColorDefault.over
+		local defaultRowColor = rowColorDefault.default
+		local alternateRowColor = rowColorAlternate and rowColorAlternate.default or defaultRowColor
+
+		if (not viaScroll) then
+			selectedRowIndex = rowIndex
+		end
+
+		if (selectedRowIndex > 0) then
+			for i = 1, maxRows do
+				local defaultColor = i % 2 == 0 and alternateRowColor or defaultRowColor
+
+				if (rows[i].index == selectedRowIndex) then
+					-- set the selected row to its over color
+					rows[i]._background:setFillColor(unpack(color))
+				else
+					-- reset other rows to their default color
+					rows[i]._background:setFillColor(unpack(defaultColor))
+				end
+			end
+		end
+	end
+
 	function tableView:enterFrame(event)
+		if (selectedRowIndex > 0) then
+			self:setRowSelected(selectedRowIndex, true)
+		end
+
 		return true
 	end
 
