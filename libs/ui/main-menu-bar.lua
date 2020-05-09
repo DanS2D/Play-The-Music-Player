@@ -24,6 +24,7 @@ local dSafeHeight = display.safeActualContentHeight
 local defaultButtonPath = "img/buttons/default/"
 local overButtonPath = "img/buttons/over/"
 local isDisabled = false
+local searchBar = nil
 
 function M.new(options)
 	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
@@ -37,15 +38,7 @@ function M.new(options)
 	local parentGroup = options.parentGroup or display.currentStage
 	local group = display.newGroup()
 	local isItemOpen = false
-	local oldMusicSearchFunction = musicList.musicFunction
-	local oldMusicSortAToZ = musicList.musicSortAToZ
 	local menuButtons = {}
-
-	local function restoreMusicFunction()
-		musicList.musicFunction = oldMusicSearchFunction
-		musicList.musicSortAToZ = oldMusicSortAToZ
-		musicList.musicSearch = nil
-	end
 
 	local background = display.newRect(0, 0, dWidth, menuBarHeight)
 	background.x = display.contentCenterX
@@ -54,7 +47,6 @@ function M.new(options)
 	background:addEventListener(
 		"touch",
 		function()
-			restoreMusicFunction()
 			native.setKeyboardFocus(nil)
 			return true
 		end
@@ -71,7 +63,6 @@ function M.new(options)
 			end
 		end
 
-		restoreMusicFunction()
 		native.setKeyboardFocus(nil)
 	end
 
@@ -218,28 +209,21 @@ function M.new(options)
 		end
 
 		if (phase == "began") then
-			if (target.text:len() <= 0) then
-				--print("setting old music search ref")
-				oldMusicSearchFunction = musicList.musicFunction
-				oldMusicSortAToZ = musicList.musicSortAToZ
-			end
-
-			if (musicList.musicSearch == nil) then
-				restoreMusicFunction()
-			end
 		elseif (phase == "editing") then
 			local currentText = event.text
 
 			if (currentText:len() <= 0) then
 				--print(">>>>>>> cancelling music search <<<<<<<<<<<<<<")
+
 				musicList.musicSearch = nil
 				musicList.musicCount = sqlLib.musicCount()
-				restoreMusicFunction()
 				musicList.reloadData()
 			else
+				musicList.musicResultsLimit = sqlLib.musicCount()
 				musicList.musicSearch = currentText
-				musicList.musicFunction = sqlLib.getMusicRowBySearch
+				musicList.musicFunction = sqlLib.getMusicRowsBySearch
 				musicList.musicSortAToZ = true
+				musicList.getSearchData()
 				musicList.reloadData(true)
 			end
 		end
@@ -247,7 +231,7 @@ function M.new(options)
 		return true
 	end
 
-	local searchBar = native.newTextField(0, 0, 100, menuBarHeight - 5)
+	searchBar = native.newTextField(0, 0, 100, menuBarHeight - 5)
 	searchBar.anchorX = 1
 	searchBar.x = dWidth - 4
 	searchBar.y = menuBarHeight / 2
