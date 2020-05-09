@@ -206,7 +206,7 @@ function M.new(options)
 			if (index <= maxRows) then
 				rows[i].index = i
 			elseif (index >= rowLimit) then
-				rows[i].index = mMin(rowLimit + 1, (rowLimit + 1 - maxRows) + i)
+				rows[i].index = mMin(rowLimit, (rowLimit - maxRows) + i)
 			else
 				rows[i].index = mMin(rowLimit, (index - maxRows) + i)
 			end
@@ -228,7 +228,7 @@ function M.new(options)
 	end
 
 	function tableView:setRowLimit(limit)
-		rowLimit = limit + 1
+		rowLimit = limit + 2
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
