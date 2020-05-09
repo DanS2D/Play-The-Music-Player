@@ -185,22 +185,24 @@ function M.getMusicRow(index)
 	return music
 end
 
-local function getMusicRowBy(index, ascending, filter)
+local function getMusicRowBy(index, ascending, filter, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
-	local music = nil
+	local music = {}
+
+	--print("limit from GETMUSICROW() is ", limit)
 
 	if (index > 1) then
 		stmt =
 			database:prepare(
-			sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1 OFFSET %d; ]], filter, orderType, index - 1)
+			sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT %d OFFSET %d; ]], filter, orderType, limit, index - 1)
 		)
 	else
-		stmt = database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1;]], filter, orderType))
+		stmt = database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT %d;]], filter, orderType, limit))
 	end
 
 	for row in stmt:nrows() do
-		music = {
+		music[#music + 1] = {
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
@@ -221,27 +223,27 @@ local function getMusicRowBy(index, ascending, filter)
 	return music
 end
 
-function M.getMusicRowByAlbum(index, ascending)
-	return getMusicRowBy(index, ascending, "album")
+function M.getMusicRowByAlbum(index, ascending, limit)
+	return getMusicRowBy(index, ascending, "album", limit)
 end
 
-function M.getMusicRowByArtist(index, ascending)
-	return getMusicRowBy(index, ascending, "artist")
+function M.getMusicRowByArtist(index, ascending, limit)
+	return getMusicRowBy(index, ascending, "artist", limit)
 end
 
-function M.getMusicRowByGenre(index, ascending)
-	return getMusicRowBy(index, ascending, "genre")
+function M.getMusicRowByGenre(index, ascending, limit)
+	return getMusicRowBy(index, ascending, "genre", limit)
 end
 
-function M.getMusicRowByTitle(index, ascending)
-	return getMusicRowBy(index, ascending, "title")
+function M.getMusicRowByTitle(index, ascending, limit)
+	return getMusicRowBy(index, ascending, "title", limit)
 end
 
-function M.getMusicRowByDuration(index, ascending)
-	return getMusicRowBy(index, ascending, "duration")
+function M.getMusicRowByDuration(index, ascending, limit)
+	return getMusicRowBy(index, ascending, "duration", limit)
 end
 
-function M.getMusicRowBySearch(index, ascending, search)
+function M.getMusicRowBySearch(index, ascending, search, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
 	local music = nil
@@ -280,6 +282,69 @@ function M.getMusicRowBySearch(index, ascending, search)
 
 	for row in stmt:nrows() do
 		music = {
+			id = row.id,
+			fileName = row.fileName,
+			filePath = row.filePath,
+			rating = row.rating,
+			md5 = row.md5,
+			album = row.album,
+			artist = row.artist,
+			genre = row.genre,
+			publisher = row.publisher,
+			title = row.title,
+			track = row.track,
+			duration = row.duration
+		}
+	end
+
+	stmt:finalize()
+
+	return music
+end
+
+function M.getMusicRowsBySearch(index, ascending, search, limit)
+	local stmt = nil
+	local orderType = ascending and "ASC" or "DESC"
+	local music = {}
+	-- %% SEARCH %% == anywhere in the string
+	-- SEARCH %% == begins with string
+	-- %% SEARCH == ends with string
+	local likeQuery = sFormat("LIKE '%%%s%%'", search)
+	local artistQuery = sFormat("OR artist %s", likeQuery)
+	local titleQuery = sFormat("OR title %s", likeQuery)
+	M.lastSearchQuery = sFormat([[WHERE album %s %s %s; ]], likeQuery, artistQuery, titleQuery)
+
+	--print("limit from GETMUSICROWSBYSEARCH() is ", limit)
+
+	if (index > 1) then
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT %d OFFSET %d; ]],
+				likeQuery,
+				artistQuery,
+				titleQuery,
+				orderType,
+				limit,
+				index - 1
+			)
+		)
+	else
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT %d; ]],
+				likeQuery,
+				artistQuery,
+				titleQuery,
+				orderType,
+				limit
+			)
+		)
+	end
+
+	for row in stmt:nrows() do
+		music[#music + 1] = {
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
