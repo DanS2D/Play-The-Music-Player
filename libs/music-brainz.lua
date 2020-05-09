@@ -152,16 +152,27 @@ local function coverExists(song)
 	local baseDir = system.DocumentsDirectory
 	local pngPath = system.pathForFile(song.md5 .. ".png", baseDir)
 	local jpgPath = system.pathForFile(song.md5 .. ".jpg", baseDir)
-	local resultPng = os.rename(pngPath, pngPath)
-	local resultJpg = os.rename(jpgPath, jpgPath)
+	local pngFile, _ = io.open(pngPath, "rb")
+	local jpgFile, _ = io.open(jpgPath, "rb")
+	local exists = false
+	local fileName = nil
 
-	if (resultPng) then
-		return true, song.md5 .. ".png"
+	if (pngFile) then
+		io.close(pngFile)
+		exists = true
+		fileName = song.md5 .. ".png"
 	end
 
-	if (resultJpg) then
-		return true, song.md5 .. ".jpg"
+	if (jpgFile) then
+		io.close(jpgFile)
+		exists = true
+		fileName = song.md5 .. ".jpg"
 	end
+
+	pngFile = nil
+	jpgFile = nil
+
+	return exists, fileName
 end
 
 function M.getCover(song)
@@ -203,7 +214,7 @@ function M.getCover(song)
 				local coverOnDiskExists, coverFileName = coverExists(song)
 
 				if (coverOnDiskExists) then
-					print("found cover, cancelling timer now")
+					print("found cover " .. coverFileName .. " cancelling timer now")
 					currentCoverFileName = coverFileName
 					dispatchCoverEvent()
 					timer.cancel(event.source)
