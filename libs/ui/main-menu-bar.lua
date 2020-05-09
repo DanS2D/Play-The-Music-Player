@@ -213,18 +213,15 @@ function M.new(options)
 			local currentText = event.text
 
 			if (currentText:len() <= 0) then
-				--print(">>>>>>> cancelling music search <<<<<<<<<<<<<<")
-
 				musicList.musicSearch = nil
-				musicList.musicCount = sqlLib.musicCount()
-				musicList.reloadData()
+				musicList:setMusicCount(sqlLib:musicCount())
+				musicList:reloadData()
 			else
-				musicList.musicResultsLimit = sqlLib.musicCount()
+				musicList.musicResultsLimit = sqlLib:musicCount()
 				musicList.musicSearch = currentText
-				musicList.musicFunction = sqlLib.getMusicRowsBySearch
-				musicList.musicSortAToZ = true
-				musicList.getSearchData()
-				musicList.reloadData(true)
+				musicList:getSearchData()
+				musicList:setMusicCount(sqlLib:searchCount())
+				musicList:reloadData(true)
 			end
 		end
 

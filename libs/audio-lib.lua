@@ -101,7 +101,6 @@ local bassDispose = bass.dispose
 local bassGetDuration = bass.getDuration
 local bassGetLevel = bass.getLevel
 local bassGetPlayBackTime = bass.getPlaybackTime
-local bassGetTags = bass.getTags
 local bassGetVolume = bass.getVolume
 local bassIsChannelPaused = bass.isChannelPaused
 local bassIsChannelPlaying = bass.isChannelPlaying
@@ -147,6 +146,10 @@ local function cleanupAudio()
 end
 
 local function loadAudio(song)
+	if (currentSong ~= nil and currentSong.fileName == song.fileName and bassIsChannelPlaying(channelHandle)) then
+		return
+	end
+
 	currentSong = song
 
 	if (channelHandle ~= nil) then
@@ -162,6 +165,7 @@ local function playAudio(song)
 	if (type(channelHandle) == "number") then
 		if (bassIsChannelPlaying(channelHandle)) then
 			bassRewind(channelHandle)
+			dispatchPlayEvent(song)
 			return
 		end
 	end
@@ -175,7 +179,6 @@ end
 
 local function onAudioComplete(event)
 	if (M.loopOne) then
-		print("audio is set to loop, restarting audio")
 		loadAudio(currentSong)
 		playAudio(currentSong)
 
@@ -243,14 +246,6 @@ end
 
 function M.getPreviousVolume()
 	return previousVolume
-end
-
-function M.getTags()
-	if (channelHandle ~= nil) then
-		return bassGetTags(channelHandle)
-	end
-
-	return nil
 end
 
 function M.getVolume()

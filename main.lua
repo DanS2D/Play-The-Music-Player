@@ -43,6 +43,7 @@ local function onAudioEvent(event)
 	local song = event.song
 
 	if (phase == "started") then
+		--print("song STARTED")
 		mediaBarLib.updatePlayPauseState(true)
 		mediaBarLib.removeAlbumArtwork()
 		mediaBarLib.updatePlaybackTime()
@@ -51,9 +52,21 @@ local function onAudioEvent(event)
 		musicBrainz.getCover(song)
 		musicVisualizer.start()
 	elseif (phase == "ended") then
-		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList.musicCount)
+		--print("song ENDED")
 
-		local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
+		-- stop audio after last index, or reset the index depending on loop mode
+		if (audioLib.currentSongIndex == musicList:getMusicCount()) then
+			-- TODO: if loop (all) is on, reset the index to 1 - if it's off, do the below
+			mediaBarLib.resetSongProgress()
+			mediaBarLib.clearPlayingSong()
+			audioLib.reset()
+			musicList:setSelectedRow(0)
+			return
+		end
+
+		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
+		local nextSong = musicList:getRow(audioLib.currentSongIndex)
+		musicList:setSelectedRow(audioLib.currentSongIndex)
 
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
@@ -69,8 +82,7 @@ Runtime:addEventListener("bass", onAudioEvent)
 
 local function playInterruptedSong()
 	if (wasSongPlaying) then
-		local previousSong =
-			musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
+		local previousSong = musicList:getRow(audioLib.currentSongIndex)
 		audioLib.load(previousSong)
 		audioLib.play(previousSong)
 
@@ -95,13 +107,13 @@ end
 Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 
 local function populateTableViews()
-	if (sqlLib.musicCount() > 0) then
+	if (sqlLib:musicCount() > 0) then
 		mainMenuBar.setEnabled(true)
 		settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = lastChosenPath
-		settings.save()
+		settings:save()
 		musicImporter.pushProgessToFront()
 		musicImporter.showProgressBar()
-		musicList.populate()
+		musicList:populate()
 	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
 end
@@ -139,7 +151,7 @@ local applicationMainMenuBar =
 								if (not hasUsedPath) then
 									lastChosenPath = selectedPath
 									background:toFront()
-									musicList.removeAllRows()
+									musicList:removeAllRows()
 									musicImporter.pushProgessToFront()
 									musicImporter.showProgressBar()
 									musicImporter.getFolderList(lastChosenPath, populateTableViews)
@@ -236,46 +248,54 @@ mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
 background:toFront()
 musicImporter.pushProgessToFront()
-settings.load()
+settings:load()
 
 local function keyEventListener(event)
 	local phase = event.phase
 
 	if (phase == "down") then
+		local isShiftDown = event.isShiftDown
 		local keyDescriptor = event.descriptor:lower()
 		-- TODO: only execute the below IF there is music data
 
-		-- pause/resume toggle
-		if (keyDescriptor == "mediaplaypause") then
-			if (audioLib.isChannelHandleValid()) then
-				if (audioLib.isChannelPaused()) then
-					mediaBarLib.updatePlayPauseState(true)
-					audioLib.resume()
-				else
-					if (audioLib.isChannelPlaying()) then
-						mediaBarLib.updatePlayPauseState(false)
-						audioLib.pause()
+		if (isShiftDown) then
+		else
+			-- pause/resume toggle
+			if (keyDescriptor == "mediaplaypause") then
+				if (audioLib.isChannelHandleValid()) then
+					if (audioLib.isChannelPaused()) then
+						mediaBarLib.updatePlayPauseState(true)
+						audioLib.resume()
+					else
+						if (audioLib.isChannelPlaying()) then
+							mediaBarLib.updatePlayPauseState(false)
+							audioLib.pause()
+						end
 					end
 				end
+			elseif (keyDescriptor == "medianext") then
+				-- next
+				if (audioLib.currentSongIndex + 1 <= #musicFiles) then
+					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+					mediaBarLib.updatePlayPauseState(true)
+					audioLib.load(musicFiles[audioLib.currentSongIndex])
+					audioLib.play(musicFiles[audioLib.currentSongIndex])
+				end
+			elseif (keyDescriptor == "mediaprevious") then
+				-- previous
+				if (audioLib.currentSongIndex - 1 > 0) then
+					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
+					mediaBarLib.updatePlayPauseState(true)
+					audioLib.load(musicFiles[audioLib.currentSongIndex])
+					audioLib.play(musicFiles[audioLib.currentSongIndex])
+				end
+			elseif (keyDescriptor == "mediastop") then
+				-- stop audio
+			elseif (keyDescriptor == "pagedown") then
+				musicList:scrollToBottom()
+			elseif (keyDescriptor == "pageup") then
+				musicList:scrollToTop()
 			end
-		elseif (keyDescriptor == "medianext") then
-			-- next
-			if (audioLib.currentSongIndex + 1 <= #musicFiles) then
-				audioLib.currentSongIndex = audioLib.currentSongIndex + 1
-				mediaBarLib.updatePlayPauseState(true)
-				audioLib.load(musicFiles[audioLib.currentSongIndex])
-				audioLib.play(musicFiles[audioLib.currentSongIndex])
-			end
-		elseif (keyDescriptor == "mediaprevious") then
-			-- previous
-			if (audioLib.currentSongIndex - 1 > 0) then
-				audioLib.currentSongIndex = audioLib.currentSongIndex - 1
-				mediaBarLib.updatePlayPauseState(true)
-				audioLib.load(musicFiles[audioLib.currentSongIndex])
-				audioLib.play(musicFiles[audioLib.currentSongIndex])
-			end
-		elseif (keyDescriptor == "mediastop") then
-		-- stop audio
 		end
 	end
 

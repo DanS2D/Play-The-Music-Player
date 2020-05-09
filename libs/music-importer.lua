@@ -2,6 +2,7 @@ local M = {}
 local utf8 = require("plugin.utf8")
 local tag = require("plugin.taglib")
 local lfs = require("lfs")
+local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
 local importProgressLib = require("libs.ui.import-progress")
@@ -40,12 +41,14 @@ function M.getFolderList(path, onComplete)
 	importProgress:showProgressBar()
 	M.showProgress()
 	importProgress:updateHeading("Searching folder hierarchy")
-	sqlLib.open()
+	sqlLib:open()
 	onFinished = onComplete
-	tRemove(musicFolders)
+	musicFolders = {}
 	musicFolders = nil
 	musicFolders = {}
 	print("root folder from gather is:" .. paths[1])
+	importProgress:updateSubHeading(sFormat("Added folder: %s", paths[1]))
+	musicFolders[#musicFolders + 1] = {name = paths[1], path = paths[1]}
 
 	local function gatherFolders()
 		if (#paths == 0) then
@@ -55,10 +58,16 @@ function M.getFolderList(path, onComplete)
 			end
 
 			paths = nil
-			importProgress:setTotalProgress(100)
+			importProgress:setTotalProgress(0)
 			importProgress:updateHeading("Retrieved folder list")
 			importProgress:updateSubHeading("Now finding music...")
-			M.scanFolders()
+
+			timer.performWithDelay(
+				500,
+				function()
+					M.scanFolders()
+				end
+			)
 
 			return
 		end
@@ -71,20 +80,22 @@ function M.getFolderList(path, onComplete)
 				if (isDir) then
 					--print(fullPath)
 					--	paths[#paths + 1] = fullPath
+					importProgress:updateSubHeading(sFormat("Added folder: %s", file))
+					-- add this folder to the folder list
+					musicFolders[#musicFolders + 1] = {name = file, path = fullPath}
 					tInsert(paths, fullPath)
 				end
 			end
 		end
 
-		-- add this folder to the folder list
-		musicFolders[#musicFolders + 1] = paths[1]
-		importProgress:updateSubHeading(sFormat("Added folder: %s to search list", paths[1]))
 		tRemove(paths, 1)
 		scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
 	end
 
 	scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
 end
+
+local crypto = require("crypto")
 
 function M.scanFolders()
 	local iterationDelay = 25
@@ -96,7 +107,7 @@ function M.scanFolders()
 	importProgress:show()
 	importProgress:showProgressBar()
 	M.showProgress()
-	importProgress:updateHeading(sFormat("Scanning %s for music", musicFolders[currentIndex + 1]))
+	importProgress:updateHeading(sFormat("Scanning %s...", musicFolders[currentIndex + 1].name))
 
 	local function checkContents()
 		currentIndex = currentIndex + 1
@@ -110,9 +121,10 @@ function M.scanFolders()
 			end
 			importProgress:updateHeading(sFormat("All done! I found %d music files", totalFiles))
 			importProgress:updateSubHeading("Thank you for your patience. Enjoy your music :)")
-			tRemove(musicFolders)
+			musicFolders = {}
 			musicFolders = nil
 			musicFolders = {}
+			collectgarbage("collect")
 
 			if (type(onFinished) == "function") then
 				onFinished()
@@ -122,39 +134,38 @@ function M.scanFolders()
 		end
 
 		if (type(musicFolders) == "table") then
-			local path = musicFolders[currentIndex]
+			local path = musicFolders[currentIndex].path
+			local folderName = musicFolders[currentIndex].name
 			local fileCount = 0
-			importProgress:updateHeading(sFormat("Scanning %s for music", path))
+			importProgress:updateHeading(sFormat("Scanning %s...", folderName))
 
 			for file in lfs.dir(path) do
 				if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
 					local fullPath = path .. "\\" .. file
 
 					if (isMusicFile(fullPath)) then
-						local tags = tag.get({fileName = utf8Escape(file), filePath = utf8Escape(path)})
-
-						--if (tags) then
-						--local playbackDuration = audioLib.getPlaybackTime().duration
-						--local duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
-						--playbackDuration = nil
-						--audioLib.dispose()
-
-						local musicData = {
-							fileName = utf8Escape(file),
-							filePath = utf8Escape(path),
-							rating = 0.0,
-							album = utf8Escape(tags.album),
-							artist = utf8Escape(tags.artist),
-							genre = utf8Escape(tags.genre),
-							publisher = "",
-							title = tags.title:len() > 0 and utf8Escape(tags.title) or utf8Escape(file),
-							track = tags.track,
-							duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
-						}
-						--print("found file: " .. file)
-						sqlLib.insertMusic(musicData)
-
-						fileCount = fileCount + 1
+						if (fileUtils:fileSize(fullPath) > 0) then
+							local tags = tag.get({fileName = file, filePath = path})
+							local musicData = {
+								fileName = file,
+								filePath = path,
+								rating = 0.0,
+								album = tags.album,
+								artist = tags.artist,
+								genre = tags.genre,
+								publisher = "",
+								title = tags.title:len() > 0 and tags.title or file,
+								track = tags.track,
+								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
+							}
+							--print("found file: " .. file)
+							sqlLib:insertMusic(musicData)
+							fileCount = fileCount + 1
+						else
+							-- TODO: keep a table of any corrupt files and offer to remove them from disk
+							-- after the import process is complete
+							print("couldn't add file " .. file .. " as it is corrupt")
+						end
 					end
 				end
 			end

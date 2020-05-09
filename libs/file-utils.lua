@@ -87,4 +87,20 @@ function M:fileExists(filePath, baseDir)
 	return exists
 end
 
+function M:fileSize(filePath)
+	local file = io.open(filePath, "rb")
+
+	if (file) then
+		local current = file:seek() -- get current position
+		local size = file:seek("end") -- get file size
+		file:seek("set", current) -- restore position
+		io.close(file)
+		file = nil
+
+		return size
+	end
+
+	return 0
+end
+
 return M

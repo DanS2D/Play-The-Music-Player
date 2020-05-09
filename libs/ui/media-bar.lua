@@ -49,10 +49,6 @@ end
 
 timer.performWithDelay(1000, updateMediaBar, 0)
 
-local function hasValidMusicData()
-	return musicList.musicCount > 0
-end
-
 function M.new(options)
 	local group = display.newGroup()
 
@@ -64,7 +60,7 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
-				if (not hasValidMusicData()) then
+				if (not musicList:hasValidMusicData()) then
 					return
 				end
 
@@ -72,10 +68,10 @@ function M.new(options)
 					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
-					local previousSong =
-						musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
+					local previousSong = musicList:getRow(audioLib.currentSongIndex)
+					--musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch, 1)
 
-					musicList.setSelectedRow(audioLib.currentSongIndex)
+					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(previousSong)
 					audioLib.play(previousSong)
 				end
@@ -147,17 +143,17 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
-				if (not hasValidMusicData()) then
+				if (not musicList:hasValidMusicData()) then
 					return
 				end
 
-				if (audioLib.currentSongIndex + 1 <= musicList.musicCount) then
+				if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 					playButton.isVisible = false
 					pauseButton.isVisible = true
-					local nextSong = musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch)
+					local nextSong = musicList:getRow(audioLib.currentSongIndex)
 
-					musicList.setSelectedRow(audioLib.currentSongIndex)
+					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(nextSong)
 					audioLib.play(nextSong)
 				end
@@ -309,7 +305,7 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
-				if (not hasValidMusicData()) then
+				if (not musicList:hasValidMusicData()) then
 					return
 				end
 
@@ -332,7 +328,7 @@ function M.new(options)
 			width = buttonSize,
 			height = buttonSize,
 			onPress = function(event)
-				if (not hasValidMusicData()) then
+				if (not musicList:hasValidMusicData()) then
 					return
 				end
 
@@ -383,10 +379,13 @@ function M.new(options)
 
 	function playBackTimeText:update()
 		local playbackTime = audioLib.getPlaybackTime()
-		local pbElapsed = playbackTime.elapsed
-		local pbDuration = playbackTime.duration
-		playBackTimeText.text =
-			sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
+
+		if (playbackTime) then
+			local pbElapsed = playbackTime.elapsed
+			local pbDuration = playbackTime.duration
+			playBackTimeText.text =
+				sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
+		end
 	end
 
 	return group
@@ -433,6 +432,16 @@ function M.updatePlayPauseState(playing)
 		playButton.isVisible = true
 		pauseButton.isVisible = false
 	end
+end
+
+function M.clearPlayingSong()
+	if (albumArtwork) then
+		display.remove(albumArtwork)
+		albumArtwork = nil
+	end
+
+	songTitleText:setText("")
+	songAlbumText:setText("")
 end
 
 function M.updateSongText(song)

@@ -25,14 +25,14 @@ local M = {
 }
 local sqlLib = require("libs.sql-lib")
 
-function M.load()
-	sqlLib.open()
-	sqlLib.insertSettings(M.item)
-	M.item = sqlLib.getSettings()
+function M:load()
+	sqlLib:open()
+	sqlLib:insertSettings(self.item)
+	self.item = sqlLib:getSettings()
 end
 
-function M.save()
-	sqlLib.updateSettings(M.item)
+function M:save()
+	sqlLib:updateSettings(self.item)
 end
 
 return M

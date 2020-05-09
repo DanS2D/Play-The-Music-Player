@@ -1,9 +1,8 @@
 local sqlLib = require("libs.sql-lib")
 local M = {
-	musicFunction = sqlLib.getMusicRowByTitle,
-	musicSortAToZ = true,
+	--musicFunction = sqlLib.getMusicRowByTitle,
 	musicSearch = nil,
-	musicCount = 0,
+	musicResultsLimit = 0,
 	rowCreationTimers = {}
 }
 local widget = require("widget")
@@ -17,10 +16,14 @@ local dHeight = display.contentHeight
 local mFloor = math.floor
 local mMin = math.min
 local mMax = math.max
+local tInsert = table.insert
 local tableViewList = {}
 local tableViewTarget = nil
 local categoryList = {}
 local categoryTarget = nil
+local musicCount = 0
+local musicSortAToZ = true
+local musicSort = "title" -- todo: get saved sort from database
 local rowFontSize = 10
 local rowHeight = 20
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 1}}
@@ -28,12 +31,48 @@ local defaultSecondRowColor = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
+local musicData = {}
+local currentRowCount = 0
 
-local function hasValidMusicData()
-	return M.musicCount > 0
+function M:getRow(rowIndex)
+	local row = nil
+
+	if (self.musicSearch) then
+		-- get search row
+		return sqlLib:getMusicRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
+	else
+		-- get normal row
+		if (musicSort == "title") then
+			return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
+		elseif (musicSort == "artist") then
+			return sqlLib:getMusicRowByArtist(rowIndex, musicSortAToZ)
+		elseif (musicSort == "album") then
+			return sqlLib:getMusicRowByAlbum(rowIndex, musicSortAToZ)
+		elseif (musicSort == "genre") then
+			return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
+		elseif (musicSort == "duration") then
+			return sqlLib:getMusicRowByDuration(rowIndex, musicSortAToZ)
+		end
+	end
+
+	return nil
 end
 
-local function createTableView(options)
+function M:getSearchData()
+	local mData = sqlLib:getMusicRowsBySearch(1, musicSortAToZ, self.musicSearch, self.musicResultsLimit)
+	-- reset the music data
+	musicData = {}
+
+	for i = 1, #mData do
+		musicData[i] = mData[i]
+	end
+end
+
+function M:getRowData(rowIndex)
+	musicData[rowIndex] = self:getRow(rowIndex)
+end
+
+function M:createTableView(options)
 	local tView =
 		desktopTableView.new(
 		{
@@ -53,24 +92,32 @@ local function createTableView(options)
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
-				local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
-				local rowLimit = M.musicSearch ~= nil and sqlLib.searchCount() or sqlLib.musicCount()
-				parent:setRowLimit(rowLimit)
+				local rowLimit = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:musicCount()
 
-				--[[
-				if (row.index > M.musicCount) then
+				if (self.musicSearch) then
+					-- clear the selected row
+					parent:setRowSelected(0)
+					self.musicResultsLimit = sqlLib:musicCount()
+					parent:setRowLimit(rowLimit)
+				else
+					self.musicResultsLimit = 1
+					parent:setRowLimit(rowLimit)
+
+					if (parent._index == 1) then
+						self:getRowData(row.index)
+					end
+				end
+
+				if (row.index > rowLimit) then
 					row.isVisible = false
 				else
 					row.isVisible = true
+				end
 
-					if (M.musicSearch ~= nil) then
-						M.musicCount = sqlLib.searchCount()
-					end
-				end--]]
 				local rowTitleText =
 					display.newText(
 					{
-						text = row.index <= M.musicCount and musicData and musicData[options.rowTitle] or "",
+						text = musicData and musicData[row.index] and musicData[row.index][options.rowTitle] or "",
 						font = subTitleFont,
 						x = 0,
 						y = (rowContentHeight * 0.5),
@@ -86,25 +133,42 @@ local function createTableView(options)
 					rowTitleText:setFillColor(1, 0, 0)
 				end
 				row:insert(rowTitleText)
+
+				if (parent._index >= 5) then
+					if (not self.musicSearch) then
+						currentRowCount = currentRowCount + 1
+
+						-- all rows in all columns have been loaded, reset the music data and currentRowCount
+						if (currentRowCount >= parent:getMaxRows()) then
+							--print("ROWRENDER: removing music data table")
+							currentRowCount = 0
+							--print("ROWRENDER: number of items in music data ", #musicData)
+							musicData = {}
+						--print("ROWRENDER: number of items in music data ", #musicData)
+						end
+					end
+				end
 			end,
 			onRowClick = function(event)
 				local phase = event.phase
 				local numClicks = event.numClicks
-				local parent = event.parent
 				local row = event.row
+				local parent = row.parent
 
 				if (numClicks > 1) then
-					local musicData = M.musicFunction(row.index, M.musicSortAToZ, M.musicSearch)
+					local song = self:getRow(row.index)
 
-					if (musicData == nil) then
+					if (song == nil) then
+						print("SONG IS NIL")
 						return
 					end
 
+					print("row " .. row.index .. " clicked - playing song " .. song.title)
 					parent:setRowSelected(row.index)
 
 					audioLib.currentSongIndex = row.index
-					audioLib.load(musicData)
-					audioLib.play(musicData)
+					audioLib.load(song)
+					audioLib.play(song)
 				end
 			end
 		}
@@ -112,13 +176,14 @@ local function createTableView(options)
 	tView.leftPos = options.left
 	tView.topPos = 80
 	tView.orderIndex = options.index
+	tView._index = #tableViewList + 1
 
 	function tView:populate()
 		--print("Creating initial rows")
-		M.musicCount = M.musicSearch ~= nil and sqlLib.searchCount() or sqlLib.musicCount()
+		musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:musicCount()
 
 		tView:createRows()
-		tView:setRowLimit(M.musicCount)
+		tView:setRowLimit(musicCount)
 	end
 
 	return tView
@@ -127,7 +192,7 @@ end
 local function moveColumns(event)
 	local phase = event.phase
 
-	if (not hasValidMusicData()) then
+	if (musicCount <= 0) then
 		return
 	end
 
@@ -152,7 +217,7 @@ local function onMouseEvent(event)
 	local eventType = event.type
 	local y = event.y
 
-	if (not hasValidMusicData()) then
+	if (musicCount <= 0) then
 		return
 	end
 
@@ -220,7 +285,7 @@ function M.new()
 	}
 
 	for i = 1, #listOptions do
-		tableViewList[i] = createTableView(listOptions[i])
+		tableViewList[i] = M:createTableView(listOptions[i])
 		categoryList[i] = display.newGroup()
 		categoryList[i].x = listOptions[i].left
 		categoryList[i].y = 80
@@ -321,7 +386,7 @@ function M.new()
 			local yEnd = target.y + target.contentHeight * 0.5
 			local x, y = event.x, event.y
 
-			if (not hasValidMusicData()) then
+			if (musicCount <= 0) then
 				return
 			end
 
@@ -421,18 +486,18 @@ function M.new()
 				self.sortAToZ = not self.sortAToZ
 				self.sortIndicator.isVisible = true
 				self.sortIndicator.text = self.sortAToZ and "⌃" or "⌄"
-				M.musicSortAToZ = self.sortAToZ
+				musicSortAToZ = self.sortAToZ
 
 				if (self.text:lower() == "title") then
-					M.musicFunction = sqlLib.getMusicRowByTitle
+					musicSort = "title"
 				elseif (self.text:lower() == "artist") then
-					M.musicFunction = sqlLib.getMusicRowByArtist
+					musicSort = "artist"
 				elseif (self.text:lower() == "album") then
-					M.musicFunction = sqlLib.getMusicRowByAlbum
+					musicSort = "album"
 				elseif (self.text:lower() == "genre") then
-					M.musicFunction = sqlLib.getMusicRowByGenre
+					musicSort = "genre"
 				elseif (self.text:lower() == "duration") then
-					M.musicFunction = sqlLib.getMusicRowByDuration
+					musicSort = "duration"
 				end
 
 				for i = 1, #tableViewList do
@@ -451,34 +516,61 @@ function M.new()
 	return tableViewList
 end
 
-function M.removeAllRows()
-	M.musicFunction = sqlLib.getMusicRowByTitle
-	M.musicSortAToZ = true
-	M.musicSearch = nil
+function M:hasValidMusicData()
+	return musicCount > 0
+end
+
+function M:getMusicCount()
+	return musicCount
+end
+
+function M:setMusicCount(count)
+	musicCount = count
+end
+
+function M:removeAllRows()
+	-- reset the music search function
+	self.musicSearch = nil
 
 	for i = 1, #tableViewList do
-		--tableViewList[i]:deleteAllRows()
+		tableViewList[i]:deleteAllRows()
 	end
 end
 
-function M.setSelectedRow(rowIndex)
+function M:scrollToTop(rowIndex)
 	for i = 1, #tableViewList do
-		tableViewList[i]:setRowSelected(rowIndex)
+		tableViewList[i]:scrollToTop()
+	end
+end
+
+function M:scrollToBottom(rowIndex)
+	for i = 1, #tableViewList do
+		tableViewList[i]:scrollToBottom()
 	end
 end
 
 local prevIndex = 0
 
-function M.reloadData(hardReload)
+function M:reloadData(hardReload)
+	currentRowCount = 0
+
+	-- if this isn't a search view reload, reset the music data
+	if (not hardReload) then
+		musicData = {}
+	end
+
 	for i = 1, #tableViewList do
 		if (hardReload) then
 			if (prevIndex == 0) then
 				prevIndex = tableViewList[i]:getRealIndex()
 			end
-			tableViewList[i]:scrollToIndex(1)
+
+			-- clear the selected row
+			tableViewList[i]:setRowSelected(0)
+			tableViewList[i]:scrollToTop()
 		else
+			--print("previous index was: ", prevIndex)
 			tableViewList[i]:scrollToIndex(prevIndex)
-			print("previous index was: ", prevIndex)
 		end
 	end
 
@@ -487,7 +579,13 @@ function M.reloadData(hardReload)
 	end
 end
 
-function M.populate()
+function M:setSelectedRow(rowIndex)
+	for i = 1, #tableViewList do
+		tableViewList[i]:setRowSelected(rowIndex)
+	end
+end
+
+function M:populate()
 	--print("POPULATE CALLED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	local startSecond = os.date("*t").sec
 	musicImporter.pushProgessToFront()
