@@ -299,7 +299,7 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 	return music
 end
 
-function M:getMusicRowsBySearch(index, ascending, search, limit)
+function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
 	local music = {}
@@ -315,10 +315,11 @@ function M:getMusicRowsBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT %d OFFSET %d; ]],
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY %s %s LIMIT %d OFFSET %d; ]],
 				likeQuery,
 				artistQuery,
 				titleQuery,
+				orderBy,
 				orderType,
 				limit,
 				index - 1
@@ -328,10 +329,11 @@ function M:getMusicRowsBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT %d; ]],
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY %s %s LIMIT %d; ]],
 				likeQuery,
 				artistQuery,
 				titleQuery,
+				orderBy,
 				orderType,
 				limit
 			)

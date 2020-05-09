@@ -59,7 +59,7 @@ function M:getRow(rowIndex)
 end
 
 function M:getSearchData()
-	local mData = sqlLib:getMusicRowsBySearch(1, musicSortAToZ, self.musicSearch, self.musicResultsLimit)
+	local mData = sqlLib:getMusicRowsBySearch(1, musicSortAToZ, musicSort, self.musicSearch, self.musicResultsLimit)
 	-- reset the music data
 	musicData = {}
 
@@ -498,6 +498,11 @@ function M.new()
 					musicSort = "genre"
 				elseif (self.text:lower() == "duration") then
 					musicSort = "duration"
+				end
+
+				-- if we are searching, get the data again to re-order it
+				if (M.musicSearch) then
+					M:getSearchData()
 				end
 
 				for i = 1, #tableViewList do
