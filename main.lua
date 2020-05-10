@@ -27,6 +27,7 @@ local musicTableView = nil
 local background = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
+local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 widget.setTheme("widget_theme_ios")
 math.randomseed(os.time())
 
@@ -235,15 +236,47 @@ local applicationMainMenuBar =
 				}
 			},
 			{
+				title = "Visualizer",
+				subItems = {
+					{
+						title = "Start",
+						iconName = "play",
+						useCheckmark = true
+					},
+					{
+						title = "Stop",
+						iconName = "stop",
+						useCheckmark = true
+					},
+					{
+						title = "Pixes",
+						iconName = "dot-circle",
+						useCheckmark = true
+					},
+					{
+						title = "Fire Bar",
+						iconName = "fire",
+						useCheckmark = true
+					}
+				}
+			},
+			{
 				title = "Help",
 				subItems = {
 					{
+						title = "Support Me On Patreon",
+						iconName = "patreon",
+						font = fontAwesomeBrandsFont
+					},
+					{
 						title = "Report Bug",
-						iconName = "bug"
+						iconName = "github",
+						font = fontAwesomeBrandsFont
 					},
 					{
 						title = "Submit Feature Request",
-						iconName = "inbox-out"
+						iconName = "trello",
+						font = fontAwesomeBrandsFont
 					},
 					{
 						title = "Visit Website",

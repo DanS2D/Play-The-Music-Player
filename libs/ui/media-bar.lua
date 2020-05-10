@@ -16,8 +16,6 @@ local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
 local random = math.random
-local defaultButtonPath = "img/buttons/default/"
-local overButtonPath = "img/buttons/over/"
 local buttonFontSize = 15
 local controlButtonsXOffset = 10
 local titleFont = "fonts/Roboto-Regular.ttf"
@@ -230,7 +228,7 @@ function M.new(options)
 	shuffleButton.y = previousButton.y
 	group:insert(shuffleButton)
 
-	musicVisualizerBar = musicVisualizer.new({})
+	musicVisualizerBar = musicVisualizer.new()
 	musicVisualizerBar.x = display.contentCenterX
 	musicVisualizerBar.y = shuffleButton.y - 5
 	group:insert(musicVisualizerBar)
