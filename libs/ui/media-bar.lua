@@ -15,9 +15,10 @@ local dCenterY = display.contentCenterY
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
+local random = math.random
 local defaultButtonPath = "img/buttons/default/"
 local overButtonPath = "img/buttons/over/"
-local buttonSize = 20
+local buttonFontSize = 15
 local controlButtonsXOffset = 10
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
@@ -57,15 +58,26 @@ function M.new(options)
 		buttonLib.new(
 		{
 			iconName = "step-backward",
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			parent = group,
 			onClick = function(event)
+				local canPlay = true
+
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
-				if (audioLib.currentSongIndex - 1 > 0) then
-					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
+				if (audioLib.shuffle) then
+					audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+				else
+					if (audioLib.currentSongIndex - 1 > 0) then
+						audioLib.currentSongIndex = audioLib.currentSongIndex - 1
+					else
+						canPlay = false
+					end
+				end
+
+				if (canPlay) then
 					local previousSong = musicList:getRow(audioLib.currentSongIndex)
 
 					playButton:setIsOn(true)
@@ -84,7 +96,7 @@ function M.new(options)
 		{
 			offIconName = "play",
 			onIconName = "pause",
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			parent = group,
 			onClick = function(event)
 				local target = event.target
@@ -129,15 +141,26 @@ function M.new(options)
 		buttonLib.new(
 		{
 			iconName = "step-forward",
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			parent = group,
 			onClick = function(event)
+				local canPlay = true
+
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
-				if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
-					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+				if (audioLib.shuffle) then
+					audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+				else
+					if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
+						audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+					else
+						canPlay = false
+					end
+				end
+
+				if (canPlay) then
 					local nextSong = musicList:getRow(audioLib.currentSongIndex)
 
 					playButton:setIsOn(true)
@@ -155,7 +178,7 @@ function M.new(options)
 	loopButton =
 		multiButtonLib.new(
 		{
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			buttonOptions = {
 				{
 					iconName = "repeat",
@@ -195,7 +218,7 @@ function M.new(options)
 			offIconName = "random",
 			onIconName = "random",
 			offAlpha = 0.6,
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			parent = group,
 			onClick = function(event)
 				local target = event.target
@@ -328,7 +351,7 @@ function M.new(options)
 		{
 			offIconName = "volume-slash",
 			onIconName = "volume-up",
-			fontSize = 18,
+			fontSize = buttonFontSize,
 			parent = group,
 			onClick = function(event)
 				local target = event.target
