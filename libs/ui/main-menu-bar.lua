@@ -23,9 +23,8 @@ local dSafeScreenOriginX = display.safeScreenOriginX
 local dSafeScreenOriginY = display.safeScreenOriginY
 local dSafeWidth = display.safeActualContentWidth
 local dSafeHeight = display.safeActualContentHeight
-local defaultButtonPath = "img/buttons/default/"
-local overButtonPath = "img/buttons/over/"
-local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isDisabled = false
 local searchBar = nil
 
@@ -34,6 +33,7 @@ function M.new(options)
 	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12, 1}
 	local menuBarHeight = options.menuBarHeight or 20
 	local font = options.font or native.systemFont
+	local fontSize = options.fontSize or 10
 	local itemWidth = options.itemWidth or 60
 	local itemListWidth = options.itemListWidth or 200
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
@@ -61,7 +61,7 @@ function M.new(options)
 
 		for j = 1, #menuButtons do
 			if (j ~= target.index) then
-				menuButtons[j]._view:setFillColor(unpack(menuButtons[j].origFill.default))
+				menuButtons[j]._view._label:setFillColor(unpack(menuButtons[j].origFill.default))
 				menuButtons[j]:closeSubmenu()
 			end
 		end
@@ -74,25 +74,41 @@ function M.new(options)
 	end
 
 	for i = 1, #items do
+		local tempItemText =
+			display.newText(
+			{
+				text = items[i].title,
+				font = font,
+				fontSize = fontSize,
+				height = menuBarHeight,
+				align = "left"
+			}
+		)
+		tempItemText.isVisible = false
+
+		local realWidth = tempItemText.contentWidth
+		display.remove(tempItemText)
+		tempItemText = nil
+
 		local mainButton =
 			widget.newButton(
 			{
-				left = itemWidth * (i - 1),
+				left = i == 1 and 0 or menuButtons[i - 1].x + menuButtons[i - 1].contentWidth * 0.5,
 				top = 0,
 				shape = "rect",
 				label = items[i].title,
 				labelColor = {
 					default = {1, 1, 1},
-					over = {1, 1, 1, 1}
+					over = {1, 1, 1, 0.6}
 				},
 				labelAlign = "left",
 				font = font,
-				fontSize = 12,
-				width = itemWidth,
+				fontSize = fontSize,
+				width = realWidth,
 				height = menuBarHeight,
 				fillColor = {
 					default = menuBarColor,
-					over = menuBarOverColor
+					over = menuBarColor
 				},
 				onPress = function(event)
 					local target = event.target
@@ -114,8 +130,8 @@ function M.new(options)
 		)
 		mainButton.index = i
 		mainButton.origFill = {
-			default = menuBarColor,
-			over = menuBarOverColor
+			default = {1, 1, 1},
+			over = {1, 1, 1, 0.6}
 		}
 
 		function mainButton:openSubmenu()
@@ -128,11 +144,12 @@ function M.new(options)
 		end
 
 		local height = #items[i].subItems * menuBarHeight
+		menuButtons[i] = mainButton
 
 		mainButton.mainTableView =
 			widget.newTableView(
 			{
-				left = itemWidth * (i - 1),
+				left = i == 1 and 0 or menuButtons[i].x - menuButtons[i].contentWidth * 0.5,
 				top = menuBarHeight,
 				width = itemListWidth,
 				height = height,
@@ -152,8 +169,8 @@ function M.new(options)
 							x = 0,
 							y = (rowContentHeight * 0.5),
 							text = params.iconName,
-							font = fontAwesomeSolidFont,
-							fontSize = 10,
+							font = params.font,
+							fontSize = fontSize,
 							align = "left"
 						}
 					)
@@ -167,7 +184,7 @@ function M.new(options)
 							y = (rowContentHeight * 0.5),
 							text = params.title,
 							font = font,
-							fontSize = 10,
+							fontSize = fontSize,
 							align = "left"
 						}
 					)
@@ -182,7 +199,7 @@ function M.new(options)
 								y = rowContentHeight * 0.5,
 								offIconName = "square-full",
 								onIconName = "check-square",
-								fontSize = 10,
+								fontSize = fontSize,
 								parent = group,
 								onClick = function(event)
 									local target = event.target
@@ -225,7 +242,7 @@ function M.new(options)
 			}
 		)
 		mainButton.mainTableView.isVisible = false
-		menuButtons[#menuButtons + 1] = mainButton
+		menuButtons[i] = mainButton
 
 		for k = 1, #items[i].subItems do
 			mainButton.mainTableView:insertRow {
@@ -236,6 +253,7 @@ function M.new(options)
 					title = items[i].subItems[k].title,
 					iconName = items[i].subItems[k].iconName,
 					useCheckmark = items[i].subItems[k].useCheckmark,
+					font = items[i].subItems[k].font or fontAwesomeSolidFont,
 					onClick = items[i].subItems[k].onClick
 				}
 			}
@@ -326,18 +344,18 @@ function M.new(options)
 						if (isItemOpen) then
 							closeSubmenus(button)
 							button.openSubmenu()
-							button._view:setFillColor(unpack(button.origFill.over))
+							button._view._label:setFillColor(unpack(button.origFill.over))
 						else
 							closeSubmenus()
-							button._view:setFillColor(unpack(button.origFill.over))
+							button._view._label:setFillColor(unpack(button.origFill.over))
 							button.mainTableView:reloadData()
 						end
 					else
-						button._view:setFillColor(unpack(button.origFill.default))
+						button._view._label:setFillColor(unpack(button.origFill.default))
 					end
 				else
 					if (not isItemOpen) then
-						button._view:setFillColor(unpack(button.origFill.default))
+						button._view._label:setFillColor(unpack(button.origFill.default))
 					end
 				end
 
