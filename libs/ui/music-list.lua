@@ -24,6 +24,7 @@ local categoryTarget = nil
 local musicCount = 0
 local musicSortAToZ = true
 local musicSort = "title" -- todo: get saved sort from database
+local prevIndex = 0
 local rowFontSize = 10
 local rowHeight = 20
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 1}}
@@ -553,8 +554,6 @@ function M:scrollToBottom(rowIndex)
 		tableViewList[i]:scrollToBottom()
 	end
 end
-
-local prevIndex = 0
 
 function M:reloadData(hardReload)
 	currentRowCount = 0

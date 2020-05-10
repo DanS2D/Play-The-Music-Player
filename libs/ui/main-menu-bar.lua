@@ -2,6 +2,7 @@ local M = {}
 local widget = require("widget")
 local sqlLib = require("libs.sql-lib")
 local musicList = require("libs.ui.music-list")
+local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
 local mAbs = math.abs
 local mMin = math.min
@@ -279,6 +280,28 @@ function M.new(options)
 	searchBar.y = menuBarHeight / 2
 	searchBar.placeholder = "search..."
 	searchBar:addEventListener("userInput", onSearchInput)
+
+	local clearSearchButton =
+		buttonLib.new(
+		{
+			iconName = "search-minus",
+			fontSize = 12,
+			ignoreHitbox = true,
+			parent = group,
+			onClick = function(event)
+				if (searchBar.text:len() > 0) then
+					searchBar.text = ""
+					musicList.musicSearch = nil
+					musicList:setMusicCount(sqlLib:musicCount())
+					musicList:reloadData(true)
+					musicList:reloadData()
+				end
+			end
+		}
+	)
+	clearSearchButton.anchorX = 1
+	clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
+	clearSearchButton.y = menuBarHeight / 2
 
 	local function onMouseEvent(event)
 		local eventType = event.type
