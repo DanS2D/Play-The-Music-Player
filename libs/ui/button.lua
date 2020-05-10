@@ -7,6 +7,7 @@ function M.new(options)
 	local iconName = options.iconName or error("button.new() iconName (string) expected, got", type(options.fontName))
 	local fontSize = options.fontSize or 14
 	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
+	local ignoreHitbox = options.ignoreHitbox or false
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 
@@ -21,6 +22,7 @@ function M.new(options)
 	)
 	button.x = x
 	button.y = y
+	button.ignoreHitbox = ignoreHitbox
 	button:setFillColor(unpack(fillColor))
 	parent:insert(button)
 
@@ -38,10 +40,16 @@ function M.new(options)
 		elseif (phase == "ended" or phase == "cancelled") then
 			self.alpha = 1
 
-			if (eventX >= target.x - targetHalfWidth and eventX <= target.x + targetHalfWidth) then
-				if (eventY >= target.y - targetHalfHeight and eventY <= target.y + targetHalfHeight) then
-					if (type(onClick) == "function") then
-						onClick(event)
+			if (self.ignoreHitbox) then
+				if (type(onClick) == "function") then
+					onClick(event)
+				end
+			else
+				if (eventX >= target.x - targetHalfWidth and eventX <= target.x + targetHalfWidth) then
+					if (eventY >= target.y - targetHalfHeight and eventY <= target.y + targetHalfHeight) then
+						if (type(onClick) == "function") then
+							onClick(event)
+						end
 					end
 				end
 			end
