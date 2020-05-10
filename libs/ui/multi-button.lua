@@ -8,7 +8,6 @@ function M.new(options)
 		options.buttonOptions or error("multiButton.new() buttonOptions (string) expected, got", type(options.buttonOptions))
 	local fontSize = options.fontSize or 14
 	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
-	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 	local buttons = {}
 	local group = display.newGroup()
@@ -43,8 +42,8 @@ function M.new(options)
 
 					group:setIsOn(index, true)
 
-					if (type(onClick) == "function") then
-						onClick(event)
+					if (type(target.onClick) == "function") then
+						target.onClick(event)
 					end
 				end
 			end
@@ -71,6 +70,7 @@ function M.new(options)
 		buttons[i].index = i
 		buttons[i].isOn = i == 1 and true or false
 		buttons[i].isVisible = i == 1
+		buttons[i].onClick = buttonOptions[i].onClick
 		buttons[i]:setFillColor(unpack(fillColor))
 		buttons[i]:addEventListener("touch", touch)
 		group:insert(buttons[i])
