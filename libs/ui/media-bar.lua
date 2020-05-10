@@ -160,28 +160,29 @@ function M.new(options)
 				{
 					iconName = "repeat",
 					name = "off",
-					alpha = 0.6
+					alpha = 0.6,
+					onClick = function(event)
+						audioLib.loopAll = true
+						audioLib.loopOne = false
+					end
 				},
 				{
 					iconName = "repeat",
-					name = "repeatAll"
+					name = "repeatAll",
+					onClick = function(event)
+						audioLib.loopOne = true
+						audioLib.loopAll = false
+					end
 				},
 				{
 					iconName = "repeat-1",
-					name = "repeatOne"
+					name = "repeatOne",
+					onClick = function(event)
+						audioLib.loopAll = false
+						audioLib.loopOne = false
+					end
 				}
-			},
-			onClick = function(event)
-				local target = event.target
-				audioLib.loopOne = false
-				audioLib.loopAll = false
-
-				if (target.name == "repeatAll") then
-					audioLib.loopAll = true
-				elseif (target.name == "repeatOne") then
-					audioLib.loopOne = true
-				end
-			end
+			}
 		}
 	)
 	loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
