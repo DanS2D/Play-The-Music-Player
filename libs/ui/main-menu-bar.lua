@@ -2,6 +2,7 @@ local M = {}
 local widget = require("widget")
 local sqlLib = require("libs.sql-lib")
 local musicList = require("libs.ui.music-list")
+local switchLib = require("libs.ui.switch")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -35,7 +36,7 @@ function M.new(options)
 	local itemWidth = options.itemWidth or 60
 	local itemListWidth = options.itemListWidth or 200
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
-	local rowColor = {default = {0.38, 0.38, 0.38, 0.6}, over = {0.38, 0.38, 0.38, 0}}
+	local rowColor = {default = {0.1, 0.1, 0.1}, over = {0.2, 0.2, 0.2}}
 	local parentGroup = options.parentGroup or display.currentStage
 	local group = display.newGroup()
 	local isItemOpen = false
@@ -172,6 +173,29 @@ function M.new(options)
 					subItemText.anchorX = 0
 					subItemText.x = 30
 					row:insert(subItemText)
+
+					if (params.useCheckmark) then
+						local switch =
+							switchLib.new(
+							{
+								y = rowContentHeight * 0.5,
+								offIconName = "square-full",
+								onIconName = "check-square",
+								fontSize = 10,
+								parent = group,
+								onClick = function(event)
+									local target = event.target
+
+									if (target.isOffButton) then
+									end
+								end
+							}
+						)
+						switch.anchorX = 1
+						switch.x = rowContentWidth - 8
+						row.switch = switch
+						row:insert(switch)
+					end
 				end,
 				onRowTouch = function(event)
 					local phase = event.phase
@@ -183,8 +207,12 @@ function M.new(options)
 							return
 						end
 
-						isItemOpen = false
-						closeSubmenus()
+						if (params.useCheckmark) then
+							row.switch:setIsOn(not row.switch:getIsOn())
+						else
+							isItemOpen = false
+							closeSubmenus()
+						end
 
 						if (type(params.onClick) == "function") then
 							params.onClick()
@@ -206,6 +234,7 @@ function M.new(options)
 				params = {
 					title = items[i].subItems[k].title,
 					iconName = items[i].subItems[k].iconName,
+					useCheckmark = items[i].subItems[k].useCheckmark,
 					onClick = items[i].subItems[k].onClick
 				}
 			}
@@ -244,7 +273,7 @@ function M.new(options)
 		return true
 	end
 
-	searchBar = native.newTextField(0, 0, 100, menuBarHeight - 5)
+	searchBar = native.newTextField(0, 0, 120, menuBarHeight - 5)
 	searchBar.anchorX = 1
 	searchBar.x = dWidth - 4
 	searchBar.y = menuBarHeight / 2
