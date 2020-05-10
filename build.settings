@@ -55,8 +55,48 @@ settings =
 	--
 	plugins =
 	{
-		["plugin.tinyfiledialogs"] = {publisherId = "com.xibalbastudios"},
-		["plugin.mousecursor"] = {publisherId = "com.spiralcodestudio"}
+		["plugin.tinyfiledialogs"] = {
+			publisherId = "com.xibalbastudios", 
+			supportedPlatforms = { 
+				iphone = false,
+				android = false,
+				macos = false,
+				["win32-sim"] = { url="http://127.0.0.1:81/tinyfiledialogs_plugin.tgz?" .. os.time() },
+			},
+		},
+		["plugin.mousecursor"] = {
+			publisherId = "com.spiralcodestudio", 
+			supportedPlatforms = { 
+				iphone = false,
+				android = false,
+				macos = false,
+				["win32-sim"] = { url="http://127.0.0.1:81/mousecursor_plugin.tgz?" .. os.time() },
+			},
+		},
+		["plugin.bass"] =
+		{
+			publisherId = "com.revolt64",
+			supportedPlatforms = { 
+				iphone = false,
+				android = false,
+				macos = false,
+				["win32-sim"] = { url="http://127.0.0.1:81/bass_plugin.tgz?" .. os.time() },
+			},
+		},
+		["plugin.taglib"] =
+		{
+			publisherId = "com.revolt64",
+			supportedPlatforms = { 
+				iphone = false,
+				android = false,
+				macos = false,
+				["win32-sim"] = { url="http://127.0.0.1:81/taglib_plugin.tgz?" .. os.time() },
+			},
+		},
+		["plugin.utf8"] =
+		{
+			publisherId = "com.coronalabs"
+		},
 	},
 
 	--
