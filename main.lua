@@ -53,18 +53,21 @@ local function onAudioEvent(event)
 		musicVisualizer.start()
 	elseif (phase == "ended") then
 		--print("song ENDED")
+		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
 
 		-- stop audio after last index, or reset the index depending on loop mode
 		if (audioLib.currentSongIndex == musicList:getMusicCount()) then
-			-- TODO: if loop (all) is on, reset the index to 1 - if it's off, do the below
-			mediaBarLib.resetSongProgress()
-			mediaBarLib.clearPlayingSong()
-			audioLib.reset()
-			musicList:setSelectedRow(0)
-			return
+			if (audioLib.loopAll) then
+				audioLib.currentSongIndex = 1
+			else
+				mediaBarLib.resetSongProgress()
+				mediaBarLib.clearPlayingSong()
+				audioLib.reset()
+				musicList:setSelectedRow(0)
+				return
+			end
 		end
 
-		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
 		local nextSong = musicList:getRow(audioLib.currentSongIndex)
 		musicList:setSelectedRow(audioLib.currentSongIndex)
 
@@ -204,11 +207,13 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Fade In Track",
-						iconName = "turntable"
+						iconName = "turntable",
+						useCheckmark = true
 					},
 					{
 						title = "Fade Out Track",
-						iconName = "turntable"
+						iconName = "turntable",
+						useCheckmark = true
 					}
 				}
 			},
@@ -216,16 +221,9 @@ local applicationMainMenuBar =
 				title = "View",
 				subItems = {
 					{
-						title = "Show Music List",
-						iconName = "music"
-					},
-					{
-						title = "Show Playlists",
-						iconName = "list-music"
-					},
-					{
 						title = "Show Visualizer",
-						iconName = "eye"
+						iconName = "eye",
+						useCheckmark = true
 					}
 				}
 			},
