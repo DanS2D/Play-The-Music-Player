@@ -1,7 +1,9 @@
 local M = {}
 local widget = require("widget")
-local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
+local buttonLib = require("libs.ui.button")
+local multiButtonLib = require("libs.ui.multi-button")
+local switchLib = require("libs.ui.switch")
 local musicList = require("libs.ui.music-list")
 local levelVisualization = require("libs.ui.level-visualizer")
 local musicVisualizer = require("libs.ui.music-visualizer")
@@ -24,10 +26,9 @@ local songAlbumText = nil
 local songProgressView = nil
 local previousButton = nil
 local playButton = nil
-local pauseButton = nil
 local nextButton = nil
-local volumeOnButton = nil
-local volumeOffButton = nil
+local shuffleButton = nil
+local volumeButton = nil
 local volumeSlider = nil
 local playBackTimeText = nil
 local albumArtwork = nil
@@ -53,24 +54,21 @@ function M.new(options)
 	local group = display.newGroup()
 
 	previousButton =
-		widget.newButton(
+		buttonLib.new(
 		{
-			defaultFile = defaultButtonPath .. "previous-button.png",
-			overFile = overButtonPath .. "previous-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (not musicList:hasValidMusicData()) then
+			iconName = "step-backward",
+			fontSize = 18,
+			parent = group,
+			onClick = function(event)
+				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
 				if (audioLib.currentSongIndex - 1 > 0) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
-					playButton.isVisible = false
-					pauseButton.isVisible = true
 					local previousSong = musicList:getRow(audioLib.currentSongIndex)
-					--musicList.musicFunction(audioLib.currentSongIndex, musicList.musicSortAToZ, musicList.musicSearch, 1)
 
+					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(previousSong)
 					audioLib.play(previousSong)
@@ -80,28 +78,44 @@ function M.new(options)
 	)
 	previousButton.x = (dScreenOriginX + (previousButton.contentWidth * 0.5) + controlButtonsXOffset)
 	previousButton.y = 55
-	group:insert(previousButton)
 
 	playButton =
-		widget.newButton(
+		switchLib.new(
 		{
-			defaultFile = defaultButtonPath .. "play-button.png",
-			overFile = overButtonPath .. "play-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (audioLib.isChannelHandleValid()) then
-					event.target.isVisible = false
-					pauseButton.isVisible = true
+			offIconName = "play",
+			onIconName = "pause",
+			fontSize = 18,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
 
-					if (audioLib.isChannelPlaying()) then
+				if (target.isOffButton) then
+					if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
+						playButton:setIsOn(false)
 						return
 					end
 
-					if (audioLib.isChannelPaused()) then
-						audioLib.resume()
-						musicVisualizer.start()
+					if (audioLib.isChannelHandleValid()) then
+						if (audioLib.isChannelPlaying()) then
+							return
+						end
+
+						if (audioLib.isChannelPaused()) then
+							audioLib.resume()
+							musicVisualizer.start()
+							return
+						end
+					end
+				else
+					if (not musicList:hasValidMusicData()) then
 						return
+					end
+
+					if (audioLib.isChannelHandleValid()) then
+						if (audioLib.isChannelPlaying()) then
+							audioLib.pause()
+							musicVisualizer.pause()
+						end
 					end
 				end
 			end
@@ -111,48 +125,22 @@ function M.new(options)
 	playButton.y = previousButton.y
 	group:insert(playButton)
 
-	pauseButton =
-		widget.newButton(
-		{
-			defaultFile = defaultButtonPath .. "pause-button.png",
-			overFile = overButtonPath .. "pause-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (audioLib.isChannelHandleValid()) then
-					if (audioLib.isChannelPlaying()) then
-						audioLib.pause()
-						musicVisualizer.pause()
-						event.target.isVisible = false
-						playButton.isVisible = true
-					end
-				end
-			end
-		}
-	)
-	pauseButton.x = playButton.x
-	pauseButton.y = previousButton.y
-	pauseButton.isVisible = false
-	group:insert(pauseButton)
-
 	nextButton =
-		widget.newButton(
+		buttonLib.new(
 		{
-			defaultFile = defaultButtonPath .. "next-button.png",
-			overFile = overButtonPath .. "next-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (not musicList:hasValidMusicData()) then
+			iconName = "step-forward",
+			fontSize = 18,
+			parent = group,
+			onClick = function(event)
+				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
 				if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
 					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
-					playButton.isVisible = false
-					pauseButton.isVisible = true
 					local nextSong = musicList:getRow(audioLib.currentSongIndex)
 
+					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(nextSong)
 					audioLib.play(nextSong)
@@ -160,19 +148,73 @@ function M.new(options)
 			end
 		}
 	)
-	nextButton.x = (pauseButton.x + pauseButton.contentWidth + controlButtonsXOffset)
+	nextButton.x = (playButton.x + playButton.contentWidth + controlButtonsXOffset)
 	nextButton.y = previousButton.y
 	group:insert(nextButton)
 
+	loopButton =
+		multiButtonLib.new(
+		{
+			fontSize = 18,
+			buttonOptions = {
+				{
+					iconName = "repeat",
+					name = "off",
+					alpha = 0.6
+				},
+				{
+					iconName = "repeat",
+					name = "repeatAll"
+				},
+				{
+					iconName = "repeat-1",
+					name = "repeatOne"
+				}
+			},
+			onClick = function(event)
+				local target = event.target
+				audioLib.loopOne = false
+				audioLib.loopAll = false
+
+				if (target.name == "repeatAll") then
+					audioLib.loopAll = true
+				elseif (target.name == "repeatOne") then
+					audioLib.loopOne = true
+				end
+			end
+		}
+	)
+	loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
+	loopButton.y = previousButton.y
+	group:insert(loopButton)
+
+	shuffleButton =
+		switchLib.new(
+		{
+			offIconName = "random",
+			onIconName = "random",
+			offAlpha = 0.6,
+			fontSize = 18,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
+				audioLib.shuffle = not target.isOffButton
+			end
+		}
+	)
+	shuffleButton.x = (loopButton.x + loopButton.contentWidth + controlButtonsXOffset)
+	shuffleButton.y = previousButton.y
+	group:insert(shuffleButton)
+
 	musicVisualizerBar = musicVisualizer.new({})
 	musicVisualizerBar.x = display.contentCenterX
-	musicVisualizerBar.y = nextButton.y - 5
+	musicVisualizerBar.y = shuffleButton.y - 5
 	group:insert(musicVisualizerBar)
 
 	songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
 	songContainerBox.anchorX = 0
-	songContainerBox.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset + 29)
-	songContainerBox.y = nextButton.y - 5
+	songContainerBox.x = (shuffleButton.x + controlButtonsXOffset + 14)
+	songContainerBox.y = shuffleButton.y - 5
 	songContainerBox.strokeWidth = 1
 	songContainerBox:setFillColor(0, 0, 0, 1)
 	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
@@ -268,23 +310,6 @@ function M.new(options)
 		end
 	end
 
-	loopButton =
-		widget.newSwitch(
-		{
-			style = "checkbox",
-			id = "loop",
-			onPress = function(event)
-				audioLib.loopOne = event.target.isOn
-			end
-		}
-	)
-	loopButton.width = buttonSize
-	loopButton.height = buttonSize
-	loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
-	loopButton.y = previousButton.y
-	loopButton._viewOff:setFillColor(0.7, 0.7, 0.7)
-	group:insert(loopButton)
-
 	songProgressView =
 		progressView.new(
 		{
@@ -297,52 +322,30 @@ function M.new(options)
 	songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
 	group:insert(songProgressView)
 
-	volumeOnButton =
-		widget.newButton(
+	volumeButton =
+		switchLib.new(
 		{
-			defaultFile = defaultButtonPath .. "volume-button.png",
-			overFile = overButtonPath .. "volume-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (not musicList:hasValidMusicData()) then
-					return
-				end
+			offIconName = "volume-slash",
+			onIconName = "volume-up",
+			fontSize = 18,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
 
-				audioLib.setVolume(0)
-				volumeSlider:setValue(0)
-				event.target.isVisible = false
-				volumeOffButton.isVisible = true
+				if (target.isOffButton) then
+					audioLib.setVolume(audioLib.getPreviousVolume())
+					volumeSlider:setValue(audioLib.getVolume() * 100)
+				else
+					audioLib.setVolume(0)
+					volumeSlider:setValue(0)
+				end
 			end
 		}
 	)
-	volumeOnButton.x = (songProgressView.x + songProgressView.actualWidth + controlButtonsXOffset + 20)
-	volumeOnButton.y = previousButton.y
-	group:insert(volumeOnButton)
-
-	volumeOffButton =
-		widget.newButton(
-		{
-			defaultFile = defaultButtonPath .. "volume-off-button.png",
-			overFile = overButtonPath .. "volume-off-button.png",
-			width = buttonSize,
-			height = buttonSize,
-			onPress = function(event)
-				if (not musicList:hasValidMusicData()) then
-					return
-				end
-
-				audioLib.setVolume(audioLib.getPreviousVolume())
-				volumeSlider:setValue(audioLib.getVolume() * 100)
-				event.target.isVisible = false
-				volumeOnButton.isVisible = true
-			end
-		}
-	)
-	volumeOffButton.x = volumeOnButton.x
-	volumeOffButton.y = previousButton.y
-	volumeOffButton.isVisible = false
-	group:insert(volumeOffButton)
+	volumeButton.x = (songProgressView.x + songProgressView.actualWidth + controlButtonsXOffset + 20)
+	volumeButton.y = previousButton.y
+	volumeButton:setIsOn(true)
+	group:insert(volumeButton)
 
 	volumeSlider =
 		widget.newSlider(
@@ -355,13 +358,13 @@ function M.new(options)
 		}
 	)
 	volumeSlider.height = volumeSlider.height / 1.5
-	volumeSlider.x = (volumeOnButton.x + (volumeOnButton.contentWidth) + 2)
+	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth)
 	volumeSlider.y = previousButton.y - 4
 	group:insert(volumeSlider)
 
 	levelVisualizer = levelVisualization.new()
 	levelVisualizer.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
-	levelVisualizer.y = volumeOnButton.y
+	levelVisualizer.y = volumeButton.y
 	group:insert(levelVisualizer)
 
 	playBackTimeText =
@@ -425,13 +428,7 @@ function M.setAlbumArtwork(fileName)
 end
 
 function M.updatePlayPauseState(playing)
-	if (playing) then
-		playButton.isVisible = false
-		pauseButton.isVisible = true
-	else
-		playButton.isVisible = true
-		pauseButton.isVisible = false
-	end
+	playButton:setIsOn(playing)
 end
 
 function M.clearPlayingSong()

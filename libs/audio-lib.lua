@@ -93,6 +93,8 @@ local M = {
 		"wav"
 	},
 	loopOne = false,
+	loopAll = false,
+	shuffle = false,
 	currentSongIndex = 0
 }
 local bass = require("plugin.bass")
@@ -114,7 +116,7 @@ local bassSetVolume = bass.setVolume
 local bassStop = bass.stop
 local channelHandle = nil
 local currentSong = nil
-local previousVolume = 0
+local previousVolume = 1.0
 local audioChannels = {}
 
 local function dispatchPlayEvent(song)
@@ -249,11 +251,7 @@ function M.getPreviousVolume()
 end
 
 function M.getVolume()
-	if (channelHandle ~= nil) then
-		return bassGetVolume()
-	end
-
-	return 0
+	return bassGetVolume()
 end
 
 function M.isChannelHandleValid()
@@ -309,10 +307,8 @@ function M.seek(position)
 end
 
 function M.setVolume(vol)
-	if (channelHandle ~= nil) then
-		previousVolume = bassGetVolume()
-		bassSetVolume(vol)
-	end
+	previousVolume = bassGetVolume()
+	bassSetVolume(vol)
 end
 
 function M.stop()

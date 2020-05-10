@@ -42,16 +42,16 @@ function M:getRow(rowIndex)
 		return sqlLib:getMusicRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
 	else
 		-- get normal row
-		if (musicSort == "title") then
-			return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
+		if (musicSort == "album") then
+			return sqlLib:getMusicRowByAlbum(rowIndex, musicSortAToZ)
 		elseif (musicSort == "artist") then
 			return sqlLib:getMusicRowByArtist(rowIndex, musicSortAToZ)
-		elseif (musicSort == "album") then
-			return sqlLib:getMusicRowByAlbum(rowIndex, musicSortAToZ)
-		elseif (musicSort == "genre") then
-			return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
 		elseif (musicSort == "duration") then
 			return sqlLib:getMusicRowByDuration(rowIndex, musicSortAToZ)
+		elseif (musicSort == "genre") then
+			return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
+		elseif (musicSort == "title") then
+			return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
 		end
 	end
 
