@@ -1,11 +1,12 @@
 local M = {}
-local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
 	local x = options.x or 0
 	local y = options.y or 0
 	local iconName = options.iconName or error("button.new() iconName (string) expected, got", type(options.fontName))
 	local fontSize = options.fontSize or 14
+	local font = options.font or fontAwesomeSolidFont
 	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
 	local ignoreHitbox = options.ignoreHitbox or false
 	local onClick = options.onClick
@@ -15,7 +16,7 @@ function M.new(options)
 		display.newText(
 		{
 			text = iconName,
-			font = fontAwesomeSolidFont,
+			font = font,
 			fontSize = fontSize,
 			align = "center"
 		}

@@ -1,5 +1,5 @@
 local M = {}
-local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
 	local x = options.x or 0
@@ -8,6 +8,8 @@ function M.new(options)
 		options.offIconName or error("switch.new() offIconName (string) expected, got", type(options.offIconName))
 	local onIconName =
 		options.onIconName or error("switch.new() onIconName (string) expected, got", type(options.onIconName))
+	local offFont = options.offFont or fontAwesomeSolidFont
+	local onFont = options.onFont or fontAwesomeSolidFont
 	local offAlpha = options.offAlpha or 1
 	local fontSize = options.fontSize or 14
 	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
@@ -22,7 +24,7 @@ function M.new(options)
 		display.newText(
 		{
 			text = offIconName,
-			font = fontAwesomeSolidFont,
+			font = offFont,
 			fontSize = fontSize,
 			align = "center"
 		}
@@ -37,7 +39,7 @@ function M.new(options)
 		display.newText(
 		{
 			text = onIconName,
-			font = fontAwesomeSolidFont,
+			font = onFont,
 			fontSize = fontSize,
 			align = "center"
 		}

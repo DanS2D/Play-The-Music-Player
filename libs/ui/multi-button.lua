@@ -1,5 +1,5 @@
 local M = {}
-local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
 	local x = options.x or 0
@@ -59,7 +59,7 @@ function M.new(options)
 			display.newText(
 			{
 				text = buttonOptions[i].iconName,
-				font = fontAwesomeSolidFont,
+				font = buttonOptions[i].font or fontAwesomeSolidFont,
 				fontSize = fontSize,
 				align = "center"
 			}
