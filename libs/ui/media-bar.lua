@@ -199,7 +199,7 @@ function M.new(options)
 			parent = group,
 			onClick = function(event)
 				local target = event.target
-				audioLib.shuffle = not target.isOffButton
+				audioLib.shuffle = target.isOffButton
 			end
 		}
 	)

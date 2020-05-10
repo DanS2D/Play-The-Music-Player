@@ -17,6 +17,7 @@ local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local sFormat = string.format
 local mMin = math.min
+local random = math.random
 local wasSongPlaying = false
 local interruptedSongPosition = {}
 local lastChosenPath = nil
@@ -27,6 +28,7 @@ local background = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 widget.setTheme("widget_theme_ios")
+math.randomseed(os.time())
 
 --local devices = bass.getDevices()
 --print(type(devices), "num elements", #devices)
@@ -55,16 +57,21 @@ local function onAudioEvent(event)
 		--print("song ENDED")
 		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
 
-		-- stop audio after last index, or reset the index depending on loop mode
-		if (audioLib.currentSongIndex == musicList:getMusicCount()) then
-			if (audioLib.loopAll) then
-				audioLib.currentSongIndex = 1
-			else
-				mediaBarLib.resetSongProgress()
-				mediaBarLib.clearPlayingSong()
-				audioLib.reset()
-				musicList:setSelectedRow(0)
-				return
+		-- handle shuffle
+		if (audioLib.shuffle) then
+			audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+		else
+			-- stop audio after last index, or reset the index depending on loop mode
+			if (audioLib.currentSongIndex == musicList:getMusicCount()) then
+				if (audioLib.loopAll) then
+					audioLib.currentSongIndex = 1
+				else
+					mediaBarLib.resetSongProgress()
+					mediaBarLib.clearPlayingSong()
+					audioLib.reset()
+					musicList:setSelectedRow(0)
+					return
+				end
 			end
 		end
 
