@@ -1,6 +1,5 @@
 local M = {}
 local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
-local fontAwesomeBrandsFont = "fonts/Font-Awesome-5-Brands-Regular-400.otf"
 
 function M.new(options)
 	local x = options.x or 0

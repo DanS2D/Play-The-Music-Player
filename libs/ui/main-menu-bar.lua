@@ -23,6 +23,7 @@ local dSafeWidth = display.safeActualContentWidth
 local dSafeHeight = display.safeActualContentHeight
 local defaultButtonPath = "img/buttons/default/"
 local overButtonPath = "img/buttons/over/"
+local fontAwesomeSolidFont = "fonts/Font-Awesome-5-Free-Solid-900.otf"
 local isDisabled = false
 local searchBar = nil
 
@@ -143,6 +144,19 @@ function M.new(options)
 					local rowContentWidth = row.contentWidth
 					local rowContentHeight = row.contentHeight
 					local params = row.params
+					local icon =
+						display.newText(
+						{
+							x = 0,
+							y = (rowContentHeight * 0.5),
+							text = params.iconName,
+							font = fontAwesomeSolidFont,
+							fontSize = 10,
+							align = "left"
+						}
+					)
+					icon.x = 8 + (icon.contentWidth * 0.5)
+					row:insert(icon)
 
 					local subItemText =
 						display.newText(
@@ -155,7 +169,8 @@ function M.new(options)
 							align = "left"
 						}
 					)
-					subItemText.x = 8 + (subItemText.contentWidth * 0.5)
+					subItemText.anchorX = 0
+					subItemText.x = 30
 					row:insert(subItemText)
 				end,
 				onRowTouch = function(event)
@@ -190,6 +205,7 @@ function M.new(options)
 				rowColor = rowColor,
 				params = {
 					title = items[i].subItems[k].title,
+					iconName = items[i].subItems[k].iconName,
 					onClick = items[i].subItems[k].onClick
 				}
 			}

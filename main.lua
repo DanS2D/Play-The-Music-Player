@@ -128,6 +128,7 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Add Music Folder",
+						iconName = "folder-plus",
 						onClick = function()
 							wasSongPlaying = audioLib.isChannelPlaying()
 							interruptedSongPosition = mediaBarLib.getSongProgress()
@@ -167,12 +168,14 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Add Music File",
+						iconName = "file-music",
 						onClick = function()
 							print("add file")
 						end
 					},
 					{
 						title = "Exit",
+						iconName = "portal-exit",
 						onClick = function()
 							native.requestExit()
 						end
@@ -183,13 +186,16 @@ local applicationMainMenuBar =
 				title = "Edit",
 				subItems = {
 					{
-						title = "Edit Tags"
+						title = "Edit Metadata",
+						iconName = "tags"
 					},
 					{
-						title = "Edit Playlist"
+						title = "Edit Playlist",
+						iconName = "list-music"
 					},
 					{
-						title = "Preferences"
+						title = "Preferences",
+						iconName = "tools"
 					}
 				}
 			},
@@ -197,10 +203,12 @@ local applicationMainMenuBar =
 				title = "Music",
 				subItems = {
 					{
-						title = "Fade In Track"
+						title = "Fade In Track",
+						iconName = "turntable"
 					},
 					{
-						title = "Fade Out Track"
+						title = "Fade Out Track",
+						iconName = "turntable"
 					}
 				}
 			},
@@ -208,13 +216,16 @@ local applicationMainMenuBar =
 				title = "View",
 				subItems = {
 					{
-						title = "Show Music List"
+						title = "Show Music List",
+						iconName = "music"
 					},
 					{
-						title = "Show Playlists"
+						title = "Show Playlists",
+						iconName = "list-music"
 					},
 					{
-						title = "Show Visualizer"
+						title = "Show Visualizer",
+						iconName = "eye"
 					}
 				}
 			},
@@ -222,16 +233,20 @@ local applicationMainMenuBar =
 				title = "Help",
 				subItems = {
 					{
-						title = "Report Bug"
+						title = "Report Bug",
+						iconName = "bug"
 					},
 					{
-						title = "Submit Feature Request"
+						title = "Submit Feature Request",
+						iconName = "inbox-out"
 					},
 					{
-						title = "Visit Website"
+						title = "Visit Website",
+						iconName = "browser"
 					},
 					{
-						title = "About"
+						title = "About",
+						iconName = "info-circle"
 					}
 				}
 			}
