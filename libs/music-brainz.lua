@@ -67,7 +67,7 @@ end
 
 urlRequestListener = function(event)
 	if (event.isError) then
-		print("MusicBrainz urlRequestListener: Network error ", event.response)
+		--print("MusicBrainz urlRequestListener: Network error ", event.response)
 	else
 		--print("RESPONSE: " .. event.response)
 		local response = json.decode(event.response)
@@ -80,10 +80,10 @@ urlRequestListener = function(event)
 
 		if (response and releaseGroups and release) then
 			local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, release.id)
-			print("FOUND entry for " .. requestedSong.title .. " at musicbrainz - url:", imageUrl)
+			--print("FOUND entry for " .. requestedSong.title .. " at musicbrainz - url:", imageUrl)
 			network.download(imageUrl, "GET", downloadListener, {}, currentCoverFileName, system.DocumentsDirectory)
 		else
-			print("FAILED to get song info for " .. requestedSong.title .. " at musicbrainz")
+			--print("FAILED to get song info for " .. requestedSong.title .. " at musicbrainz")
 		end
 	end
 end
@@ -96,8 +96,8 @@ downloadListener = function(event)
 			local songTitle = requestedSong.title
 			local artistTitle = requestedSong.artist
 
-			print("FAILED to get artwork for " .. requestedSong.title .. " from coverarchive.org")
-			print("REQUESTING artwork for " .. requestedSong.title .. " (song title, artist) from musicbrainz")
+			--print("FAILED to get artwork for " .. requestedSong.title .. " from coverarchive.org")
+			--print("REQUESTING artwork for " .. requestedSong.title .. " (song title, artist) from musicbrainz")
 			local fullMusicBrainzUrl =
 				sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, songTitle:urlEncode(), artistTitle:urlEncode())
 			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
@@ -108,15 +108,15 @@ downloadListener = function(event)
 	end
 
 	if (event.isError) then
-		print("Network error - download failed: ", event.response)
+		--print("Network error - download failed: ", event.response)
 	elseif (event.phase == "began") then
-		print("Progress Phase: began")
+		--print("Progress Phase: began")
 	elseif (event.phase == "ended") then
 		local fileName = event.response.filename
 		local fileExtension = fileName:sub(fileName:len() - 3)
 		local newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. fileExtension
 		local baseDir = event.response.baseDirectory
-		print("current filename: ", currentCoverFileName, "new name:", newFileName)
+		--print("current filename: ", currentCoverFileName, "new name:", newFileName)
 		--local result, reason =
 		--	os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
 
@@ -124,7 +124,7 @@ downloadListener = function(event)
 		--local fName = "04cc22c81455179997b2478966005f57.png"
 		local pureMagic = require("libs.pure-magic")
 		local mimetype = pureMagic.via_path(path)
-		print("mime type: ", mimetype)
+		--print("mime type: ", mimetype)
 
 		if (mimetype == "image/png") then
 			newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. ".png"
@@ -142,7 +142,7 @@ downloadListener = function(event)
 		if (fileUtils:fileExists(newFileName, system.DocumentsDirectory)) then
 			currentCoverFileName = newFileName
 			setMp3CoverFromDownload(requestedSong, newFileName)
-			print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
+			--print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
 		end
 	end
@@ -196,7 +196,7 @@ function M.getCover(song)
 			dispatchCoverEvent()
 		else
 			tryAgain = true
-			print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
+			--print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
 			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
 		end
 	end
@@ -208,13 +208,13 @@ function M.getCover(song)
 	else
 		if (isMp3File(song)) then
 			getMp3CoverFromMp3(song)
-			print("trying to get cover from mp3 file")
+			--print("trying to get cover from mp3 file")
 
 			local function findFileSavedFromMp3(event)
 				local coverOnDiskExists, coverFileName = coverExists(song)
 
 				if (coverOnDiskExists) then
-					print("found cover " .. coverFileName .. " cancelling timer now")
+					--print("found cover " .. coverFileName .. " cancelling timer now")
 					currentCoverFileName = coverFileName
 					dispatchCoverEvent()
 					timer.cancel(event.source)

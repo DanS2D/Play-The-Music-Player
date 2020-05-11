@@ -43,8 +43,8 @@ function M.new(options)
 		visibleRows = maxRows - 1
 	end
 
-	print("is row count even ", isRowCountEven)
-	print("we should be able to fit " .. realRowVisibleCount .. " rows on screen")
+	--print("is row count even ", isRowCountEven)
+	--print("we should be able to fit " .. realRowVisibleCount .. " rows on screen")
 
 	local function onRowTap(event)
 		local target = event.target

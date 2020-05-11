@@ -6,6 +6,7 @@ local widget = require("widget")
 local tfd = require("plugin.tinyfiledialogs")
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
+local luaExt = require("libs.lua-ext")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
@@ -17,7 +18,9 @@ local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local sFormat = string.format
 local mMin = math.min
-local random = math.random
+local mRandom = math.random
+local mRandomSeed = math.randomseed
+local osTime = os.time
 local wasSongPlaying = false
 local interruptedSongPosition = {}
 local lastChosenPath = nil
@@ -29,7 +32,8 @@ local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 widget.setTheme("widget_theme_ios")
-math.randomseed(os.time())
+mRandomSeed(osTime())
+settings:load()
 
 --local devices = bass.getDevices()
 --print(type(devices), "num elements", #devices)
@@ -53,14 +57,14 @@ local function onAudioEvent(event)
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updateSongText(song)
 		musicBrainz.getCover(song)
-		musicVisualizer.start()
+		musicVisualizer:start()
 	elseif (phase == "ended") then
-		--print("song ENDED")
+		mRandomSeed(osTime())
 		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
 
 		-- handle shuffle
 		if (audioLib.shuffle) then
-			audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+			audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
 			if (audioLib.currentSongIndex == musicList:getMusicCount()) then
@@ -83,7 +87,7 @@ local function onAudioEvent(event)
 		mediaBarLib.resetSongProgress()
 		audioLib.load(nextSong)
 		audioLib.play(nextSong)
-		musicVisualizer.start()
+		musicVisualizer:restart()
 	end
 
 	return true
@@ -120,7 +124,7 @@ Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 local function populateTableViews()
 	if (sqlLib:musicCount() > 0) then
 		mainMenuBar.setEnabled(true)
-		settings.item.musicFolderPaths[#settings.item.musicFolderPaths + 1] = lastChosenPath
+		settings.musicFolderPaths[#settings.musicFolderPaths + 1] = lastChosenPath
 		settings:save()
 		musicImporter.pushProgessToFront()
 		musicImporter.showProgressBar()
@@ -147,7 +151,7 @@ local applicationMainMenuBar =
 							musicVisualizer.pause()
 							mainMenuBar.setEnabled(false)
 							local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
-							local previousPaths = settings.item.musicFolderPaths
+							local previousPaths = settings.musicFolderPaths
 							local hasUsedPath = false
 
 							if (selectedPath ~= nil and type(selectedPath) == "string") then
@@ -181,7 +185,6 @@ local applicationMainMenuBar =
 						title = "Add Music File",
 						iconName = "file-music",
 						onClick = function()
-							print("add file")
 						end
 					},
 					{
@@ -198,15 +201,21 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Edit Metadata",
-						iconName = "tags"
+						iconName = "tags",
+						onClick = function(event)
+						end
 					},
 					{
 						title = "Edit Playlist",
-						iconName = "list-music"
+						iconName = "list-music",
+						onClick = function(event)
+						end
 					},
 					{
 						title = "Preferences",
-						iconName = "tools"
+						iconName = "tools",
+						onClick = function(event)
+						end
 					}
 				}
 			},
@@ -216,12 +225,36 @@ local applicationMainMenuBar =
 					{
 						title = "Fade In Track",
 						iconName = "turntable",
-						useCheckmark = true
+						useCheckmark = true,
+						checkMarkIsOn = toboolean(settings.fadeInTrack),
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.fadeInTrack = true
+								else
+									settings.fadeInTrack = false
+								end
+							end
+
+							settings:save()
+						end
 					},
 					{
 						title = "Fade Out Track",
 						iconName = "turntable",
-						useCheckmark = true
+						useCheckmark = true,
+						checkMarkIsOn = toboolean(settings.fadeOutTrack),
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.fadeOutTrack = true
+								else
+									settings.fadeOutTrack = false
+								end
+							end
+
+							settings:save()
+						end
 					}
 				}
 			},
@@ -231,7 +264,20 @@ local applicationMainMenuBar =
 					{
 						title = "Show Visualizer",
 						iconName = "eye",
-						useCheckmark = true
+						useCheckmark = true,
+						checkMarkIsOn = toboolean(settings.showVisualizer),
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.showVisualizer = true
+								else
+									settings.showVisualizer = false
+								end
+							end
+
+							musicVisualizer:restart()
+							settings:save()
+						end
 					}
 				}
 			},
@@ -241,22 +287,57 @@ local applicationMainMenuBar =
 					{
 						title = "Start",
 						iconName = "play",
-						useCheckmark = true
+						onClick = function(event)
+							musicVisualizer:start()
+						end
+					},
+					{
+						title = "Pause",
+						iconName = "pause",
+						onClick = function(event)
+							musicVisualizer:pause()
+						end
 					},
 					{
 						title = "Stop",
 						iconName = "stop",
-						useCheckmark = true
+						onClick = function(event)
+							musicVisualizer:remove()
+						end
 					},
 					{
 						title = "Pixes",
 						iconName = "dot-circle",
-						useCheckmark = true
+						useCheckmark = true,
+						checkMarkIsOn = settings.selectedVisualizers.pixies.enabled,
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.selectedVisualizers.pixies.enabled = true
+								else
+									settings.selectedVisualizers.pixies.enabled = false
+								end
+
+								settings:save()
+							end
+						end
 					},
 					{
 						title = "Fire Bar",
 						iconName = "fire",
-						useCheckmark = true
+						useCheckmark = true,
+						checkMarkIsOn = settings.selectedVisualizers.firebar.enabled,
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.selectedVisualizers.firebar.enabled = true
+								else
+									settings.selectedVisualizers.firebar.enabled = false
+								end
+
+								settings:save()
+							end
+						end
 					}
 				}
 			},
@@ -266,25 +347,39 @@ local applicationMainMenuBar =
 					{
 						title = "Support Me On Patreon",
 						iconName = "patreon",
-						font = fontAwesomeBrandsFont
+						font = fontAwesomeBrandsFont,
+						onClick = function(event)
+							system.openURL("https://www.patreon.com/dannyglover")
+						end
 					},
 					{
 						title = "Report Bug",
 						iconName = "github",
-						font = fontAwesomeBrandsFont
+						font = fontAwesomeBrandsFont,
+						onClick = function(event)
+							system.openURL("https://github.com/DannyGlover/Play-The-Music-Player")
+						end
 					},
 					{
 						title = "Submit Feature Request",
 						iconName = "trello",
-						font = fontAwesomeBrandsFont
+						font = fontAwesomeBrandsFont,
+						onClick = function(event)
+							system.openURL("https://trello.com/b/HdFlGXkR")
+						end
 					},
 					{
 						title = "Visit Website",
-						iconName = "browser"
+						iconName = "browser",
+						onClick = function(event)
+							system.openURL("https://playmusicplayer.net")
+						end
 					},
 					{
 						title = "About",
-						iconName = "info-circle"
+						iconName = "info-circle",
+						onClick = function(event)
+						end
 					}
 				}
 			}
@@ -301,12 +396,12 @@ mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
 background:toFront()
 musicImporter.pushProgessToFront()
-settings:load()
 
 local function keyEventListener(event)
 	local phase = event.phase
 
 	if (phase == "down") then
+		--print(event.keyName)
 		local isShiftDown = event.isShiftDown
 		local keyDescriptor = event.descriptor:lower()
 		-- TODO: only execute the below IF there is music data

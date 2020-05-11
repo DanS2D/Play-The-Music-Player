@@ -1,38 +1,54 @@
 local M = {
-	item = {
-		musicFolderPaths = {},
-		volume = 1.0,
-		loopOne = false,
-		loopAll = false,
-		shuffle = false,
-		lastPlayedSongIndex = 0,
-		lastPlayedSongTime = {
-			duration = {minutes = 0, seconds = 0},
-			elapsed = {minutes = 0, seconds = 0}
-		},
-		fadeInTracks = false,
-		fadeOutTracks = false,
-		crossFade = false,
-		displayAlbumArtwork = true,
-		columnOrder = {},
-		hiddenColumns = {},
-		columnSizes = {},
-		lastUsedColumn = "",
-		lastUsedColumnSortAToZ = true,
-		showVisualizer = true,
-		lastView = "musicList"
-	}
+	musicFolderPaths = {},
+	volume = 1.0,
+	loopOne = false,
+	loopAll = false,
+	shuffle = false,
+	lastPlayedSongIndex = 0,
+	lastPlayedSongTime = {
+		duration = {minutes = 0, seconds = 0},
+		elapsed = {minutes = 0, seconds = 0}
+	},
+	fadeInTrack = false,
+	fadeOutTrack = false,
+	fadeInTime = 3000,
+	fadeOutTime = 3000,
+	crossFade = false,
+	displayAlbumArtwork = true,
+	columnOrder = {},
+	hiddenColumns = {},
+	columnSizes = {},
+	lastUsedColumn = "",
+	lastUsedColumnSortAToZ = true,
+	showVisualizer = true,
+	selectedVisualizers = {pixies = {name = "pixies", enabled = true}, firebar = {name = "firebar", enabled = true}},
+	lastView = "musicList"
 }
 local sqlLib = require("libs.sql-lib")
+local hasLoadedSettings = false
 
 function M:load()
 	sqlLib:open()
-	sqlLib:insertSettings(self.item)
-	self.item = sqlLib:getSettings()
+
+	local settings = sqlLib:getSettings()
+
+	if (settings) then
+		for k, v in pairs(settings) do
+			self[k] = v
+		end
+
+		hasLoadedSettings = true
+	else
+		sqlLib:insertSettings(self)
+	end
 end
 
 function M:save()
-	sqlLib:updateSettings(self.item)
+	if (not hasLoadedSettings) then
+		self:load()
+	end
+
+	sqlLib:updateSettings(self)
 end
 
 return M

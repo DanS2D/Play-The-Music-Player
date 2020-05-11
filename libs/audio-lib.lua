@@ -98,8 +98,11 @@ local M = {
 	currentSongIndex = 0
 }
 local bass = require("plugin.bass")
+local settings = require("libs.settings")
 local tRemove = table.remove
 local bassDispose = bass.dispose
+local bassFadeIn = bass.fadeIn
+local bassFadeOut = bass.fadeOut
 local bassGetDuration = bass.getDuration
 local bassGetLevel = bass.getLevel
 local bassGetPlayBackTime = bass.getPlaybackTime
@@ -147,6 +150,14 @@ local function cleanupAudio()
 	end
 end
 
+local function getRemainingPlaybackTimeInSeconds()
+	local playbackTime = M.getPlaybackTime()
+	local duration = playbackTime.duration
+	local elapsed = playbackTime.elapsed
+
+	return (duration.minutes * 60 - elapsed.minutes * 60 + duration.seconds - elapsed.seconds)
+end
+
 local function loadAudio(song)
 	if (currentSong ~= nil and currentSong.fileName == song.fileName and bassIsChannelPlaying(channelHandle)) then
 		return
@@ -167,6 +178,11 @@ local function playAudio(song)
 	if (type(channelHandle) == "number") then
 		if (bassIsChannelPlaying(channelHandle)) then
 			bassRewind(channelHandle)
+
+			if (toboolean(settings.fadeInTrack)) then
+				bassFadeIn(channelHandle, settings.fadeInTime)
+			end
+
 			dispatchPlayEvent(song)
 			return
 		end
@@ -176,6 +192,11 @@ local function playAudio(song)
 	bassPlay(channelHandle)
 	tRemove(audioChannels)
 	audioChannels[#audioChannels + 1] = channelHandle
+
+	if (toboolean(settings.fadeInTrack)) then
+		bassFadeIn(channelHandle, settings.fadeInTime)
+	end
+
 	dispatchPlayEvent(currentSong)
 end
 
@@ -198,13 +219,21 @@ local function handleAudioEvents()
 		for i = 1, #audioChannels do
 			local channel = audioChannels[i]
 
-			if (channel and not bassIsChannelPlaying(channel) and not bassIsChannelPaused(channel)) then
-				local event = {
-					name = "bass-internal",
-					completed = true
-				}
+			if (channel) then
+				if (not bassIsChannelPlaying(channel) and not bassIsChannelPaused(channel)) then
+					local event = {
+						name = "bass-internal",
+						completed = true
+					}
 
-				onAudioComplete(event)
+					onAudioComplete(event)
+				else
+					if (toboolean(settings.fadeOutTrack)) then
+						if (getRemainingPlaybackTimeInSeconds() <= settings.fadeOutTime / 1000) then
+							bassFadeOut(channelHandle, settings.fadeOutTime)
+						end
+					end
+				end
 			end
 		end
 	end

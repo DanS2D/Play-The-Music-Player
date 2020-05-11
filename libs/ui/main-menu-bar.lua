@@ -135,12 +135,13 @@ function M.new(options)
 		}
 
 		function mainButton:openSubmenu()
-			mainButton.mainTableView.isVisible = true
-			display.getCurrentStage():insert(mainButton.mainTableView)
+			self.mainTableView.isVisible = true
+			self.mainTableView:toFront()
+			display.getCurrentStage():insert(self.mainTableView)
 		end
 
 		function mainButton:closeSubmenu()
-			mainButton.mainTableView.isVisible = false
+			self.mainTableView.isVisible = false
 		end
 
 		local height = #items[i].subItems * menuBarHeight
@@ -193,6 +194,9 @@ function M.new(options)
 					row:insert(subItemText)
 
 					if (params.useCheckmark) then
+						-- have to convert to boolean
+						local isOn = toboolean(params.checkMarkIsOn)
+
 						local switch =
 							switchLib.new(
 							{
@@ -202,17 +206,37 @@ function M.new(options)
 								fontSize = fontSize,
 								parent = group,
 								onClick = function(event)
-									local target = event.target
-
-									if (target.isOffButton) then
-									end
 								end
 							}
 						)
 						switch.anchorX = 1
 						switch.x = rowContentWidth - 8
 						row.switch = switch
+
+						switch:setIsOn(isOn)
 						row:insert(switch)
+
+						local switchUnderlay =
+							widget.newButton(
+							{
+								shape = "rect",
+								width = rowContentWidth,
+								height = rowContentHeight,
+								fillColor = {default = {0, 0, 0, 0.01}, over = {0, 0, 0, 0.01}},
+								onPress = function(event)
+									switch:setIsOn(not switch:getIsOn())
+
+									if (type(params.onClick) == "function") then
+										event.isSwitch = true
+										event.isOn = switch:getIsOn()
+										params.onClick(event)
+									end
+
+									return true
+								end
+							}
+						)
+						row:insert(switchUnderlay)
 					end
 				end,
 				onRowTouch = function(event)
@@ -225,21 +249,25 @@ function M.new(options)
 							return
 						end
 
-						if (params.useCheckmark) then
-							row.switch:setIsOn(not row.switch:getIsOn())
-						else
+						if (not params.useCheckmark) then
 							isItemOpen = false
 							closeSubmenus()
-						end
 
-						if (type(params.onClick) == "function") then
-							params.onClick()
+							if (type(params.onClick) == "function") then
+								params.onClick(event)
+							end
 						end
 					end
 
 					return true
 				end
 			}
+		)
+		mainButton.mainTableView:addEventListener(
+			"tap",
+			function()
+				return true
+			end
 		)
 		mainButton.mainTableView.isVisible = false
 		menuButtons[i] = mainButton
@@ -253,6 +281,7 @@ function M.new(options)
 					title = items[i].subItems[k].title,
 					iconName = items[i].subItems[k].iconName,
 					useCheckmark = items[i].subItems[k].useCheckmark,
+					checkMarkIsOn = items[i].subItems[k].checkMarkIsOn,
 					font = items[i].subItems[k].font or fontAwesomeSolidFont,
 					onClick = items[i].subItems[k].onClick
 				}
@@ -343,12 +372,11 @@ function M.new(options)
 					if (x >= buttonXStart and x <= buttonXEnd) then
 						if (isItemOpen) then
 							closeSubmenus(button)
-							button.openSubmenu()
+							button:openSubmenu()
 							button._view._label:setFillColor(unpack(button.origFill.over))
 						else
 							closeSubmenus()
 							button._view._label:setFillColor(unpack(button.origFill.over))
-							button.mainTableView:reloadData()
 						end
 					else
 						button._view._label:setFillColor(unpack(button.origFill.default))

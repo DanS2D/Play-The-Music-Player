@@ -15,7 +15,7 @@ local dCenterY = display.contentCenterY
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
-local random = math.random
+local mRandom = math.random
 local buttonFontSize = 15
 local controlButtonsXOffset = 10
 local titleFont = "fonts/Roboto-Regular.ttf"
@@ -66,7 +66,7 @@ function M.new(options)
 				end
 
 				if (audioLib.shuffle) then
-					audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+					audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
 				else
 					if (audioLib.currentSongIndex - 1 > 0) then
 						audioLib.currentSongIndex = audioLib.currentSongIndex - 1
@@ -78,6 +78,7 @@ function M.new(options)
 				if (canPlay) then
 					local previousSong = musicList:getRow(audioLib.currentSongIndex)
 
+					musicVisualizer:restart()
 					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(previousSong)
@@ -149,7 +150,7 @@ function M.new(options)
 				end
 
 				if (audioLib.shuffle) then
-					audioLib.currentSongIndex = random(1, musicList:getMusicCount())
+					audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
 				else
 					if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
 						audioLib.currentSongIndex = audioLib.currentSongIndex + 1
@@ -160,7 +161,7 @@ function M.new(options)
 
 				if (canPlay) then
 					local nextSong = musicList:getRow(audioLib.currentSongIndex)
-
+					musicVisualizer:restart()
 					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(nextSong)
@@ -228,10 +229,7 @@ function M.new(options)
 	shuffleButton.y = previousButton.y
 	group:insert(shuffleButton)
 
-	musicVisualizerBar = musicVisualizer.new()
-	musicVisualizerBar.x = display.contentCenterX
-	musicVisualizerBar.y = shuffleButton.y - 5
-	group:insert(musicVisualizerBar)
+	musicVisualizerBar = musicVisualizer.new({yPos = shuffleButton.y - 5, group = group})
 
 	songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
 	songContainerBox.anchorX = 0

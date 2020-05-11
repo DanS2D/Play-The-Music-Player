@@ -20,7 +20,7 @@ local function createTables()
 	-- it's own table. When adding a playlist, add it's name and primary key to the playlists table so it can be referenced.
 	-- when removing it, also remove its entry from the playlists master table.
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT);]]
+		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
 		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, rating REAL, md5 TEXT, album TEXT, artist TEXT, genre TEXT, publisher TEXT, title TEXT, track TEXT, duration TEXT);]]
@@ -51,40 +51,53 @@ local function createOrReplaceSettings(settings, replace)
 	if (replace) then
 		stmt =
 			database:prepare(
-			[[ REPLACE INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView); ]]
+			[[ REPLACE INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers); ]]
 		)
 	else
 		stmt =
 			database:prepare(
-			[[ INSERT INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView); ]]
+			[[ INSERT INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers); ]]
 		)
+	end
+
+	local userSettings = {}
+
+	for k, v in pairs(settings) do
+		if (type(v) ~= "function" and type(v) ~= "userdata") then
+			userSettings[k] = v
+		end
 	end
 
 	stmt:bind_names(
 		{
 			key = 1,
-			musicFolderPaths = jEncode(settings.musicFolderPaths),
-			volume = settings.volume,
-			loopOne = settings.loopOne,
-			loopAll = settings.loopAll,
-			shuffle = settings.shuffle,
-			lastPlayedSongIndex = settings.lastPlayedSongIndex,
-			lastPlayedSongTime = jEncode(settings.lastPlayedSongTime),
-			fadeInTrack = settings.fadeInTrack,
-			fadeOutTrack = settings.fadeOutTrack,
-			crossFade = settings.crossFade,
-			displayAlbumArtwork = settings.displayAlbumArtwork,
-			columnOrder = jEncode(settings.columnOrder),
-			hiddenColumns = jEncode(settings.hiddenColumns),
-			columnSizes = jEncode(settings.columnSizes),
-			lastUsedColumn = settings.lastUsedColumn,
-			lastUsedColumnSortAToZ = settings.lastUsedColumnSortAToZ,
-			showVisualizer = settings.showVisualizer,
-			lastView = settings.lastView
+			musicFolderPaths = jEncode(userSettings.musicFolderPaths),
+			volume = userSettings.volume,
+			loopOne = userSettings.loopOne,
+			loopAll = userSettings.loopAll,
+			shuffle = userSettings.shuffle,
+			lastPlayedSongIndex = userSettings.lastPlayedSongIndex,
+			lastPlayedSongTime = jEncode(userSettings.lastPlayedSongTime),
+			fadeInTrack = userSettings.fadeInTrack,
+			fadeOutTrack = userSettings.fadeOutTrack,
+			fadeInTime = userSettings.fadeInTime,
+			fadeOutTime = userSettings.fadeOutTime,
+			crossFade = userSettings.crossFade,
+			displayAlbumArtwork = userSettings.displayAlbumArtwork,
+			columnOrder = jEncode(userSettings.columnOrder),
+			hiddenColumns = jEncode(userSettings.hiddenColumns),
+			columnSizes = jEncode(userSettings.columnSizes),
+			lastUsedColumn = userSettings.lastUsedColumn,
+			lastUsedColumnSortAToZ = userSettings.lastUsedColumnSortAToZ,
+			showVisualizer = userSettings.showVisualizer,
+			lastView = userSettings.lastView,
+			selectedVisualizers = jEncode(userSettings.selectedVisualizers)
 		}
 	)
 	stmt:step()
 	stmt:finalize()
+	stmt = nil
+	userSettings = nil
 end
 
 function M:insertSettings(settings)
@@ -118,11 +131,13 @@ function M:getSettings()
 			lastUsedColumn = row.lastUsedColumn,
 			lastUsedColumnSortAToZ = row.lastUsedColumnSortAToZ,
 			showVisualizer = row.showVisualizer,
+			selectedVisualizers = jDecode(row.selectedVisualizers),
 			lastView = row.lastView
 		}
 	end
 
 	stmt:finalize()
+	stmt = nil
 
 	return settings
 end
