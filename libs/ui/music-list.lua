@@ -226,9 +226,12 @@ local function onMouseEvent(event)
 		-- handle main menu buttons
 		if (y >= 80 + rowHeight) then
 			resizeCursor:hide()
+		elseif (y >= 0 and y <= 80) then
+			resizeCursor:hide()
 		end
 	elseif (eventType == "up") then
 		resizeCursor:hide()
+		display.getCurrentStage():setFocus(nil)
 	end
 end
 
@@ -312,9 +315,11 @@ function M.new()
 
 			if (phase == "began") then
 				tableViewTarget = tableViewList[self.parent.index]
+				display.getCurrentStage():setFocus(tableViewTarget)
 				categoryTarget = categoryList[i]
 			elseif (phase == "ended" or phase == "cancelled") then
 				tableViewTarget = nil
+				display.getCurrentStage():setFocus(nil)
 			end
 
 			return true
