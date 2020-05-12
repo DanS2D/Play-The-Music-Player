@@ -33,7 +33,7 @@ function M.new(options)
 	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
 	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12, 1}
 	local font = options.font or native.systemFont
-	local fontSize = options.fontSize or menuBarHeight / 2
+	local fontSize = options.fontSize or (menuBarHeight / 2)
 	local itemWidth = options.itemWidth or 60
 	local itemListWidth = options.itemListWidth or 200
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
@@ -82,7 +82,7 @@ function M.new(options)
 			{
 				text = items[i].title,
 				font = font,
-				fontSize = fontSize,
+				fontSize = fontSize + 4,
 				height = menuBarHeight,
 				align = "left"
 			}
@@ -98,6 +98,7 @@ function M.new(options)
 			{
 				iconName = items[i].title,
 				font = font,
+				fontSize = fontSize + 4,
 				onClick = function(event)
 					local target = event.target
 
@@ -174,7 +175,7 @@ function M.new(options)
 							y = (rowContentHeight * 0.5),
 							text = params.title,
 							font = font,
-							fontSize = fontSize,
+							fontSize = fontSize + 2,
 							align = "left"
 						}
 					)
