@@ -39,8 +39,8 @@ function M.new(options)
 	local isRowCountEven = maxRows % 2 == 0
 
 	if (not isRowCountEven) then
-		maxRows = maxRows + 1
-		visibleRows = maxRows - 1
+	--maxRows = maxRows + 1
+	--visibleRows = maxRows - 1
 	end
 
 	--print("is row count even ", isRowCountEven)
@@ -236,7 +236,7 @@ function M.new(options)
 	end
 
 	function tableView:setRowLimit(limit)
-		rowLimit = limit + 2
+		rowLimit = limit + 1
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
