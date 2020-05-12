@@ -29,7 +29,7 @@ function M.new(options)
 	local didMouseScroll = false
 	local lockScrolling = false
 	local realRowIndex = 0
-	local realHeight = (dHeight - y)
+	local realHeight = (display.contentHeight - y)
 	local realRowVisibleCount, _ = mModf(realHeight / rowHeight)
 	local tableView = display.newGroup() --display.newContainer(width, height)
 	maxRows = realRowVisibleCount + 1
@@ -68,7 +68,7 @@ function M.new(options)
 			rows[i]._background = display.newRect(0, 0, width, rowHeight)
 			rows[i]._background.anchorX = 0
 			rows[i]._background.x = 0
-			rows[i]._background.y = rowHeight * 0.5
+			rows[i]._background.y = (rowHeight * 0.5)
 			rows[i]._background:setFillColor(unpack(rowColorDefault.default))
 
 			if (rowColorAlternate and i % 2 == 0) then
@@ -219,7 +219,7 @@ function M.new(options)
 				rows[i].index = mMin(rowLimit, (index - maxRows) + i)
 			end
 
-			self:moveRow(i, rowHeight * i - 1 - visibleRows)
+			self:moveRow(i, rowHeight * (i - 1))
 			self:deleteRowContents(i)
 			self:dispatchRowEvent(i)
 		end
