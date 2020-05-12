@@ -22,8 +22,8 @@ settings =
 	window =
 		{
 			defaultMode = "normal",
-			minViewWidth = 825,
-			minViewHeight = 512,
+			minViewWidth = 600,
+			minViewHeight = 400,
 			defaultViewWidth = 1650,
 			defaultViewHeight = 1024,
 			resizable = true,

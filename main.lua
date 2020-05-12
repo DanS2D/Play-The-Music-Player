@@ -2,7 +2,6 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
-local widget = require("widget")
 local tfd = require("plugin.tinyfiledialogs")
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
@@ -31,7 +30,6 @@ local background = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
-widget.setTheme("widget_theme_ios")
 mRandomSeed(osTime())
 settings:load()
 
@@ -82,12 +80,11 @@ local function onAudioEvent(event)
 
 		local nextSong = musicList:getRow(audioLib.currentSongIndex)
 		musicList:setSelectedRow(audioLib.currentSongIndex)
-
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
+		musicVisualizer:restart()
 		audioLib.load(nextSong)
 		audioLib.play(nextSong)
-		musicVisualizer:restart()
 	end
 
 	return true
@@ -255,6 +252,23 @@ local applicationMainMenuBar =
 
 							settings:save()
 						end
+					},
+					{
+						title = "Crossfade",
+						iconName = "music",
+						useCheckmark = true,
+						checkMarkIsOn = toboolean(settings.crossFade),
+						onClick = function(event)
+							if (event.isSwitch) then
+								if (event.isOn) then
+									settings.crossFade = true
+								else
+									settings.crossFade = false
+								end
+							end
+
+							settings:save()
+						end
 					}
 				}
 			},
@@ -390,7 +404,7 @@ local applicationMainMenuBar =
 background = display.newRect(0, 0, display.contentWidth, display.contentHeight)
 background.anchorY = 0
 background.x = display.contentCenterX
-background.y = 100
+background.y = 161
 background:setFillColor(0.10, 0.10, 0.10, 1)
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
@@ -438,11 +452,7 @@ local function keyEventListener(event)
 					audioLib.play(musicFiles[audioLib.currentSongIndex])
 				end
 			elseif (keyDescriptor == "mediastop") then
-				-- stop audio
-			elseif (keyDescriptor == "pagedown") then
-				musicList:scrollToBottom()
-			elseif (keyDescriptor == "pageup") then
-				musicList:scrollToTop()
+			-- stop audio
 			end
 		end
 	end
@@ -466,5 +476,12 @@ local function onSystemEvent(event)
 end
 
 Runtime:addEventListener("system", onSystemEvent)
+
+local function onResize(event)
+	--print(display.contentWidth, display.contentHeight)
+	applicationMainMenuBar:handleResize()
+end
+
+Runtime:addEventListener("resize", onResize)
 
 populateTableViews()
