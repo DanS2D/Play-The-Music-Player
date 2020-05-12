@@ -244,9 +244,9 @@ function M.new(options)
 	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 	group:insert(songContainerBox)
 
-	songContainer = display.newContainer(songContainerBox.contentWidth - 80, barHeight)
+	songContainer = display.newContainer(songContainerBox.contentWidth - 100, barHeight)
 	songContainer.anchorX = 0
-	songContainer.x = songContainerBox.x + 46
+	songContainer.x = songContainerBox.x + 80
 	songContainer.y = songContainerBox.y - 10
 	group:insert(songContainer)
 
@@ -266,49 +266,73 @@ function M.new(options)
 	songTitleText:setFillColor(0.9, 0.9, 0.9)
 	songContainer:insert(songTitleText)
 
-	function songTitleText:enterFrame()
-		if (songTitleText and songTitleText.contentWidth > songContainer.contentWidth) then
-			songTitleText.x = songTitleText.x - 1
+	songTitleText.copy =
+		display.newText(
+		{
+			text = "",
+			font = titleFont,
+			align = "center",
+			fontSize = 22
+		}
+	)
+	songTitleText.copy.anchorX = 0
+	songTitleText.copy.x = -(songTitleText.contentWidth * 0.5)
+	songTitleText.copy.y = -(songTitleText.contentHeight * 0.5) - 3
+	songTitleText.copy:setFillColor(0.9, 0.9, 0.9)
+	songContainer:insert(songTitleText.copy)
 
-			if (songTitleText.x + songTitleText.contentWidth < -songTitleText.contentWidth * 0.4) then
-				songTitleText.x = songContainer.x + songContainer.contentWidth * 0.25
-			end
-		end
-
-		if (songAlbumText and songAlbumText.contentWidth > songContainer.contentWidth) then
-			songAlbumText.x = songAlbumText.x - 1
-
-			if (songAlbumText.x + songAlbumText.contentWidth < -songAlbumText.contentWidth * 0.4) then
-				songAlbumText.x = songContainer.x + songContainer.contentWidth * 0.25
-			end
-		end
-	end
-
-	-- TODO: the scrolling code no longer works
-	function songTitleText:setText(title)
-		self.text = title
-
-		if (self.contentWidth > songContainer.contentWidth) then
-			self.x = -(self.contentWidth * 0.40)
-		else
-			self.x = -(self.contentWidth * 0.5)
-		end
-
-		Runtime:removeEventListener("enterFrame", songTitleText)
+	function songTitleText:restartListener()
+		Runtime:removeEventListener("enterFrame", self)
 
 		if (self.scrollTimer) then
 			timer.cancel(self.scrollTimer)
 			self.scrollTimer = nil
 		end
 
+		self.scrollTimer =
+			timer.performWithDelay(
+			3000,
+			function()
+				Runtime:addEventListener("enterFrame", self)
+			end
+		)
+	end
+
+	function songTitleText:enterFrame()
+		self.x = self.x - 1
+		self.copy.x = self.copy.x - 1
+
+		if (self.x + self.contentWidth < -self.contentWidth * 0.47) then
+			self.x = -songContainer.contentWidth * 0.5 + self.contentWidth + 30
+		end
+
+		if (self.copy.x <= -songContainer.contentWidth * 0.5) then
+			self.copy.x = -songContainer.contentWidth * 0.5 + self.contentWidth + 30
+			self.x = -songContainer.contentWidth * 0.5
+			self:restartListener()
+		end
+
+		return true
+	end
+
+	function songTitleText:setText(title)
+		self.text = title
+		self.copy.text = title
+
 		if (self.contentWidth > songContainer.contentWidth) then
-			self.scrollTimer =
-				timer.performWithDelay(
-				3000,
-				function()
-					Runtime:addEventListener("enterFrame", songTitleText)
-				end
-			)
+			self.copy.isVisible = true
+			self.anchorX = 0
+			self.x = -songContainer.contentWidth * 0.5
+		else
+			self.copy.isVisible = false
+			self.anchorX = 0.5
+			self.x = 0
+		end
+
+		self.copy.x = self.x + self.contentWidth + 30
+
+		if (self.contentWidth > songContainer.contentWidth) then
+			self:restartListener()
 		end
 	end
 
@@ -324,15 +348,78 @@ function M.new(options)
 	songAlbumText.anchorX = 0
 	songAlbumText.x = -(songAlbumText.contentWidth * 0.5)
 	songAlbumText.y = songTitleText.y + (songTitleText.contentHeight * 0.5) + 8
-	songAlbumText:setFillColor(0.6, 0.6, 0.6)
+	songAlbumText.scrollTimer = nil
+	songAlbumText:setFillColor(0.7, 0.7, 0.7)
 	songContainer:insert(songAlbumText)
+
+	songAlbumText.copy =
+		display.newText(
+		{
+			text = "",
+			font = subTitleFont,
+			align = "center",
+			fontSize = 19
+		}
+	)
+	songAlbumText.copy.anchorX = 0
+	songAlbumText.copy.x = -(songAlbumText.contentWidth * 0.5)
+	songAlbumText.copy.y = songTitleText.y + (songTitleText.contentHeight * 0.5) + 8
+	songAlbumText.copy:setFillColor(0.7, 0.7, 0.7)
+	songContainer:insert(songAlbumText.copy)
+
+	function songAlbumText:restartListener()
+		local startTime = songTitleText.scrollTimer == nil and 3000 or 6000
+		Runtime:removeEventListener("enterFrame", self)
+
+		if (self.scrollTimer) then
+			timer.cancel(self.scrollTimer)
+			self.scrollTimer = nil
+		end
+
+		self.scrollTimer =
+			timer.performWithDelay(
+			startTime,
+			function()
+				Runtime:addEventListener("enterFrame", self)
+			end
+		)
+	end
+
+	function songAlbumText:enterFrame()
+		self.x = self.x - 1
+		self.copy.x = self.copy.x - 1
+
+		if (self.x + self.contentWidth < -self.contentWidth * 0.47) then
+			self.x = -songContainer.contentWidth * 0.5 + self.contentWidth + 30
+		end
+
+		if (self.copy.x <= -songContainer.contentWidth * 0.5) then
+			self.copy.x = -songContainer.contentWidth * 0.5 + self.contentWidth + 30
+			self.x = -songContainer.contentWidth * 0.5
+			self:restartListener()
+		end
+
+		return true
+	end
+
 	function songAlbumText:setText(album)
 		self.text = album
+		self.copy.text = album
 
 		if (self.contentWidth > songContainer.contentWidth) then
-			self.x = -(self.contentWidth * 0.40)
+			self.copy.isVisible = true
+			self.anchorX = 0
+			self.x = -songContainer.contentWidth * 0.5
 		else
-			self.x = -(self.contentWidth * 0.5)
+			self.copy.isVisible = false
+			self.anchorX = 0.5
+			self.x = 0
+		end
+
+		self.copy.x = self.x + self.contentWidth + 30
+
+		if (self.contentWidth > songContainer.contentWidth) then
+			self:restartListener()
 		end
 	end
 
@@ -491,6 +578,14 @@ function M.updateSongText(song)
 		}
 	)
 
+	--[[
+	songTitleText:setText(
+		"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg"
+	)
+
+	songAlbumText:setText(
+		"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg. so so so long"
+	)--]]
 	songTitleText:setText(song.title)
 	songAlbumText:setText(song.album)
 end
