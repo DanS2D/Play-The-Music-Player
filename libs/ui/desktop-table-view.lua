@@ -96,6 +96,7 @@ function M.new(options)
 	function tableView:deleteAllRows()
 		if (#rows > 0) then
 			for i = 1, maxRows do
+				rows[i]:removeEventListener("tap", onRowTap)
 				self:deleteRowContents(i)
 				display.remove(rows[i])
 				rows[i] = nil
