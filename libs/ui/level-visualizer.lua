@@ -34,6 +34,9 @@ Runtime:addEventListener("enterFrame", updateVisualization)
 
 function M.new()
 	local group = display.newGroup()
+	group.anchorX = 0.5
+	group.anchorY = 0.5
+	group.anchorChildren = true
 
 	for i = 1, 13 do
 		leftChannel[i] = display.newRect(50, 0, 2, 30)

@@ -14,6 +14,10 @@ local jDecode = json.decode
 local cDigest = crypto.digest
 local sFormat = string.format
 local database = nil
+local settingsBinds =
+	"(:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers)"
+local musicBinds =
+	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :duration, :bitrate, :sampleRate)"
 
 local function createTables()
 	-- the playlist table simply holds the name and id of the playlists. Each playlist should be
@@ -23,7 +27,7 @@ local function createTables()
 		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, rating REAL, md5 TEXT, album TEXT, artist TEXT, genre TEXT, publisher TEXT, title TEXT, track TEXT, duration TEXT);]]
+		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER);]]
 	)
 	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, key INTEGER);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS musicIndex on music (album, artist, genre, title);]])
@@ -49,15 +53,9 @@ local function createOrReplaceSettings(settings, replace)
 	local stmt = nil
 
 	if (replace) then
-		stmt =
-			database:prepare(
-			[[ REPLACE INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers); ]]
-		)
+		stmt = database:prepare(sFormat([[ REPLACE INTO `settings` VALUES %s; ]], settingsBinds))
 	else
-		stmt =
-			database:prepare(
-			[[ INSERT INTO `settings` VALUES (:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers); ]]
-		)
+		stmt = database:prepare(sFormat([[ INSERT INTO `settings` VALUES %s; ]], settingsBinds))
 	end
 
 	local userSettings = {}
@@ -144,24 +142,24 @@ end
 
 function M:insertMusic(musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
-	local stmt =
-		database:prepare(
-		[[ INSERT INTO `music` VALUES (:key, :fileName, :filePath, :rating, :md5, :album, :artist, :genre, :publisher, :title, :track, :duration); ]]
-	)
+	local stmt = database:prepare(sFormat([[ INSERT INTO `music` VALUES %s; ]], musicBinds))
 
 	stmt:bind_names(
 		{
 			fileName = musicData.fileName,
 			filePath = musicData.filePath,
-			rating = musicData.rating,
 			md5 = hash, -- use this when doing music database lookups
-			album = musicData.album,
-			artist = musicData.artist,
-			genre = musicData.genre,
-			publisher = musicData.publisher,
 			title = musicData.title,
-			track = musicData.track,
-			duration = musicData.duration
+			artist = musicData.artist,
+			album = musicData.album,
+			genre = musicData.genre,
+			comment = musicData.comment,
+			year = musicData.year,
+			trackNumber = musicData.trackNumber,
+			rating = musicData.rating,
+			duration = musicData.duration,
+			bitrate = musicData.bitrate,
+			sampleRate = musicData.sampleRate
 		}
 	)
 	stmt:step()

@@ -1,9 +1,9 @@
 local M = {}
-local widget = require("widget")
 local sqlLib = require("libs.sql-lib")
 local musicList = require("libs.ui.music-list")
 local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
+local desktopTableView = require("libs.ui.desktop-table-view")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -27,13 +27,13 @@ local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isDisabled = false
 local searchBar = nil
+local menuBarHeight = 28
 
 function M.new(options)
 	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
 	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12, 1}
-	local menuBarHeight = options.menuBarHeight or 20
 	local font = options.font or native.systemFont
-	local fontSize = options.fontSize or 10
+	local fontSize = options.fontSize or menuBarHeight / 2
 	local itemWidth = options.itemWidth or 60
 	local itemListWidth = options.itemListWidth or 200
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
@@ -44,7 +44,8 @@ function M.new(options)
 	local menuButtons = {}
 
 	local background = display.newRect(0, 0, dWidth, menuBarHeight)
-	background.x = display.contentCenterX
+	background.anchorX = 0
+	background.x = 0
 	background.y = background.contentHeight * 0.5
 	background:setFillColor(unpack(menuBarColor))
 	background:addEventListener(
@@ -61,7 +62,7 @@ function M.new(options)
 
 		for j = 1, #menuButtons do
 			if (j ~= target.index) then
-				menuButtons[j]._view._label:setFillColor(unpack(menuButtons[j].origFill.default))
+				menuButtons[j]:setFillColor(unpack(menuButtons[j].origFill.default))
 				menuButtons[j]:closeSubmenu()
 			end
 		end
@@ -74,6 +75,8 @@ function M.new(options)
 	end
 
 	for i = 1, #items do
+		local tableViewParams = {}
+
 		local tempItemText =
 			display.newText(
 			{
@@ -91,26 +94,11 @@ function M.new(options)
 		tempItemText = nil
 
 		local mainButton =
-			widget.newButton(
+			buttonLib.new(
 			{
-				left = i == 1 and 0 or menuButtons[i - 1].x + menuButtons[i - 1].contentWidth * 0.5,
-				top = 0,
-				shape = "rect",
-				label = items[i].title,
-				labelColor = {
-					default = {1, 1, 1},
-					over = {1, 1, 1, 0.6}
-				},
-				labelAlign = "left",
+				iconName = items[i].title,
 				font = font,
-				fontSize = fontSize,
-				width = realWidth,
-				height = menuBarHeight,
-				fillColor = {
-					default = menuBarColor,
-					over = menuBarColor
-				},
-				onPress = function(event)
+				onClick = function(event)
 					local target = event.target
 
 					if (isDisabled) then
@@ -128,6 +116,9 @@ function M.new(options)
 				end
 			}
 		)
+		mainButton.anchorX = 0
+		mainButton.x = i == 1 and 10 or menuButtons[i - 1].x + menuButtons[i - 1].contentWidth + 10
+		mainButton.y = menuBarHeight * 0.5
 		mainButton.index = i
 		mainButton.origFill = {
 			default = {1, 1, 1},
@@ -148,22 +139,20 @@ function M.new(options)
 		menuButtons[i] = mainButton
 
 		mainButton.mainTableView =
-			widget.newTableView(
+			desktopTableView.new(
 			{
 				left = i == 1 and 0 or menuButtons[i].x - menuButtons[i].contentWidth * 0.5,
 				top = menuBarHeight,
 				width = itemListWidth,
 				height = height,
-				isLocked = true,
-				noLines = true,
-				rowTouchDelay = 0,
+				rowHeight = menuBarHeight - 2,
 				backgroundColor = {0.18, 0.18, 0.18},
 				onRowRender = function(event)
 					local phase = event.phase
 					local row = event.row
 					local rowContentWidth = row.contentWidth
 					local rowContentHeight = row.contentHeight
-					local params = row.params
+					local params = tableViewParams[row.index]
 					local icon =
 						display.newText(
 						{
@@ -217,13 +206,14 @@ function M.new(options)
 						row:insert(switch)
 
 						local switchUnderlay =
-							widget.newButton(
-							{
-								shape = "rect",
-								width = rowContentWidth,
-								height = rowContentHeight,
-								fillColor = {default = {0, 0, 0, 0.01}, over = {0, 0, 0, 0.01}},
-								onPress = function(event)
+							display.newRect(rowContentWidth * 0.5, rowContentHeight * 0.5, rowContentWidth, rowContentHeight)
+						switchUnderlay.fill = {0, 0, 0, 0.01}
+						switchUnderlay:addEventListener(
+							"touch",
+							function(event)
+								local phase = event.phase
+
+								if (phase == "began") then
 									switch:setIsOn(not switch:getIsOn())
 
 									if (type(params.onClick) == "function") then
@@ -231,32 +221,31 @@ function M.new(options)
 										event.isOn = switch:getIsOn()
 										params.onClick(event)
 									end
-
-									return true
 								end
-							}
+
+								return true
+							end
 						)
+
 						row:insert(switchUnderlay)
 					end
 				end,
-				onRowTouch = function(event)
+				onRowClick = function(event)
 					local phase = event.phase
 					local row = event.row
-					local params = row.params
+					local params = tableViewParams[row.index]
 
-					if (phase == "release") then
-						if (isDisabled) then
-							return
-						end
+					if (isDisabled) then
+						return
+					end
 
-						if (not params.useCheckmark) then
-							isItemOpen = false
-							closeSubmenus()
+					if (not params.useCheckmark) then
+						isItemOpen = false
+						closeSubmenus()
+					end
 
-							if (type(params.onClick) == "function") then
-								params.onClick(event)
-							end
-						end
+					if (type(params.onClick) == "function") then
+						params.onClick(event)
 					end
 
 					return true
@@ -273,20 +262,18 @@ function M.new(options)
 		menuButtons[i] = mainButton
 
 		for k = 1, #items[i].subItems do
-			mainButton.mainTableView:insertRow {
-				isCategory = false,
-				rowHeight = menuBarHeight,
-				rowColor = rowColor,
-				params = {
-					title = items[i].subItems[k].title,
-					iconName = items[i].subItems[k].iconName,
-					useCheckmark = items[i].subItems[k].useCheckmark,
-					checkMarkIsOn = items[i].subItems[k].checkMarkIsOn,
-					font = items[i].subItems[k].font or fontAwesomeSolidFont,
-					onClick = items[i].subItems[k].onClick
-				}
+			tableViewParams[#tableViewParams + 1] = {
+				title = items[i].subItems[k].title,
+				iconName = items[i].subItems[k].iconName,
+				useCheckmark = items[i].subItems[k].useCheckmark,
+				checkMarkIsOn = items[i].subItems[k].checkMarkIsOn,
+				font = items[i].subItems[k].font or fontAwesomeSolidFont,
+				onClick = items[i].subItems[k].onClick
 			}
 		end
+
+		mainButton.mainTableView:setMaxRows(#tableViewParams)
+		mainButton.mainTableView:createRows()
 
 		group:insert(mainButton)
 		group:insert(mainButton.mainTableView)
@@ -321,7 +308,7 @@ function M.new(options)
 		return true
 	end
 
-	searchBar = native.newTextField(0, 0, 120, menuBarHeight - 5)
+	searchBar = native.newTextField(0, 0, 200, menuBarHeight - 5)
 	searchBar.anchorX = 1
 	searchBar.x = dWidth - 4
 	searchBar.y = menuBarHeight / 2
@@ -332,8 +319,7 @@ function M.new(options)
 		buttonLib.new(
 		{
 			iconName = "search-minus",
-			fontSize = 12,
-			ignoreHitbox = true,
+			fontSize = 18,
 			parent = group,
 			onClick = function(event)
 				if (searchBar.text:len() > 0) then
@@ -348,7 +334,7 @@ function M.new(options)
 	)
 	clearSearchButton.anchorX = 1
 	clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
-	clearSearchButton.y = menuBarHeight / 2
+	clearSearchButton.y = (menuBarHeight / 2)
 
 	local function onMouseEvent(event)
 		local eventType = event.type
@@ -360,9 +346,9 @@ function M.new(options)
 		if (eventType == "move") then
 			for i = 1, #menuButtons do
 				local button = menuButtons[i]
-				local buttonXStart = button.x - button.contentWidth * 0.5
-				local buttonXEnd = button.x + button.contentWidth * 0.5
-				local buttonYStart = button.y - button.contentHeight * 0.5
+				local buttonXStart = button.x
+				local buttonXEnd = button.x + button.contentWidth
+				local buttonYStart = 0
 				local buttonYEnd = button.y + button.contentHeight * 0.5
 				local x = event.x
 				local y = event.y
@@ -373,37 +359,36 @@ function M.new(options)
 						if (isItemOpen) then
 							closeSubmenus(button)
 							button:openSubmenu()
-							button._view._label:setFillColor(unpack(button.origFill.over))
+							button:setFillColor(unpack(button.origFill.over))
 						else
 							closeSubmenus()
-							button._view._label:setFillColor(unpack(button.origFill.over))
+							button:setFillColor(unpack(button.origFill.over))
 						end
 					else
-						button._view._label:setFillColor(unpack(button.origFill.default))
+						button:setFillColor(unpack(button.origFill.default))
 					end
 				else
 					if (not isItemOpen) then
-						button._view._label:setFillColor(unpack(button.origFill.default))
+						button:setFillColor(unpack(button.origFill.default))
 					end
 				end
 
 				-- handle subItems (the tableview contents)
-				for j = 1, button.mainTableView:getNumRows() do
+				for j = 1, button.mainTableView:getMaxRows() do
 					local row = button.mainTableView:getRowAtIndex(j)
 					local rowXEnd = itemListWidth
-					local rowYStart = 20 * j
-					local rowYEnd = rowYStart + 20
-					local cell = row._cell
+					local rowYStart = (menuBarHeight - 2) * j
+					local rowYEnd = rowYStart + (menuBarHeight - 2)
 
 					if (x >= buttonXStart and x <= buttonXStart + rowXEnd) then
 						if (y >= rowYStart and y <= rowYEnd) then
 							if (isItemOpen) then
-								cell:setFillColor(unpack(rowColor.over))
+								row._background:setFillColor(unpack(rowColor.over))
 							else
-								cell:setFillColor(unpack(rowColor.default))
+								row._background:setFillColor(unpack(rowColor.default))
 							end
 						else
-							cell:setFillColor(unpack(rowColor.default))
+							row._background:setFillColor(unpack(rowColor.default))
 						end
 					end
 				end
@@ -412,6 +397,13 @@ function M.new(options)
 	end
 
 	Runtime:addEventListener("mouse", onMouseEvent)
+
+	function group:handleResize()
+		searchBar.x = display.contentWidth - 4
+		clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
+		background.width = display.contentWidth
+	end
+
 	parentGroup:insert(group)
 
 	return group
@@ -419,6 +411,10 @@ end
 
 function M.setEnabled(enabled)
 	isDisabled = not enabled
+end
+
+function M.getHeight()
+	return menuBarHeight
 end
 
 return M

@@ -22,31 +22,35 @@ settings =
 	window =
 		{
 			defaultMode = "normal",
-			minViewWidth = 1650,
-			minViewHeight = 1024,
+			minViewWidth = 825,
+			minViewHeight = 512,
 			defaultViewWidth = 1650,
 			defaultViewHeight = 1024,
-			resizable = false,
+			resizable = true,
 			enableMinimizeButton = true,
-			enableMaximizeButton = true,
+			enableMaximizeButton = false,
 			enableCloseButton = true,
 			suspendWhenMinimized = false,
 			titleText = {
-				-- The "default" text will be used if the system is using a language and/or
-				-- country code not defined below. This serves as a fallback mechanism.
-				default = "Play - The Music Player",
-				-- This text is used on English language systems in the United States.
-				-- Note that the country code must be separated by a dash (-).
-				["en‐us"] = "Play - The Music Player",
-				-- This text is used on English language systems in the United Kingdom.
-				-- Note that the country code must be separated by a dash (-).
-				["en‐gb"] = "Play - The Music Player",
-				-- This text is used for all other English language systems.
-				["en"] = "Play - The Music Player",
-				-- This text is used for all French language systems.
-				["fr"] = "Window Title Test (French)",
-				-- This text is used for all Spanish language systems.
-				["es"] = "Window Title Test (Spanish)",
+				default = "Play - The Music Player", -- if not language specific entry is found
+				["en‐us"] = "Play - The Music Player", -- USA
+				["en‐gb"] = "Play - The Music Player", -- britain
+				["en"] = "Play - The Music Player", -- general english
+				["de"] = "Abspielen - Der Musik-Player", -- german
+				["fr"] = "Jouer - Le lecteur de musique", -- french
+				["es"] = "Play - El reproductor de música", -- spanish
+				["pt"] = "Tocar - The Music Player", -- portugese
+				["it"] = "Gioca - Il lettore musicale", -- italian
+				["nl"] = "Afspelen - De muziekspeler", -- dutch
+				["pl"] = "Odtwarzanie - Odtwarzacz muzyki", -- polish
+				["ru"] = "Играть - Музыкальный игрок", -- russian
+				["da"] = "Afspil - Musikafspilleren", -- danish
+				["fi"] = "Toista - musiikkisoitin", -- finnish
+				["el"] = "Παίξτε - Το πρόγραμμα αναπαραγωγής μουσικής", -- greek
+				["no"] = "Spill - musikkspilleren", -- norwegian
+				["ro"] = "Play - Playerul muzical", -- romanian
+				["sv"] = "Spela - musikspelaren", -- swedish
+				["tr"] = "Çal - Müzik Çalar", -- turkish
 			},
 		},
 
@@ -93,10 +97,6 @@ settings =
 				["win32-sim"] = { url="http://127.0.0.1:81/taglib_plugin.tgz?" .. os.time() },
 			},
 		},
-		["plugin.utf8"] =
-		{
-			publisherId = "com.coronalabs"
-		},
 	},
 
 	--
@@ -105,7 +105,6 @@ settings =
 	excludeFiles =
 	{
 		-- Exclude unnecessary files for each platform
-		all = {"Icon.png", "Icon-*dpi.png", "Images.xcassets", ".git"},
-		android = {"LaunchScreen.storyboardc"},
+		all = { ".vscode", ".git", "*.md", "*.txt", "*.ico", "Icon.png", ".gitignore" },
 	},
 }

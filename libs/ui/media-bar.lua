@@ -1,13 +1,14 @@
 local M = {}
-local widget = require("widget")
 local audioLib = require("libs.audio-lib")
 local buttonLib = require("libs.ui.button")
 local multiButtonLib = require("libs.ui.multi-button")
 local switchLib = require("libs.ui.switch")
 local musicList = require("libs.ui.music-list")
+local mainMenuBar = require("libs.ui.main-menu-bar")
 local levelVisualization = require("libs.ui.level-visualizer")
 local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
+local ratings = require("libs.ui.ratings")
 local dScreenOriginX = display.screenOriginX
 local dScreenOriginY = display.dScreenOriginY
 local dCenterX = display.contentCenterX
@@ -16,8 +17,9 @@ local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
 local mRandom = math.random
-local buttonFontSize = 15
+local buttonFontSize = 20
 local controlButtonsXOffset = 10
+local barHeight = 80
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local songTitleText = nil
@@ -29,6 +31,7 @@ local nextButton = nil
 local shuffleButton = nil
 local volumeButton = nil
 local volumeSlider = nil
+local ratingStars = nil
 local playBackTimeText = nil
 local albumArtwork = nil
 local songContainerBox = nil
@@ -88,7 +91,7 @@ function M.new(options)
 		}
 	)
 	previousButton.x = (dScreenOriginX + (previousButton.contentWidth * 0.5) + controlButtonsXOffset)
-	previousButton.y = 55
+	previousButton.y = mainMenuBar:getHeight() + (barHeight / 2) + 13
 
 	playButton =
 		switchLib.new(
@@ -231,16 +234,17 @@ function M.new(options)
 
 	musicVisualizerBar = musicVisualizer.new({yPos = shuffleButton.y - 5, group = group})
 
-	songContainerBox = display.newRoundedRect(0, 0, dWidth / 2 - 8, 50, 2)
+	songContainerBox = display.newRoundedRect(0, 0, display.contentWidth / 1.4, barHeight, 2)
 	songContainerBox.anchorX = 0
 	songContainerBox.x = (shuffleButton.x + controlButtonsXOffset + 14)
-	songContainerBox.y = shuffleButton.y - 5
+	songContainerBox.y = (barHeight - 5)
 	songContainerBox.strokeWidth = 1
+	songContainerBox.alpha = 0.6
 	songContainerBox:setFillColor(0, 0, 0, 1)
 	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
 	group:insert(songContainerBox)
 
-	songContainer = display.newContainer(songContainerBox.contentWidth - 80, 50)
+	songContainer = display.newContainer(songContainerBox.contentWidth - 80, barHeight)
 	songContainer.anchorX = 0
 	songContainer.x = songContainerBox.x + 46
 	songContainer.y = songContainerBox.y - 10
@@ -252,11 +256,12 @@ function M.new(options)
 			text = "",
 			font = titleFont,
 			align = "center",
-			fontSize = 15
+			fontSize = 22
 		}
 	)
 	songTitleText.anchorX = 0
 	songTitleText.x = -(songTitleText.contentWidth * 0.5)
+	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 3
 	songTitleText.scrollTimer = nil
 	songTitleText:setFillColor(0.9, 0.9, 0.9)
 	songContainer:insert(songTitleText)
@@ -279,6 +284,7 @@ function M.new(options)
 		end
 	end
 
+	-- TODO: the scrolling code no longer works
 	function songTitleText:setText(title)
 		self.text = title
 
@@ -312,12 +318,12 @@ function M.new(options)
 			text = "",
 			font = subTitleFont,
 			align = "center",
-			fontSize = 12
+			fontSize = 19
 		}
 	)
 	songAlbumText.anchorX = 0
 	songAlbumText.x = -(songAlbumText.contentWidth * 0.5)
-	songAlbumText.y = songTitleText.contentHeight
+	songAlbumText.y = songTitleText.y + (songTitleText.contentHeight * 0.5) + 8
 	songAlbumText:setFillColor(0.6, 0.6, 0.6)
 	songContainer:insert(songAlbumText)
 	function songAlbumText:setText(album)
@@ -330,16 +336,59 @@ function M.new(options)
 		end
 	end
 
+	levelVisualizer = levelVisualization.new()
+	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 25
+	levelVisualizer.y = songContainerBox.y + songContainerBox.contentHeight * 0.5 - 12
+	levelVisualizer.isVisible = false
+	group:insert(levelVisualizer)
+
+	ratingStars =
+		ratings.new(
+		{
+			x = 0,
+			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 5,
+			fontSize = 10,
+			rating = audioLib.isChannelHandleValid() and musicList:getRow(audioLib.currentSongIndex).rating or 0,
+			parent = songContainer
+		}
+	)
+
+	playBackTimeText =
+		display.newText(
+		{
+			text = "00:00/00:00",
+			font = titleFont,
+			fontSize = 14,
+			align = "left"
+		}
+	)
+	playBackTimeText.anchorX = 1
+	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
+	playBackTimeText.y = songContainerBox.y + (songContainerBox.contentHeight * 0.5) - 16
+	playBackTimeText.text = ""
+	group:insert(playBackTimeText)
+
+	function playBackTimeText:update()
+		local playbackTime = audioLib.getPlaybackTime()
+
+		if (playbackTime) then
+			local pbElapsed = playbackTime.elapsed
+			local pbDuration = playbackTime.duration
+			playBackTimeText.text =
+				sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
+		end
+	end
+
 	songProgressView =
 		progressView.new(
 		{
-			width = dWidth / 2 - 10,
+			width = songContainerBox.contentWidth,
 			allowTouch = true
 		}
 	)
 	songProgressView.anchorX = 0
-	songProgressView.x = songContainerBox.x + 2
-	songProgressView.y = songContainerBox.y + songAlbumText.contentHeight + songProgressView.contentHeight + 1
+	songProgressView.x = songContainerBox.x
+	songProgressView.y = songContainerBox.y + songContainerBox.contentHeight * 0.5 - songProgressView.contentHeight * 0.5
 	group:insert(songProgressView)
 
 	volumeButton =
@@ -367,6 +416,7 @@ function M.new(options)
 	volumeButton:setIsOn(true)
 	group:insert(volumeButton)
 
+	--[[
 	volumeSlider =
 		widget.newSlider(
 		{
@@ -380,37 +430,7 @@ function M.new(options)
 	volumeSlider.height = volumeSlider.height / 1.5
 	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth)
 	volumeSlider.y = previousButton.y - 4
-	group:insert(volumeSlider)
-
-	levelVisualizer = levelVisualization.new()
-	levelVisualizer.x = volumeSlider.x + volumeSlider.contentWidth * 0.5 + 15
-	levelVisualizer.y = volumeButton.y
-	group:insert(levelVisualizer)
-
-	playBackTimeText =
-		display.newText(
-		{
-			text = "00:00/00:00",
-			font = titleFont,
-			fontSize = 10,
-			align = "left"
-		}
-	)
-	playBackTimeText.x = levelVisualizer.x + levelVisualizer.contentWidth
-	playBackTimeText.y = levelVisualizer.y + levelVisualizer.contentHeight + playBackTimeText.contentHeight
-	group:insert(playBackTimeText)
-
-	function playBackTimeText:update()
-		local playbackTime = audioLib.getPlaybackTime()
-
-		if (playbackTime) then
-			local pbElapsed = playbackTime.elapsed
-			local pbDuration = playbackTime.duration
-			playBackTimeText.text =
-				sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
-		end
-	end
-
+	group:insert(volumeSlider)--]]
 	return group
 end
 
@@ -441,10 +461,10 @@ function M.setAlbumArtwork(fileName)
 		albumArtwork = nil
 	end
 
-	albumArtwork = display.newImageRect(fileName, system.DocumentsDirectory, 30, 30)
+	albumArtwork = display.newImageRect(fileName, system.DocumentsDirectory, 60, 60)
 	albumArtwork.anchorX = 0
 	albumArtwork.x = songContainerBox.x + 5
-	albumArtwork.y = songContainerBox.y - 2.5
+	albumArtwork.y = songContainerBox.y - 3
 end
 
 function M.updatePlayPauseState(playing)
@@ -457,11 +477,16 @@ function M.clearPlayingSong()
 		albumArtwork = nil
 	end
 
+	levelVisualizer.isVisible = false
+	ratingStars.isVisible = false
 	songTitleText:setText("")
 	songAlbumText:setText("")
 end
 
 function M.updateSongText(song)
+	levelVisualizer.isVisible = true
+	ratingStars.isVisible = true
+	ratingStars:update(song.rating)
 	songTitleText:setText(song.title)
 	songAlbumText:setText(song.album)
 end

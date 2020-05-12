@@ -1,15 +1,14 @@
 local M = {}
-local utf8 = require("plugin.utf8")
 local tag = require("plugin.taglib")
 local lfs = require("lfs")
 local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
+local ratings = require("libs.ui.ratings")
 local importProgressLib = require("libs.ui.import-progress")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
-local utf8Escape = utf8.escape
 local musicFolders = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
@@ -95,8 +94,6 @@ function M.getFolderList(path, onComplete)
 	scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
 end
 
-local crypto = require("crypto")
-
 function M.scanFolders()
 	local iterationDelay = 25
 	local currentIndex = 0
@@ -149,14 +146,17 @@ function M.scanFolders()
 							local musicData = {
 								fileName = file,
 								filePath = path,
-								rating = 0.0,
-								album = tags.album,
-								artist = tags.artist,
-								genre = tags.genre,
-								publisher = "",
 								title = tags.title:len() > 0 and tags.title or file,
-								track = tags.track,
-								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds)
+								artist = tags.artist,
+								album = tags.album,
+								genre = tags.genre,
+								comment = tags.comment,
+								year = tags.year,
+								trackNumber = tags.trackNumber,
+								rating = ratings:convert(tags.rating),
+								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+								bitrate = tags.bitrate,
+								sampleRate = tags.sampleRate
 							}
 							--print("found file: " .. file)
 							sqlLib:insertMusic(musicData)

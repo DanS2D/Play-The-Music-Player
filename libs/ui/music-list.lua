@@ -5,11 +5,9 @@ local M = {
 	musicResultsLimit = 0,
 	rowCreationTimers = {}
 }
-local widget = require("widget")
 local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
-local tableView = require("libs.ui.music-tableview")
 local musicImporter = require("libs.music-importer")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
@@ -25,8 +23,8 @@ local musicCount = 0
 local musicSortAToZ = true
 local musicSort = "title" -- todo: get saved sort from database
 local prevIndex = 0
-local rowFontSize = 10
-local rowHeight = 20
+local rowFontSize = 18
+local rowHeight = 40
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 1}}
 local defaultSecondRowColor = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.28, 0.28, 1}}
 local titleFont = "fonts/Roboto-Regular.ttf"
@@ -34,6 +32,7 @@ local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
 local currentRowCount = 0
+local topPosition = 121
 
 function M:getRow(rowIndex)
 	local row = nil
@@ -78,12 +77,10 @@ function M:createTableView(options)
 		desktopTableView.new(
 		{
 			left = options.left,
-			top = 80 + rowHeight,
-			width = options.width or (dWidth / 5),
-			height = dHeight - 100,
-			isLocked = true,
-			noLines = true,
-			rowTouchDelay = 0,
+			top = topPosition + rowHeight,
+			width = options.width or display.contentWidth,
+			height = display.contentHeight - 100,
+			rowHeight = rowHeight,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
 			rowColorDefault = defaultRowColor,
 			rowColorAlternate = defaultSecondRowColor,
@@ -175,7 +172,7 @@ function M:createTableView(options)
 		}
 	)
 	tView.leftPos = options.left
-	tView.topPos = 80
+	tView.topPos = topPosition + rowHeight
 	tView.orderIndex = options.index
 	tView._index = #tableViewList + 1
 
@@ -200,7 +197,7 @@ local function moveColumns(event)
 	if (tableViewTarget) then
 		if (phase == "moved") then
 			tableViewTarget.x = mFloor(event.x)
-			categoryTarget.x = mFloor(event.x + categoryTarget.contentWidth * 0.5 - 20)
+			categoryTarget.x = mFloor(event.x)
 		end
 
 		if (phase == "ended" or phase == "cancelled") then
@@ -216,40 +213,43 @@ Runtime:addEventListener("touch", moveColumns)
 
 local function onMouseEvent(event)
 	local eventType = event.type
-	local y = event.y
 
 	if (musicCount <= 0) then
 		return
 	end
 
-	if (eventType == "move") then
-		-- handle main menu buttons
-		if (y >= 80 + rowHeight) then
-			resizeCursor:hide()
-		elseif (y >= 0 and y <= 80) then
-			resizeCursor:hide()
+	if (eventType == "up") then
+		if (tableViewTarget) then
+			display.getCurrentStage():setFocus(nil)
 		end
-	elseif (eventType == "up") then
-		resizeCursor:hide()
-		display.getCurrentStage():setFocus(nil)
 	end
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
 
 function M.new()
-	local categoryBar = display.newRect(0, 0, dWidth, rowHeight)
+	local categoryBar = display.newRect(0, 0, display.contentWidth, rowHeight)
 	categoryBar.anchorX = 0
 	categoryBar.anchorY = 0
 	categoryBar.x = 0
-	categoryBar.y = 80
+	categoryBar.y = topPosition
 	categoryBar:setFillColor(0.15, 0.15, 0.15)
+
+	function categoryBar:mouse(event)
+		local phase = event.type
+
+		if (phase == "move") then
+			resizeCursor:hide()
+		end
+	end
+
+	categoryBar:addEventListener("mouse")
 
 	local listOptions = {
 		{
 			index = 1,
 			left = 0,
-			width = dWidth,
+			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Title",
 			rowTitle = "title"
@@ -257,7 +257,7 @@ function M.new()
 		{
 			index = 2,
 			left = 200,
-			width = dWidth,
+			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Artist",
 			rowTitle = "artist"
@@ -265,7 +265,7 @@ function M.new()
 		{
 			index = 3,
 			left = 400,
-			width = dWidth,
+			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Album",
 			rowTitle = "album"
@@ -273,7 +273,7 @@ function M.new()
 		{
 			index = 4,
 			left = 600,
-			width = dWidth,
+			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Genre",
 			rowTitle = "genre"
@@ -281,7 +281,7 @@ function M.new()
 		{
 			index = 5,
 			left = 750,
-			width = dWidth,
+			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Duration",
 			rowTitle = "duration"
@@ -292,9 +292,8 @@ function M.new()
 		tableViewList[i] = M:createTableView(listOptions[i])
 		categoryList[i] = display.newGroup()
 		categoryList[i].x = listOptions[i].left
-		categoryList[i].y = 80
+		categoryList[i].y = topPosition
 		categoryList[i].index = i
-		--categoryList[i].isVisible = false -- REMOVE THIS WHEN THE NEW TABLEVIEW WORKS
 
 		local seperatorText =
 			display.newText(
@@ -303,21 +302,27 @@ function M.new()
 				left = 0,
 				y = categoryBar.contentHeight * 0.5,
 				font = subTitleFont,
-				fontSize = 18,
+				fontSize = rowFontSize + 8,
 				align = "left"
 			}
 		)
 		seperatorText:setFillColor(0.8, 0.8, 0.8)
 		categoryList[i]:insert(seperatorText)
 
-		function seperatorText:touch(event)
-			local phase = event.phase
+		function seperatorText:mouse(event)
+			local phase = event.type
 
-			if (phase == "began") then
+			if (categoryList[i].index == 1) then
+				return
+			end
+
+			if (phase == "move") then
+				resizeCursor:show()
+			elseif (phase == "down") then
 				tableViewTarget = tableViewList[self.parent.index]
 				display.getCurrentStage():setFocus(tableViewTarget)
 				categoryTarget = categoryList[i]
-			elseif (phase == "ended" or phase == "cancelled") then
+			elseif (phase == "up") then
 				tableViewTarget = nil
 				display.getCurrentStage():setFocus(nil)
 			end
@@ -325,29 +330,6 @@ function M.new()
 			return true
 		end
 
-		function seperatorText:mouse(event)
-			local phase = event.type
-			local xStart = self.x
-			local xEnd = self.x + self.contentWidth
-			local yStart = self.y - self.contentHeight * 0.5
-			local yEnd = self.y + self.contentHeight * 0.5
-			local x, y = self:contentToLocal(event.x, event.y)
-
-			if (phase == "move") then
-				-- handle main menu buttons
-				if (y >= yStart - 8 and y <= yStart + 8) then
-					if (x >= xStart - 2 and x <= xEnd - 4) then
-						resizeCursor:show()
-					else
-						resizeCursor:hide()
-					end
-				else
-					resizeCursor:hide()
-				end
-			end
-		end
-
-		seperatorText:addEventListener("touch")
 		seperatorText:addEventListener("mouse")
 
 		local titleText =
@@ -356,13 +338,13 @@ function M.new()
 				text = listOptions[i].categoryTitle,
 				y = categoryBar.contentHeight * 0.5,
 				font = titleFont,
-				fontSize = 10,
+				fontSize = rowFontSize,
 				align = "left"
 			}
 		)
 		titleText.anchorX = 0
 		titleText.x = seperatorText.x + seperatorText.contentWidth
-		titleText.sortAToZ = i == 1 or false
+		titleText.sortAToZ = i == 1 or false -- TODO: read from database
 		titleText:setFillColor(1, 1, 1)
 		categoryList[i]:insert(titleText)
 
@@ -372,13 +354,13 @@ function M.new()
 				text = "⌃",
 				y = categoryBar.contentHeight * 0.5,
 				font = titleFont,
-				fontSize = 10,
+				fontSize = rowFontSize,
 				align = "left"
 			}
 		)
 		sortIndicator.anchorX = 0
 		sortIndicator.x = titleText.x + titleText.contentWidth + 2
-		sortIndicator.isVisible = i == 1
+		sortIndicator.isVisible = i == 1 -- TODO: read from database
 		titleText.sortIndicator = sortIndicator
 		categoryList[i].sortIndicator = sortIndicator
 		categoryList[i]:insert(sortIndicator)

@@ -63,7 +63,7 @@ function M.new(options)
 			emitter.name = visualizerName:lower()
 
 			if (options and options.group) then
-				options.group:insert(emitter)
+				options.group:insert(emitter, true)
 			end
 
 			emitterParams = nil
@@ -80,14 +80,18 @@ function M.new(options)
 end
 
 function M:pause()
-	if (toboolean(settings.showVisualizer) and emitter) then
-		emitter:pause()
+	if (toboolean(settings.showVisualizer)) then
+		if (emitter) then
+			emitter:pause()
+		end
 	end
 end
 
 function M:start()
 	if (toboolean(settings.showVisualizer)) then
-		emitter:start()
+		if (emitter) then
+			emitter:start()
+		end
 	end
 end
 

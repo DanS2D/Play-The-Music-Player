@@ -15,13 +15,13 @@ function M.new(options)
 	local progress = 0
 	group.actualWidth = width
 
-	local outerBox = display.newRect(0, 0, width, height)
+	local outerBox = display.newRoundedRect(0, 0, width, height, 2)
 	outerBox.anchorX = 0
 	outerBox.x = 0
 	outerBox:setFillColor(unpack(outerColor))
 	group:insert(outerBox)
 
-	local innerBox = display.newRect(0, 0, 0, height)
+	local innerBox = display.newRoundedRect(0, 0, 0, height, 2)
 	innerBox.anchorX = 0
 	innerBox.x = 0
 	innerBox:setFillColor(unpack(innerColor))
@@ -31,14 +31,14 @@ function M.new(options)
 		local phase = event.phase
 
 		if (phase == "began") then
-			local valueX, valueY = self:contentToLocal(event.x, event.y)
-			local onePercent = width / 100
-			local currentPercent = valueX / onePercent
-			local duration = audioLib.getDuration() * 1000
-			seekPosition = ((currentPercent / 10) * duration / 10)
-			--print(seekPosition)
-
 			if (audioLib.isChannelPlaying()) then
+				local valueX, valueY = self:contentToLocal(event.x, event.y)
+				local onePercent = width / 100
+				local currentPercent = valueX / onePercent
+				local duration = audioLib.getDuration() * 1000
+				seekPosition = ((currentPercent / 10) * duration / 10)
+				--print(seekPosition)
+
 				progress = seekPosition
 				self:setOverallProgress(progress / duration)
 				audioLib.seek(seekPosition / 1000)

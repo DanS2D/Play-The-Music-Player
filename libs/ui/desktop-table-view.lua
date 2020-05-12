@@ -133,6 +133,10 @@ function M.new(options)
 		return visibleRows
 	end
 
+	function tableView:getRowAtIndex(index)
+		return rows[index]
+	end
+
 	function tableView:getScrollDirection()
 		return lastMouseScrollWasUp and "up" or "down"
 	end
@@ -191,6 +195,10 @@ function M.new(options)
 		end
 	end
 
+	function tableView:setMaxRows(max)
+		maxRows = max
+	end
+
 	function tableView:scrollToIndex(index)
 		local newRowIndex = 0
 
@@ -232,7 +240,7 @@ function M.new(options)
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
-		local color = rowIndex % 2 == 0 and rowColorAlternate.over or rowColorDefault.over
+		local color = rowIndex % 2 == 0 and rowColorAlternate and rowColorAlternate.over or rowColorDefault.over
 		local defaultRowColor = rowColorDefault.default
 		local alternateRowColor = rowColorAlternate and rowColorAlternate.default or defaultRowColor
 
