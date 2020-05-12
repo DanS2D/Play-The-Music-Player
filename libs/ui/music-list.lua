@@ -312,7 +312,7 @@ function M.new()
 		function seperatorText:mouse(event)
 			local phase = event.type
 
-			if (categoryList[i].index == 1) then
+			if (categoryList[i].index == 1 or musicCount <= 0) then
 				return
 			end
 
