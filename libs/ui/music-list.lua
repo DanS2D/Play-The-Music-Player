@@ -82,6 +82,7 @@ function M:createTableView(options, index)
 			width = display.contentWidth,
 			height = display.contentHeight - 100,
 			rowHeight = rowHeight,
+			useSelectedRowHighlighting = true,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
 			rowColorDefault = defaultRowColor,
 			rowColorAlternate = defaultSecondRowColor,

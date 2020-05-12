@@ -148,8 +148,8 @@ function M.new(options)
 	local group = display.newGroup()
 	group.anchorX = 0.5
 	group.anchorY = 0.5
-
 	group.anchorChildren = true
+	group.isVisible = isVisible
 
 	create(currentStars, starRating, fontSize, group)
 	group.x = x
@@ -168,7 +168,6 @@ function M.new(options)
 	end
 
 	parent:insert(group)
-	group.isVisible = isVisible
 
 	return group
 end

@@ -20,6 +20,7 @@ function M.new(options)
 	local rowColorDefault = options.rowColorDefault or {default = {0, 0, 0}, over = {0.2, 0.2, 0.2}}
 	local rowColorAlternate = options.rowColorAlternate or nil
 	local rowHeight = options.rowHeight or 20
+	local useSelectedRowHighlighting = options.useSelectedRowHighlighting
 	local onRowRender =
 		options.onRowRender or
 		error("desktop-table-view() options.onRowRender function expected, got ", type(options.onRowRender))
@@ -36,12 +37,13 @@ function M.new(options)
 	visibleRows = maxRows - 1
 	tableView.x = x
 	tableView.y = y
-	local isRowCountEven = maxRows % 2 == 0
+	--local isRowCountEven = maxRows % 2 == 0
 
-	if (not isRowCountEven) then
+	-- i don't think we need to use this anymore
+	--if (not isRowCountEven) then
 	--maxRows = maxRows + 1
 	--visibleRows = maxRows - 1
-	end
+	--end
 
 	--print("is row count even ", isRowCountEven)
 	--print("we should be able to fit " .. realRowVisibleCount .. " rows on screen")
@@ -240,6 +242,10 @@ function M.new(options)
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
+		if (not useSelectedRowHighlighting) then
+			return
+		end
+
 		local color = rowIndex % 2 == 0 and rowColorAlternate and rowColorAlternate.over or rowColorDefault.over
 		local defaultRowColor = rowColorDefault.default
 		local alternateRowColor = rowColorAlternate and rowColorAlternate.default or defaultRowColor
@@ -266,7 +272,7 @@ function M.new(options)
 	function tableView:enterFrame(event)
 		lockScrolling = (rowLimit < visibleRows)
 
-		if (selectedRowIndex > 0) then
+		if (selectedRowIndex > 0 and useSelectedRowHighlighting) then
 			self:setRowSelected(selectedRowIndex, true)
 		end
 
