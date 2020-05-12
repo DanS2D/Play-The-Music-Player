@@ -6,6 +6,7 @@ local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local headingText = nil
 local subHeadingText = nil
+local logo = nil
 local importProgressView = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
@@ -20,11 +21,11 @@ function M.new()
 			font = titleFont,
 			width = dWidth - 20,
 			align = "center",
-			fontSize = 20
+			fontSize = 24
 		}
 	)
 	headingText.x = dCenterX
-	headingText.y = 200
+	headingText.y = 240
 	headingText:setFillColor(0.9, 0.9, 0.9)
 	group:insert(headingText)
 
@@ -35,7 +36,7 @@ function M.new()
 			font = subTitleFont,
 			width = dWidth - 20,
 			align = "center",
-			fontSize = 16
+			fontSize = 20
 		}
 	)
 	subHeadingText.x = dCenterX
@@ -54,6 +55,11 @@ function M.new()
 	importProgressView.y = subHeadingText.y + subHeadingText.contentHeight + 5
 	importProgressView.isVisible = false
 	group:insert(importProgressView)
+
+	logo = display.newImageRect("img/icons/play.png", 60, 60)
+	logo.x = dCenterX
+	logo.y = importProgressView.y + importProgressView.contentHeight + (logo.contentHeight * 0.5) + 5
+	group:insert(logo)
 
 	function group:updateHeading(text)
 		headingText.text = text
