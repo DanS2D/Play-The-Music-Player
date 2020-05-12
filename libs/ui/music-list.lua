@@ -9,6 +9,7 @@ local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
+local ratings = require("libs.ui.ratings")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -72,13 +73,13 @@ function M:getRowData(rowIndex)
 	musicData[rowIndex] = self:getRow(rowIndex)
 end
 
-function M:createTableView(options)
+function M:createTableView(options, index)
 	local tView =
 		desktopTableView.new(
 		{
-			left = options.left,
+			left = categoryList[index].x,
 			top = topPosition + rowHeight,
-			width = options.width or display.contentWidth,
+			width = display.contentWidth,
 			height = display.contentHeight - 100,
 			rowHeight = rowHeight,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
@@ -112,27 +113,41 @@ function M:createTableView(options)
 					row.isVisible = true
 				end
 
-				local rowTitleText =
-					display.newText(
-					{
-						text = musicData and musicData[row.index] and musicData[row.index][options.rowTitle] or "",
-						font = subTitleFont,
-						x = 0,
-						y = (rowContentHeight * 0.5),
-						fontSize = rowFontSize,
-						width = rowContentWidth - 10,
-						align = "left"
-					}
-				)
-				rowTitleText.anchorX = 0
-				rowTitleText.x = 10
+				if (options[index].rowTitle == "rating") then
+					local ratingStars =
+						ratings.new(
+						{
+							x = 42,
+							y = (rowContentHeight * 0.5),
+							fontSize = 10,
+							isVisible = true,
+							rating = musicData and musicData[row.index] and musicData[row.index][options[index].rowTitle] or 0,
+							parent = row
+						}
+					)
+				else
+					local rowTitleText =
+						display.newText(
+						{
+							text = musicData and musicData[row.index] and musicData[row.index][options[index].rowTitle] or "",
+							font = subTitleFont,
+							x = 0,
+							y = (rowContentHeight * 0.5),
+							fontSize = rowFontSize,
+							width = rowContentWidth - 10,
+							align = "left"
+						}
+					)
+					rowTitleText.anchorX = 0
+					rowTitleText.x = 10
 
-				if (rowTitleText.text:lower() == "lady (hear me tonight)") then
-					rowTitleText:setFillColor(1, 0, 0)
+					if (rowTitleText.text:lower() == "lady (hear me tonight)") then
+						rowTitleText:setFillColor(1, 0, 0)
+					end
+					row:insert(rowTitleText)
 				end
-				row:insert(rowTitleText)
 
-				if (parent._index >= 5) then
+				if (parent._index >= #options) then
 					if (not self.musicSearch) then
 						currentRowCount = currentRowCount + 1
 
@@ -171,9 +186,9 @@ function M:createTableView(options)
 			end
 		}
 	)
-	tView.leftPos = options.left
+	tView.leftPos = options[index].left
 	tView.topPos = topPosition + rowHeight
-	tView.orderIndex = options.index
+	tView.orderIndex = index
 	tView._index = #tableViewList + 1
 
 	function tView:populate()
@@ -228,6 +243,11 @@ end
 Runtime:addEventListener("mouse", onMouseEvent)
 
 function M.new()
+	local extraSmallColumnSize = display.contentWidth / 15
+	local smallColumnSize = display.contentWidth / 10
+	local smallMediumColumnSize = display.contentWidth / 8
+	local mediumColumnSize = display.contentWidth / 5
+	local largeColumnSize = display.contentWidth / 3
 	local categoryBar = display.newRect(0, 0, display.contentWidth, rowHeight)
 	categoryBar.anchorX = 0
 	categoryBar.anchorY = 0
@@ -248,7 +268,7 @@ function M.new()
 	local listOptions = {
 		{
 			index = 1,
-			left = 0,
+			left = largeColumnSize,
 			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Title",
@@ -256,7 +276,7 @@ function M.new()
 		},
 		{
 			index = 2,
-			left = 200,
+			left = mediumColumnSize,
 			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Artist",
@@ -264,7 +284,7 @@ function M.new()
 		},
 		{
 			index = 3,
-			left = 400,
+			left = mediumColumnSize,
 			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Album",
@@ -272,7 +292,7 @@ function M.new()
 		},
 		{
 			index = 4,
-			left = 600,
+			left = smallMediumColumnSize,
 			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Genre",
@@ -280,7 +300,15 @@ function M.new()
 		},
 		{
 			index = 5,
-			left = 750,
+			left = extraSmallColumnSize,
+			width = display.contentWidth,
+			showSeperatorLine = true,
+			categoryTitle = "Rating",
+			rowTitle = "rating"
+		},
+		{
+			index = 6,
+			left = extraSmallColumnSize,
 			width = display.contentWidth,
 			showSeperatorLine = true,
 			categoryTitle = "Duration",
@@ -289,11 +317,11 @@ function M.new()
 	}
 
 	for i = 1, #listOptions do
-		tableViewList[i] = M:createTableView(listOptions[i])
 		categoryList[i] = display.newGroup()
-		categoryList[i].x = listOptions[i].left
+		categoryList[i].x = i == 1 and 0 or categoryList[i - 1].x + listOptions[i - 1].left
 		categoryList[i].y = topPosition
 		categoryList[i].index = i
+		tableViewList[i] = M:createTableView(listOptions, i)
 
 		local seperatorText =
 			display.newText(

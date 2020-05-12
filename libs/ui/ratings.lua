@@ -107,9 +107,8 @@ local ratingStars = {
 		{name = "star", font = fontAwesomeSolidFont}
 	}
 }
-local currentStars = {}
 
-local function create(starList, fontSize, group)
+local function create(currentStars, starList, fontSize, group)
 	if (#currentStars > 0) then
 		for i = 1, #currentStars do
 			display.remove(currentStars[i])
@@ -139,22 +138,27 @@ local function create(starList, fontSize, group)
 end
 
 function M.new(options)
+	local currentStars = {}
 	local parent = options.parent or display.getCurrentStage()
 	local starRating = ratingStars[tostring(options.rating)]
 	local fontSize = options.fontSize or 8
 	local x = options.x or 0
 	local y = options.y or 0
+	local isVisible = options.isVisible or false
 	local group = display.newGroup()
 	group.anchorX = 0.5
 	group.anchorY = 0.5
+
 	group.anchorChildren = true
 
-	create(starRating, fontSize, group)
+	create(currentStars, starRating, fontSize, group)
+	group.x = x
+	group.y = y
 
 	function group:update(songRating)
 		local newRating = ratingStars[tostring(songRating)]
 
-		create(newRating, fontSize, self)
+		create(currentStars, newRating, fontSize, self)
 
 		self.isVisible = true
 		self.anchorChildren = true
@@ -164,7 +168,7 @@ function M.new(options)
 	end
 
 	parent:insert(group)
-	group.isVisible = false
+	group.isVisible = isVisible
 
 	return group
 end

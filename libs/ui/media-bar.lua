@@ -342,17 +342,6 @@ function M.new(options)
 	levelVisualizer.isVisible = false
 	group:insert(levelVisualizer)
 
-	ratingStars =
-		ratings.new(
-		{
-			x = 0,
-			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 5,
-			fontSize = 10,
-			rating = audioLib.isChannelHandleValid() and musicList:getRow(audioLib.currentSongIndex).rating or 0,
-			parent = songContainer
-		}
-	)
-
 	playBackTimeText =
 		display.newText(
 		{
@@ -478,15 +467,30 @@ function M.clearPlayingSong()
 	end
 
 	levelVisualizer.isVisible = false
-	ratingStars.isVisible = false
 	songTitleText:setText("")
 	songAlbumText:setText("")
 end
 
 function M.updateSongText(song)
 	levelVisualizer.isVisible = true
-	ratingStars.isVisible = true
-	ratingStars:update(song.rating)
+
+	if (ratingStars ~= nil) then
+		display.remove(ratingStars)
+		ratingStars = nil
+	end
+
+	ratingStars =
+		ratings.new(
+		{
+			x = 0,
+			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 5,
+			fontSize = 10,
+			rating = song.rating or 0,
+			isVisible = true,
+			parent = songContainer
+		}
+	)
+
 	songTitleText:setText(song.title)
 	songAlbumText:setText(song.album)
 end
