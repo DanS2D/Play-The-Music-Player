@@ -461,7 +461,6 @@ local function keyEventListener(event)
 	return false
 end
 
-audioLib.setVolume(1.0)
 display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
@@ -492,4 +491,6 @@ end
 
 Runtime:addEventListener("resize", onResize)
 
+mediaBarLib.setVolumeSliderValue(settings.volume * 100)
+audioLib.setVolume(settings.volume)
 populateTableViews()

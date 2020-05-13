@@ -10,6 +10,7 @@ local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
 local ratings = require("libs.ui.ratings")
 local volumeSliderLib = require("libs.ui.volume-slider")
+local settings = require("libs.settings")
 local dScreenOriginX = display.screenOriginX
 local dScreenOriginY = display.dScreenOriginY
 local dCenterX = display.contentCenterX
@@ -242,6 +243,10 @@ function M.new(options)
 			value = 100,
 			listener = function(event)
 				audioLib.setVolume(event.value / 100)
+			end,
+			onTouchEnded = function(event)
+				settings.volume = (event.value / 100)
+				settings:save()
 			end
 		}
 	)
@@ -550,6 +555,10 @@ end
 
 function M.updatePlayPauseState(playing)
 	playButton:setIsOn(playing)
+end
+
+function M.setVolumeSliderValue(volume)
+	volumeSlider:setValue(volume)
 end
 
 function M.clearPlayingSong()

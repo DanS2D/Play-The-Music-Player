@@ -13,6 +13,7 @@ function M.new(options)
 	local handleColor = options.innerColor or {1, 1, 1, 0.8}
 	local initialValue = options.value or 0
 	local listener = options.listener
+	local onTouchEnded = options.onTouchEnded
 	local group = display.newGroup()
 	local outerBox = nil
 	local innerBox = nil
@@ -57,11 +58,19 @@ function M.new(options)
 				local listenerEvent = {
 					value = target.x + (target.contentWidth * 0.5)
 				}
+
 				listener(listenerEvent)
 			end
 
 			self.parent:setValue(target.x + target.contentWidth * 0.5)
 		elseif (phase == "ended" or phase == "cancelled") then
+			if (type(onTouchEnded) == "function") then
+				local listenerEvent = {
+					value = target.x + (target.contentWidth * 0.5)
+				}
+
+				onTouchEnded(listenerEvent)
+			end
 			display.getCurrentStage():setFocus(nil)
 		end
 
