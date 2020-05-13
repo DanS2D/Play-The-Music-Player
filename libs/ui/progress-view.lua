@@ -5,6 +5,7 @@ local mMin = math.min
 
 function M.new(options)
 	local width = options.width
+	local origWidth = options.width
 	local height = options.height or 6
 	local allowTouch = options.allowTouch or nil
 	local outerColor = options.outerColor or {0.28, 0.28, 0.28, 1}
@@ -63,6 +64,11 @@ function M.new(options)
 
 	function group:setElapsedProgress(newProgress)
 		progress = newProgress
+	end
+
+	function group:setWidth(newWidth)
+		width = newWidth
+		outerBox.width = width
 	end
 
 	return group

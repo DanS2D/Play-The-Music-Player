@@ -401,9 +401,10 @@ local applicationMainMenuBar =
 	}
 )
 
-background = display.newRect(0, 0, display.contentWidth, display.contentHeight)
+background = display.newRect(0, 0, display.contentWidth, display.contentHeight - 161)
+background.anchorX = 0
 background.anchorY = 0
-background.x = display.contentCenterX
+background.x = 0
 background.y = 161
 background:setFillColor(0.10, 0.10, 0.10, 1)
 mediaBar = mediaBarLib.new({})
@@ -479,7 +480,14 @@ Runtime:addEventListener("system", onSystemEvent)
 
 local function onResize(event)
 	--print(display.contentWidth, display.contentHeight)
-	applicationMainMenuBar:handleResize()
+	background.width = display.contentWidth
+	background.height = display.contentHeight - 161
+
+	applicationMainMenuBar:onResize()
+	mediaBarLib:onResize()
+	--musicTableView:remove()
+	--musicTableView = musicList.new()
+	--musicList:populate()
 end
 
 Runtime:addEventListener("resize", onResize)

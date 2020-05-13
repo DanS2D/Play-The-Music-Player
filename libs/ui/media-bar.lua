@@ -18,6 +18,7 @@ local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
 local mAbs = math.abs
+local mMin = math.min
 local mRandom = math.random
 local mSqrt = math.sqrt
 local buttonFontSize = 20
@@ -42,11 +43,10 @@ local songContainer = nil
 local musicVisualizerBar = nil
 local loopButton = nil
 local levelVisualizer = nil
+local musicDuration = 0
 
 local function updateMediaBar()
 	if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
-		local musicDuration = audioLib.getDuration() * 1000
-
 		playBackTimeText:update()
 		songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
 		songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
@@ -516,6 +516,7 @@ end
 
 function M.resetSongProgress()
 	playBackTimeText.text = "00:00/00:00"
+	musicDuration = 0
 	songProgressView:setElapsedProgress(0)
 	songProgressView:setOverallProgress(0)
 end
@@ -558,6 +559,7 @@ function M.clearPlayingSong()
 	end
 
 	levelVisualizer.isVisible = false
+	musicDuration = 0
 	songTitleText:setText("")
 	songAlbumText:setText("")
 end
@@ -568,6 +570,10 @@ function M.updateSongText(song)
 	if (ratingStars ~= nil) then
 		display.remove(ratingStars)
 		ratingStars = nil
+	end
+
+	if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
+		musicDuration = audioLib.getDuration() * 1000
 	end
 
 	ratingStars =
@@ -596,6 +602,19 @@ end
 
 function M.updatePlaybackTime()
 	playBackTimeText:update()
+end
+
+function M:onResize()
+	-- todo: you're going to have to update whether or not the current song title text (etc) needs to scroll as this happens.
+	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 14
+	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
+	local songContainerWidth =
+		mAbs(shuffleButton.x + shuffleButton.contentWidth - volumeButton.x + volumeButton.contentWidth)
+	songContainerBox.width = mSqrt(songContainerWidth ^ 2)
+	songContainer.width = songContainerBox.contentWidth - 100
+	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
+	songProgressView:setWidth(songContainerBox.contentWidth)
+	songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
 end
 
 return M

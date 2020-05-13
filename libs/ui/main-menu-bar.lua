@@ -400,7 +400,7 @@ function M.new(options)
 
 	Runtime:addEventListener("mouse", onMouseEvent)
 
-	function group:handleResize()
+	function group:onResize()
 		searchBar.x = display.contentWidth - 4
 		clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
 		background.width = display.contentWidth
