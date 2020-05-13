@@ -9,6 +9,7 @@ local levelVisualization = require("libs.ui.level-visualizer")
 local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
 local ratings = require("libs.ui.ratings")
+local volumeSliderLib = require("libs.ui.volume-slider")
 local dScreenOriginX = display.screenOriginX
 local dScreenOriginY = display.dScreenOriginY
 local dCenterX = display.contentCenterX
@@ -492,9 +493,8 @@ function M.new(options)
 	volumeButton:setIsOn(true)
 	group:insert(volumeButton)
 
-	--[[
 	volumeSlider =
-		widget.newSlider(
+		volumeSliderLib.new(
 		{
 			width = 100,
 			value = 100,
@@ -503,10 +503,10 @@ function M.new(options)
 			end
 		}
 	)
-	volumeSlider.height = volumeSlider.height / 1.5
 	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth)
-	volumeSlider.y = previousButton.y - 4
-	group:insert(volumeSlider)--]]
+	volumeSlider.y = previousButton.y
+	group:insert(volumeSlider)
+
 	return group
 end
 

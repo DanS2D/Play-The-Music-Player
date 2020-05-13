@@ -1,12 +1,13 @@
 local bass = require("plugin.bass")
 local audioLib = require("libs.audio-lib")
 local M = {}
+local mMin = math.min
 
 function M.new(options)
 	local width = options.width
 	local height = options.height or 6
 	local allowTouch = options.allowTouch or nil
-	local outerColor = options.innerColor or {0.28, 0.28, 0.28, 1}
+	local outerColor = options.outerColor or {0.28, 0.28, 0.28, 1}
 	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
 	local seekPosition = 0
 	local group = display.newGroup()
@@ -44,6 +45,8 @@ function M.new(options)
 				audioLib.seek(seekPosition / 1000)
 			end
 		end
+
+		return true
 	end
 
 	if (allowTouch) then
@@ -51,7 +54,7 @@ function M.new(options)
 	end
 
 	function group:setOverallProgress(newProgress)
-		innerBox.width = (width / 100) * (newProgress * 100)
+		innerBox.width = mMin(width, (width / 100) * (newProgress * 100))
 	end
 
 	function group:getElapsedProgress()
