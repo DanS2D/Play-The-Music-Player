@@ -20,9 +20,11 @@ local dHeight = display.contentHeight
 local sFormat = string.format
 local mAbs = math.abs
 local mMin = math.min
+local mMax = math.max
 local mRandom = math.random
 local mSqrt = math.sqrt
-local buttonFontSize = 20
+local smallButtonFontSize = 20
+local mainButtonFontSize = 28
 local controlButtonsXOffset = 10
 local barHeight = 80
 local titleFont = "fonts/Roboto-Regular.ttf"
@@ -63,7 +65,7 @@ function M.new(options)
 		buttonLib.new(
 		{
 			iconName = "step-backward",
-			fontSize = buttonFontSize,
+			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
 				local canPlay = true
@@ -94,15 +96,15 @@ function M.new(options)
 			end
 		}
 	)
-	previousButton.x = (dScreenOriginX + (previousButton.contentWidth * 0.5) + controlButtonsXOffset)
-	previousButton.y = mainMenuBar:getHeight() + (barHeight / 2) + 13
+	previousButton.x = (dScreenOriginX + previousButton.contentWidth + controlButtonsXOffset)
+	previousButton.y = mainMenuBar:getHeight() + previousButton.contentHeight + 18
 
 	playButton =
 		switchLib.new(
 		{
 			offIconName = "play",
 			onIconName = "pause",
-			fontSize = buttonFontSize,
+			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
 				local target = event.target
@@ -147,7 +149,7 @@ function M.new(options)
 		buttonLib.new(
 		{
 			iconName = "step-forward",
-			fontSize = buttonFontSize,
+			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
 				local canPlay = true
@@ -181,10 +183,95 @@ function M.new(options)
 	nextButton.y = previousButton.y
 	group:insert(nextButton)
 
+	volumeSlider =
+		volumeSliderLib.new(
+		{
+			width = 100,
+			value = 100,
+			listener = function(event)
+				audioLib.setVolume(event.value / 100)
+			end,
+			onTouchEnded = function(event)
+				settings.volume = (event.value / 100)
+				settings:save()
+			end
+		}
+	)
+	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 28
+	volumeSlider.y = previousButton.y
+	group:insert(volumeSlider)
+
+	volumeButton =
+		switchLib.new(
+		{
+			offIconName = "volume-slash",
+			onIconName = "volume-up",
+			fontSize = mainButtonFontSize,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
+
+				if (target.isOffButton) then
+					audioLib.setVolume(audioLib.getPreviousVolume())
+					volumeSlider:setValue(audioLib.getVolume() * 100)
+				else
+					audioLib.setVolume(0)
+					volumeSlider:setValue(0)
+				end
+			end
+		}
+	)
+	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
+	volumeButton.y = previousButton.y
+	volumeButton:setIsOn(true)
+	group:insert(volumeButton)
+
+	musicVisualizerBar = musicVisualizer.new({yPos = 26, group = group})
+
+	songContainerBox = display.newRoundedRect(0, 0, mMax(489, display.contentWidth / 2), barHeight, 2)
+	songContainerBox.anchorX = 0
+	songContainerBox.x = display.contentCenterX - songContainerBox.contentWidth * 0.5 - 38
+	songContainerBox.y = (barHeight - 5)
+	songContainerBox.strokeWidth = 1
+	songContainerBox:setFillColor(0.1, 0.1, 0.1, 0.8)
+	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+	group:insert(songContainerBox)
+
+	songContainer = display.newContainer(songContainerBox.contentWidth - 140, barHeight - 14)
+	songContainer.anchorX = 0
+	songContainer.x = songContainerBox.x + 105
+	songContainer.y = songContainerBox.y - 3
+	group:insert(songContainer)
+
+	--[[
+	local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
+	rect.anchorX = 0
+	rect.x = songContainer.x
+	rect.y = songContainer.y
+	group:insert(rect)
+	--]]
+	shuffleButton =
+		switchLib.new(
+		{
+			offIconName = "random",
+			onIconName = "random",
+			offAlpha = 0.6,
+			fontSize = smallButtonFontSize,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
+				audioLib.shuffle = target.isOffButton
+			end
+		}
+	)
+	shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+	shuffleButton.y = songContainerBox.y - shuffleButton.contentHeight - 5
+	group:insert(shuffleButton)
+
 	loopButton =
 		multiButtonLib.new(
 		{
-			fontSize = buttonFontSize,
+			fontSize = smallButtonFontSize,
 			buttonOptions = {
 				{
 					iconName = "repeat",
@@ -214,90 +301,9 @@ function M.new(options)
 			}
 		}
 	)
-	loopButton.x = (nextButton.x + nextButton.contentWidth + controlButtonsXOffset)
-	loopButton.y = previousButton.y
+	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
+	loopButton.y = shuffleButton.y
 	group:insert(loopButton)
-
-	shuffleButton =
-		switchLib.new(
-		{
-			offIconName = "random",
-			onIconName = "random",
-			offAlpha = 0.6,
-			fontSize = buttonFontSize,
-			parent = group,
-			onClick = function(event)
-				local target = event.target
-				audioLib.shuffle = target.isOffButton
-			end
-		}
-	)
-	shuffleButton.x = (loopButton.x + loopButton.contentWidth + controlButtonsXOffset)
-	shuffleButton.y = previousButton.y
-	group:insert(shuffleButton)
-
-	volumeSlider =
-		volumeSliderLib.new(
-		{
-			width = 100,
-			value = 100,
-			listener = function(event)
-				audioLib.setVolume(event.value / 100)
-			end,
-			onTouchEnded = function(event)
-				settings.volume = (event.value / 100)
-				settings:save()
-			end
-		}
-	)
-	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 14
-	volumeSlider.y = previousButton.y
-	group:insert(volumeSlider)
-
-	volumeButton =
-		switchLib.new(
-		{
-			offIconName = "volume-slash",
-			onIconName = "volume-up",
-			fontSize = buttonFontSize,
-			parent = group,
-			onClick = function(event)
-				local target = event.target
-
-				if (target.isOffButton) then
-					audioLib.setVolume(audioLib.getPreviousVolume())
-					volumeSlider:setValue(audioLib.getVolume() * 100)
-				else
-					audioLib.setVolume(0)
-					volumeSlider:setValue(0)
-				end
-			end
-		}
-	)
-	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
-	volumeButton.y = previousButton.y
-	volumeButton:setIsOn(true)
-	group:insert(volumeButton)
-
-	musicVisualizerBar = musicVisualizer.new({yPos = shuffleButton.y - 5, group = group})
-
-	local songContainerWidth =
-		mAbs(shuffleButton.x + shuffleButton.contentWidth - volumeButton.x + volumeButton.contentWidth)
-	songContainerBox = display.newRoundedRect(0, 0, mSqrt(songContainerWidth ^ 2), barHeight, 2)
-	songContainerBox.anchorX = 0
-	songContainerBox.x = (shuffleButton.x + controlButtonsXOffset + 14)
-	songContainerBox.y = (barHeight - 5)
-	songContainerBox.strokeWidth = 1
-	songContainerBox.alpha = 0.6
-	songContainerBox:setFillColor(0, 0, 0, 1)
-	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
-	group:insert(songContainerBox)
-
-	songContainer = display.newContainer(songContainerBox.contentWidth - 100, barHeight)
-	songContainer.anchorX = 0
-	songContainer.x = songContainerBox.x + 80
-	songContainer.y = songContainerBox.y - 10
-	group:insert(songContainer)
 
 	songTitleText =
 		display.newText(
@@ -310,7 +316,7 @@ function M.new(options)
 	)
 	songTitleText.anchorX = 0
 	songTitleText.x = -(songTitleText.contentWidth * 0.5)
-	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 3
+	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 10
 	songTitleText.scrollTimer = nil
 	songTitleText:setFillColor(0.9, 0.9, 0.9)
 	songContainer:insert(songTitleText)
@@ -325,8 +331,8 @@ function M.new(options)
 		}
 	)
 	songTitleText.copy.anchorX = 0
-	songTitleText.copy.x = -(songTitleText.contentWidth * 0.5)
-	songTitleText.copy.y = -(songTitleText.contentHeight * 0.5) - 3
+	songTitleText.copy.x = songTitleText.x
+	songTitleText.copy.y = songTitleText.y
 	songTitleText.copy:setFillColor(0.9, 0.9, 0.9)
 	songContainer:insert(songTitleText.copy)
 
@@ -473,7 +479,7 @@ function M.new(options)
 	end
 
 	levelVisualizer = levelVisualization.new()
-	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 25
+	levelVisualizer.x = songContainerBox.x + 28
 	levelVisualizer.y = songContainerBox.y + songContainerBox.contentHeight * 0.5 - 12
 	levelVisualizer.isVisible = false
 	group:insert(levelVisualizer)
@@ -547,10 +553,16 @@ function M.setAlbumArtwork(fileName)
 		albumArtwork = nil
 	end
 
-	albumArtwork = display.newImageRect(fileName, system.DocumentsDirectory, 60, 60)
+	albumArtwork = display.newImageRect(fileName, system.DocumentsDirectory, 65, 65)
 	albumArtwork.anchorX = 0
 	albumArtwork.x = songContainerBox.x + 5
 	albumArtwork.y = songContainerBox.y - 3
+
+	if (albumArtwork) then
+		shuffleButton.x = songContainerBox.x + 90
+	else
+		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+	end
 end
 
 function M.updatePlayPauseState(playing)
@@ -607,6 +619,12 @@ function M.updateSongText(song)
 	)--]]
 	songTitleText:setText(song.title)
 	songAlbumText:setText(song.album)
+
+	if (albumArtwork) then
+		shuffleButton.x = songContainerBox.x + 90
+	else
+		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+	end
 end
 
 function M.updatePlaybackTime()
@@ -615,15 +633,30 @@ end
 
 function M:onResize()
 	-- todo: you're going to have to update whether or not the current song title text (etc) needs to scroll as this happens.
-	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 14
+	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 28
 	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
-	local songContainerWidth =
-		mAbs(shuffleButton.x + shuffleButton.contentWidth - volumeButton.x + volumeButton.contentWidth)
-	songContainerBox.width = mSqrt(songContainerWidth ^ 2)
-	songContainer.width = songContainerBox.contentWidth - 100
+	songContainerBox.width = mMax(489, display.contentWidth / 2)
+	songContainerBox.x = display.contentCenterX - songContainerBox.contentWidth * 0.5 - 38
+	songContainer.width = songContainerBox.contentWidth - 140
+	songContainer.x = songContainerBox.x + 105
+	shuffleButton.x = songContainerBox.x + 90
+	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
 	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
+	songProgressView.x = songContainerBox.x
+	levelVisualizer.x = songContainerBox.x + 28
+
+	if (albumArtwork) then
+		albumArtwork.x = songContainerBox.x + 5
+		shuffleButton.x = songContainerBox.x + 90
+	else
+		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+	end
+
 	songProgressView:setWidth(songContainerBox.contentWidth)
-	songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
+
+	if (audioLib.isChannelHandleValid() and audioLib.isChannelPlaying()) then
+		songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
+	end
 end
 
 return M
