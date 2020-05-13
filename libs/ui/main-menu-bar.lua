@@ -147,6 +147,7 @@ function M.new(options)
 				width = itemListWidth,
 				height = height,
 				rowHeight = menuBarHeight - 2,
+				rowLimit = 0,
 				useSelectedRowHighlighting = false,
 				backgroundColor = {0.18, 0.18, 0.18},
 				onRowRender = function(event)

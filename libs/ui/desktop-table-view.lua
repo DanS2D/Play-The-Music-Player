@@ -11,14 +11,13 @@ local selectedRowIndex = 0
 function M.new(options)
 	local x = options.left or 0
 	local y = options.top or 0
-	local width = options.width or dWidth
+	local width = options.width or display.contentWidth
 	local height = options.height or error("desktop-table-view() options.height number expect, got ", type(options.height))
 	local maxRows = options.maxRows or 22
 	local visibleRows = maxRows - 1
 	local rowLimit = options.rowLimit or maxRows
 	local backgroundColor = options.backgroundColor or {0, 0, 0}
 	local rowColorDefault = options.rowColorDefault or {default = {0, 0, 0}, over = {0.2, 0.2, 0.2}}
-	local rowColorAlternate = options.rowColorAlternate or nil
 	local rowHeight = options.rowHeight or 20
 	local useSelectedRowHighlighting = options.useSelectedRowHighlighting
 	local onRowRender =
@@ -37,13 +36,6 @@ function M.new(options)
 	visibleRows = maxRows - 1
 	tableView.x = x
 	tableView.y = y
-	--local isRowCountEven = maxRows % 2 == 0
-
-	-- i don't think we need to use this anymore
-	--if (not isRowCountEven) then
-	--maxRows = maxRows + 1
-	--visibleRows = maxRows - 1
-	--end
 
 	--print("is row count even ", isRowCountEven)
 	--print("we should be able to fit " .. realRowVisibleCount .. " rows on screen")
@@ -62,6 +54,15 @@ function M.new(options)
 	end
 
 	function tableView:createRows(params)
+		local color = rowColorDefault.default
+
+		if not (options.rowLimit) then
+			realHeight = (display.contentHeight - y)
+			realRowVisibleCount, _ = mModf(realHeight / rowHeight)
+			maxRows = realRowVisibleCount + 1
+			visibleRows = maxRows - 1
+		end
+
 		realRowIndex = maxRows
 
 		for i = 1, maxRows do
@@ -71,12 +72,7 @@ function M.new(options)
 			rows[i]._background.anchorX = 0
 			rows[i]._background.x = 0
 			rows[i]._background.y = (rowHeight * 0.5)
-			rows[i]._background:setFillColor(unpack(rowColorDefault.default))
-
-			if (rowColorAlternate and i % 2 == 0) then
-				rows[i]._background:setFillColor(unpack(rowColorAlternate.default))
-			end
-
+			rows[i]._background:setFillColor(unpack(color))
 			rows[i]._background._isBackground = true
 			rows[i]:insert(rows[i]._background)
 
@@ -198,21 +194,26 @@ function M.new(options)
 		end
 	end
 
+	function tableView:removeEverything()
+		self:deleteAllRows()
+		Runtime:removeEventListener("enterFrame", tableView)
+		Runtime:removeEventListener("mouse", tableView)
+
+		display.remove(self)
+		self = nil
+	end
+
+	function tableView:resizeAllRowBackgrounds(newWidth)
+		for i = 1, maxRows do
+			rows[i]._background.width = newWidth
+		end
+	end
+
 	function tableView:setMaxRows(max)
 		maxRows = max
 	end
 
 	function tableView:scrollToIndex(index)
-		local newRowIndex = 0
-
-		if (index == 1) then
-			newRowIndex = visibleRows
-		elseif (index >= rowLimit) then
-			newRowIndex = rowLimit - visibleRows
-		else
-			newRowIndex = index - visibleRows
-		end
-
 		for i = 1, maxRows do
 			if (index <= maxRows) then
 				rows[i].index = i
@@ -247,9 +248,8 @@ function M.new(options)
 			return
 		end
 
-		local color = rowIndex % 2 == 0 and rowColorAlternate and rowColorAlternate.over or rowColorDefault.over
 		local defaultRowColor = rowColorDefault.default
-		local alternateRowColor = rowColorAlternate and rowColorAlternate.default or defaultRowColor
+		local overRowColor = rowColorDefault.over
 
 		if (not viaScroll) then
 			selectedRowIndex = rowIndex
@@ -257,14 +257,12 @@ function M.new(options)
 
 		if (selectedRowIndex >= 0) then
 			for i = 1, maxRows do
-				local defaultColor = i % 2 == 0 and alternateRowColor or defaultRowColor
-
 				if (rows[i].index == selectedRowIndex) then
 					-- set the selected row to its over color
-					rows[i]._background:setFillColor(unpack(color))
+					rows[i]._background:setFillColor(unpack(overRowColor))
 				else
 					-- reset other rows to their default color
-					rows[i]._background:setFillColor(unpack(defaultColor))
+					rows[i]._background:setFillColor(unpack(defaultRowColor))
 				end
 			end
 		end
@@ -282,7 +280,7 @@ function M.new(options)
 
 	Runtime:addEventListener("enterFrame", tableView)
 
-	local function mouseEventListener(event)
+	function tableView:mouse(event)
 		local eventType = event.type
 		local scrollY = event.scrollY
 
@@ -317,7 +315,7 @@ function M.new(options)
 		return true
 	end
 
-	Runtime:addEventListener("mouse", mouseEventListener)
+	Runtime:addEventListener("mouse", tableView)
 
 	return tableView
 end

@@ -27,6 +27,7 @@ local musicFiles = {}
 local mediaBar = nil
 local musicTableView = nil
 local background = nil
+local resizeTimer = nil
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
@@ -484,9 +485,23 @@ local function onResize(event)
 
 	applicationMainMenuBar:onResize()
 	mediaBarLib:onResize()
-	--musicTableView:remove()
-	--musicTableView = musicList.new()
-	--musicList:populate()
+
+	if (sqlLib:musicCount() > 0) then
+		musicList:onResize()
+
+		if (resizeTimer) then
+			timer.cancel(resizeTimer)
+			resizeTimer = nil
+		end
+
+		resizeTimer =
+			timer.performWithDelay(
+			500,
+			function()
+				musicList:recreateMusicList()
+			end
+		)
+	end
 end
 
 Runtime:addEventListener("resize", onResize)

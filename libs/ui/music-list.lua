@@ -18,6 +18,7 @@ local mMax = math.max
 local tInsert = table.insert
 local tableViewList = {}
 local tableViewTarget = nil
+local categoryBar = nil
 local categoryList = {}
 local categoryTarget = nil
 local musicCount = 0
@@ -26,8 +27,7 @@ local musicSort = "title" -- todo: get saved sort from database
 local prevIndex = 0
 local rowFontSize = 18
 local rowHeight = 40
-local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.38, 0.38, 0.38, 1}}
-local defaultSecondRowColor = {default = {0.15, 0.15, 0.15, 1}, over = {0.28, 0.28, 0.28, 1}}
+local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.18, 1}}
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
@@ -85,7 +85,6 @@ function M:createTableView(options, index)
 			useSelectedRowHighlighting = true,
 			backgroundColor = {0.10, 0.10, 0.10, 1},
 			rowColorDefault = defaultRowColor,
-			rowColorAlternate = defaultSecondRowColor,
 			onRowRender = function(event)
 				local phase = event.phase
 				local parent = event.parent
@@ -196,6 +195,7 @@ function M:createTableView(options, index)
 		--print("Creating initial rows")
 		musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:musicCount()
 
+		tView:deleteAllRows()
 		tView:createRows()
 		tView:setRowLimit(musicCount)
 	end
@@ -249,7 +249,7 @@ function M.new()
 	local smallMediumColumnSize = display.contentWidth / 8
 	local mediumColumnSize = display.contentWidth / 5
 	local largeColumnSize = display.contentWidth / 3
-	local categoryBar = display.newRect(0, 0, display.contentWidth, rowHeight)
+	categoryBar = display.newRect(0, 0, display.contentWidth, rowHeight)
 	categoryBar.anchorX = 0
 	categoryBar.anchorY = 0
 	categoryBar.x = 0
@@ -542,6 +542,10 @@ function M:hasValidMusicData()
 	return musicCount > 0
 end
 
+function M:getCurrentIndex()
+	return tableViewList[1]:getRealIndex()
+end
+
 function M:getMusicCount()
 	return musicCount
 end
@@ -612,30 +616,32 @@ function M:populate()
 	musicImporter.showProgressBar()
 	musicImporter.updateHeading("Loading music library")
 	musicImporter.updateSubHeading("Give me a sec..")
-	local listIndex = 0
 
-	local function createLists()
-		listIndex = listIndex + 1
+	for i = 1, #tableViewList do
+		tableViewList[i]:populate()
+		musicImporter.setTotalProgress(i / #tableViewList)
+		tableViewList[i]:toFront()
 
-		if (listIndex > #tableViewList) then
+		if (i == #tableViewList) then
 			musicImporter.hideProgress()
-
-			for i = 1, #tableViewList do
-				tableViewList[i]:toFront()
-			end
-
-			local endSecond = os.date("*t").sec
-			print("render time = " .. math.abs(endSecond - startSecond))
-
-			return
 		end
-
-		tableViewList[listIndex]:populate()
-		musicImporter.setTotalProgress(listIndex / #tableViewList)
-		timer.performWithDelay(25, createLists)
 	end
+end
 
-	timer.performWithDelay(25, createLists)
+function M:onResize()
+	categoryBar.width = display.contentWidth
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
+	end
+end
+
+function M:recreateMusicList()
+	if (musicCount > 0) then
+		musicData = {}
+		currentRowCount = 0
+		self:populate()
+	end
 end
 
 return M

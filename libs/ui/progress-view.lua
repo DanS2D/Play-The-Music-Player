@@ -6,7 +6,7 @@ local mMin = math.min
 function M.new(options)
 	local width = options.width
 	local origWidth = options.width
-	local height = options.height or 6
+	local height = options.height or 7
 	local allowTouch = options.allowTouch or nil
 	local outerColor = options.outerColor or {0.28, 0.28, 0.28, 1}
 	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
