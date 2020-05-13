@@ -17,7 +17,9 @@ local dCenterY = display.contentCenterY
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local sFormat = string.format
+local mAbs = math.abs
 local mRandom = math.random
+local mSqrt = math.sqrt
 local buttonFontSize = 20
 local controlButtonsXOffset = 10
 local barHeight = 80
@@ -233,9 +235,50 @@ function M.new(options)
 	shuffleButton.y = previousButton.y
 	group:insert(shuffleButton)
 
+	volumeSlider =
+		volumeSliderLib.new(
+		{
+			width = 100,
+			value = 100,
+			listener = function(event)
+				audioLib.setVolume(event.value / 100)
+			end
+		}
+	)
+	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 14
+	volumeSlider.y = previousButton.y
+	group:insert(volumeSlider)
+
+	volumeButton =
+		switchLib.new(
+		{
+			offIconName = "volume-slash",
+			onIconName = "volume-up",
+			fontSize = buttonFontSize,
+			parent = group,
+			onClick = function(event)
+				local target = event.target
+
+				if (target.isOffButton) then
+					audioLib.setVolume(audioLib.getPreviousVolume())
+					volumeSlider:setValue(audioLib.getVolume() * 100)
+				else
+					audioLib.setVolume(0)
+					volumeSlider:setValue(0)
+				end
+			end
+		}
+	)
+	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
+	volumeButton.y = previousButton.y
+	volumeButton:setIsOn(true)
+	group:insert(volumeButton)
+
 	musicVisualizerBar = musicVisualizer.new({yPos = shuffleButton.y - 5, group = group})
 
-	songContainerBox = display.newRoundedRect(0, 0, display.contentWidth / 1.4, barHeight, 2)
+	local songContainerWidth =
+		mAbs(shuffleButton.x + shuffleButton.contentWidth - volumeButton.x + volumeButton.contentWidth)
+	songContainerBox = display.newRoundedRect(0, 0, mSqrt(songContainerWidth ^ 2), barHeight, 2)
 	songContainerBox.anchorX = 0
 	songContainerBox.x = (shuffleButton.x + controlButtonsXOffset + 14)
 	songContainerBox.y = (barHeight - 5)
@@ -467,45 +510,6 @@ function M.new(options)
 	songProgressView.x = songContainerBox.x
 	songProgressView.y = songContainerBox.y + songContainerBox.contentHeight * 0.5 - songProgressView.contentHeight * 0.5
 	group:insert(songProgressView)
-
-	volumeButton =
-		switchLib.new(
-		{
-			offIconName = "volume-slash",
-			onIconName = "volume-up",
-			fontSize = buttonFontSize,
-			parent = group,
-			onClick = function(event)
-				local target = event.target
-
-				if (target.isOffButton) then
-					audioLib.setVolume(audioLib.getPreviousVolume())
-					volumeSlider:setValue(audioLib.getVolume() * 100)
-				else
-					audioLib.setVolume(0)
-					volumeSlider:setValue(0)
-				end
-			end
-		}
-	)
-	volumeButton.x = (songProgressView.x + songProgressView.actualWidth + controlButtonsXOffset + 20)
-	volumeButton.y = previousButton.y
-	volumeButton:setIsOn(true)
-	group:insert(volumeButton)
-
-	volumeSlider =
-		volumeSliderLib.new(
-		{
-			width = 100,
-			value = 100,
-			listener = function(event)
-				audioLib.setVolume(event.value / 100)
-			end
-		}
-	)
-	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth)
-	volumeSlider.y = previousButton.y
-	group:insert(volumeSlider)
 
 	return group
 end
