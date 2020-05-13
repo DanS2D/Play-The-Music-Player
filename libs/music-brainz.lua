@@ -29,11 +29,26 @@ local function dispatchCoverEvent()
 end
 
 local function isMp3File(song)
-	return (song.fileName:match("^.+(%..+)$") == ".mp3")
+	return (song.fileName:match("^.+(%..+)$"):lower() == ".mp3")
 end
 
-local function getMp3CoverFromMp3(song)
-	if (isMp3File(song)) then
+local function isFlacFile(song)
+	return (song.fileName:match("^.+(%..+)$"):lower() == ".flac")
+end
+
+local function isMp4File(song)
+	local extension = song.fileName:match("^.+(%..+)$"):lower()
+
+	return (extension == ".mva" or extension == "m4v")
+end
+
+local function canGetCoverFromAudioFile(song)
+	return isMp3File(song) or isFlacFile(song) or isMp4File(song)
+end
+
+local function getCoverFromAudioFile(song)
+	if (isMp3File(song) or isFlacFile(song) or isMp4File(song)) then
+		print("Getting cover from file")
 		tag.getArtwork(
 			{
 				fileName = song.fileName,
@@ -45,8 +60,8 @@ local function getMp3CoverFromMp3(song)
 	end
 end
 
-local function setMp3CoverFromDownload(song, fileName)
-	if (isMp3File(song)) then
+local function setCoverFromDownload(song, fileName)
+	if (isMp3File(song) or isFlacFile(song) or isMp4File(song)) then
 		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
 			print("setting artwork")
 			print(song.fileName)
@@ -141,7 +156,7 @@ downloadListener = function(event)
 
 		if (fileUtils:fileExists(newFileName, system.DocumentsDirectory)) then
 			currentCoverFileName = newFileName
-			setMp3CoverFromDownload(requestedSong, newFileName)
+			setCoverFromDownload(requestedSong, newFileName)
 			--print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
 		end
@@ -206,8 +221,8 @@ function M.getCover(song)
 		currentCoverFileName = fileName
 		dispatchCoverEvent()
 	else
-		if (isMp3File(song)) then
-			getMp3CoverFromMp3(song)
+		if (canGetCoverFromAudioFile(song)) then
+			getCoverFromAudioFile(song)
 			--print("trying to get cover from mp3 file")
 
 			local function findFileSavedFromMp3(event)
