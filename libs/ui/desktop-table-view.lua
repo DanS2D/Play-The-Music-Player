@@ -89,6 +89,10 @@ function M.new(options)
 		end
 	end
 
+	function tableView:didMouseScroll()
+		return didMouseScroll
+	end
+
 	function tableView:deleteAllRows()
 		if (#rows > 0) then
 			for i = 1, maxRows do
@@ -194,15 +198,6 @@ function M.new(options)
 		end
 	end
 
-	function tableView:removeEverything()
-		self:deleteAllRows()
-		Runtime:removeEventListener("enterFrame", tableView)
-		Runtime:removeEventListener("mouse", tableView)
-
-		display.remove(self)
-		self = nil
-	end
-
 	function tableView:resizeAllRowBackgrounds(newWidth)
 		for i = 1, maxRows do
 			rows[i]._background.width = newWidth
@@ -267,18 +262,6 @@ function M.new(options)
 			end
 		end
 	end
-
-	function tableView:enterFrame(event)
-		lockScrolling = (rowLimit < visibleRows)
-
-		if (selectedRowIndex > 0 and useSelectedRowHighlighting) then
-			self:setRowSelected(selectedRowIndex, true)
-		end
-
-		return true
-	end
-
-	Runtime:addEventListener("enterFrame", tableView)
 
 	function tableView:mouse(event)
 		local eventType = event.type

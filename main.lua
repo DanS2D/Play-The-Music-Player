@@ -478,6 +478,8 @@ end
 
 Runtime:addEventListener("system", onSystemEvent)
 
+local oldHeight = display.contentHeight
+
 local function onResize(event)
 	--print(display.contentWidth, display.contentHeight)
 	background.width = display.contentWidth
@@ -485,22 +487,25 @@ local function onResize(event)
 
 	applicationMainMenuBar:onResize()
 	mediaBarLib:onResize()
+	musicList:onResize()
 
-	if (sqlLib:musicCount() > 0) then
-		musicList:onResize()
+	if (display.contentHeight > oldHeight or display.contentHeight < oldHeight) then
+		if (sqlLib:musicCount() > 0) then
+			if (resizeTimer) then
+				timer.cancel(resizeTimer)
+				resizeTimer = nil
+			end
 
-		if (resizeTimer) then
-			timer.cancel(resizeTimer)
-			resizeTimer = nil
+			resizeTimer =
+				timer.performWithDelay(
+				500,
+				function()
+					musicList:recreateMusicList()
+				end
+			)
 		end
 
-		resizeTimer =
-			timer.performWithDelay(
-			500,
-			function()
-				musicList:recreateMusicList()
-			end
-		)
+		oldHeight = display.contentHeight
 	end
 end
 

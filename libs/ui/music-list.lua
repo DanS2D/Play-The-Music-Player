@@ -28,6 +28,7 @@ local prevIndex = 0
 local rowFontSize = 18
 local rowHeight = 40
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.18, 1}}
+local selectedRowIndex = 0
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
 local resizeCursor = mousecursor.newCursor("resize left right")
@@ -177,7 +178,12 @@ function M:createTableView(options, index)
 					end
 
 					print("row " .. row.index .. " clicked - playing song " .. song.title)
-					parent:setRowSelected(row.index)
+					--parent:setRowSelected(row.index)
+					selectedRowIndex = row.index
+
+					for i = 1, #tableViewList do
+						tableViewList[i]:setRowSelected(selectedRowIndex)
+					end
 
 					audioLib.currentSongIndex = row.index
 					audioLib.load(song)
@@ -242,6 +248,16 @@ local function onMouseEvent(event)
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
+
+local function onEnterFrame(event)
+	if (#tableViewList > 0 and selectedRowIndex > 0) then
+		for i = 1, #tableViewList do
+			tableViewList[i]:setRowSelected(selectedRowIndex)
+		end
+	end
+end
+
+Runtime:addEventListener("enterFrame", onEnterFrame)
 
 function M.new()
 	local extraSmallColumnSize = display.contentWidth / 15
@@ -631,8 +647,10 @@ end
 function M:onResize()
 	categoryBar.width = display.contentWidth
 
-	for i = 1, #tableViewList do
-		tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
+	if (sqlLib.musicCount() > 0) then
+		for i = 1, #tableViewList do
+			tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
+		end
 	end
 end
 

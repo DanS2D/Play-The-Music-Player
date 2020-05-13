@@ -19,11 +19,16 @@ settings =
 		singleInstance = true,
 	},
 
+	build =
+	{
+		neverStripDebugInfo = true,
+	},
+
 	window =
 		{
 			defaultMode = "normal",
-			minViewWidth = 600,
-			minViewHeight = 400,
+			minViewWidth = 850,
+			minViewHeight = 564,
 			defaultViewWidth = 1650,
 			defaultViewHeight = 1024,
 			resizable = true,
