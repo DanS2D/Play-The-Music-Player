@@ -579,6 +579,12 @@ function M.clearPlayingSong()
 		albumArtwork = nil
 	end
 
+	if (albumArtwork) then
+		shuffleButton.x = songContainerBox.x + 90
+	else
+		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+	end
+
 	levelVisualizer.isVisible = false
 	musicDuration = 0
 	songTitleText:setText("")
