@@ -195,7 +195,10 @@ function M.new(options)
 			width = 100,
 			value = 100,
 			listener = function(event)
-				audioLib.setVolume(event.value / 100)
+				local convertedValue = event.value / 100
+
+				audioLib.setVolume(convertedValue)
+				volumeButton:setIsOn(convertedValue > 0)
 			end,
 			onTouchEnded = function(event)
 				settings.volume = (event.value / 100)
