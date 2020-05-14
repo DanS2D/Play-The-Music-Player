@@ -145,7 +145,7 @@ function M.new(options)
 		mainButton.mainTableView =
 			desktopTableView.new(
 			{
-				left = i == 1 and 0 or menuButtons[i].x - menuButtons[i].contentWidth * 0.5,
+				left = i == 1 and 0 or menuButtons[i].x,
 				top = menuBarHeight,
 				width = itemListWidth,
 				height = height,
