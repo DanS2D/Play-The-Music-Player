@@ -554,7 +554,7 @@ function M.new()
 			}
 		)
 		titleText.anchorX = 0
-		titleText.x = seperatorText.x + seperatorText.contentWidth
+		titleText.x = seperatorText.x + seperatorText.contentWidth * 0.35
 		titleText.sortAToZ = i == 1 or false -- TODO: read from database
 		categoryTouchRect.text = titleText.text
 		titleText:setFillColor(1, 1, 1)
