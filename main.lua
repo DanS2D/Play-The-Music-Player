@@ -281,7 +281,26 @@ local applicationMainMenuBar =
 				title = "View",
 				subItems = {
 					{
-						title = "Show Visualizer",
+						title = "Light Theme",
+						iconName = "palette",
+						onClick = function(event)
+							--settings:save()
+						end
+					},
+					{
+						title = "Dark Theme",
+						iconName = "palette",
+						onClick = function(event)
+							--settings:save()
+						end
+					}
+				}
+			},
+			{
+				title = "Visualizer",
+				subItems = {
+					{
+						title = "Enabled",
 						iconName = "eye",
 						useCheckmark = true,
 						checkMarkIsOn = toboolean(settings.showVisualizer),
@@ -297,12 +316,7 @@ local applicationMainMenuBar =
 							musicVisualizer:restart()
 							settings:save()
 						end
-					}
-				}
-			},
-			{
-				title = "Visualizer",
-				subItems = {
+					},
 					{
 						title = "Start",
 						iconName = "play",
