@@ -16,6 +16,7 @@ local mFloor = math.floor
 local mMin = math.min
 local mMax = math.max
 local tInsert = table.insert
+local sFormat = string.format
 local tableViewList = {}
 local tableViewTarget = nil
 local categoryBar = nil
@@ -390,40 +391,17 @@ function M.new()
 
 		seperatorText:addEventListener("mouse")
 
-		local titleText =
-			display.newText(
-			{
-				text = listOptions[i].categoryTitle,
-				y = categoryBar.contentHeight * 0.5,
-				font = subTitleFont,
-				fontSize = rowFontSize,
-				align = "left"
-			}
-		)
-		titleText.anchorX = 0
-		titleText.x = seperatorText.x + seperatorText.contentWidth
-		titleText.sortAToZ = i == 1 or false -- TODO: read from database
-		titleText:setFillColor(1, 1, 1)
-		categoryList[i]:insert(titleText)
+		local categoryTouchRect = display.newRect(0, 0, listOptions[i].left, rowHeight)
+		categoryTouchRect.anchorX = 0
+		categoryTouchRect.anchorY = 0
+		categoryTouchRect.x = seperatorText.x
+		categoryTouchRect.y = 0
+		categoryTouchRect.isVisible = false
+		categoryTouchRect.isHitTestable = true
+		categoryTouchRect.sortAToZ = i == 1 or false -- TODO: read from database
+		categoryList[i]:insert(categoryTouchRect)
 
-		local sortIndicator =
-			display.newText(
-			{
-				text = "caret-up",
-				y = categoryBar.contentHeight * 0.5,
-				font = fontAwesomeSolidFont,
-				fontSize = rowFontSize,
-				align = "left"
-			}
-		)
-		sortIndicator.anchorX = 0
-		sortIndicator.x = titleText.x + titleText.contentWidth + 4
-		sortIndicator.isVisible = i == 1 -- TODO: read from database
-		titleText.sortIndicator = sortIndicator
-		categoryList[i].sortIndicator = sortIndicator
-		categoryList[i]:insert(sortIndicator)
-
-		function titleText:touch(event)
+		function categoryTouchRect:touch(event)
 			local phase = event.phase
 			local target = event.target
 			local xStart = target.x
@@ -563,7 +541,42 @@ function M.new()
 			return true
 		end
 
-		titleText:addEventListener("touch")
+		categoryTouchRect:addEventListener("touch")
+
+		local titleText =
+			display.newText(
+			{
+				text = listOptions[i].categoryTitle,
+				y = categoryBar.contentHeight * 0.5,
+				font = subTitleFont,
+				fontSize = rowFontSize,
+				align = "left"
+			}
+		)
+		titleText.anchorX = 0
+		titleText.x = seperatorText.x + seperatorText.contentWidth
+		titleText.sortAToZ = i == 1 or false -- TODO: read from database
+		categoryTouchRect.text = titleText.text
+		titleText:setFillColor(1, 1, 1)
+		categoryList[i]:insert(titleText)
+
+		local sortIndicator =
+			display.newText(
+			{
+				text = "caret-up",
+				y = categoryBar.contentHeight * 0.5,
+				font = fontAwesomeSolidFont,
+				fontSize = rowFontSize,
+				align = "left"
+			}
+		)
+		sortIndicator.anchorX = 0
+		sortIndicator.x = titleText.x + titleText.contentWidth + 4
+		sortIndicator.isVisible = i == 1 -- TODO: read from database
+		titleText.sortIndicator = sortIndicator
+		categoryTouchRect.sortIndicator = sortIndicator
+		categoryList[i].sortIndicator = sortIndicator
+		categoryList[i]:insert(sortIndicator)
 	end
 
 	return tableViewList
