@@ -396,8 +396,8 @@ function M.new()
 		categoryTouchRect:setFillColor(0.15, 0.15, 0.15)
 		categoryList[i]:insert(categoryTouchRect)
 
-		function categoryTouchRect:touch(event)
-			local phase = event.phase
+		function categoryTouchRect:mouse(event)
+			local phase = event.type
 			local target = event.target
 			local xStart = target.x
 			local xEnd = target.x + target.contentWidth
@@ -409,134 +409,142 @@ function M.new()
 				return
 			end
 
-			if (phase == "began") then
-				local thisTableView = tableViewList[self.parent.index]
-				local origIndex = tableViewList[thisTableView.orderIndex].orderIndex
-				local buttons = {"Right", "Left", "Cancel"}
+			if (phase == "down") then
+				if (event.isPrimaryButtonDown) then
+					for i = 1, #categoryList do
+						categoryList[i].sortIndicator.isVisible = false
+					end
 
-				if (tableViewList[thisTableView.orderIndex].orderIndex == 1) then
-					buttons = {"Right", "Cancel"}
-				elseif (tableViewList[thisTableView.orderIndex].orderIndex == #tableViewList) then
-					buttons = {"Left", "Cancel"}
-				end
+					self.sortAToZ = not self.sortAToZ
+					self.sortIndicator.isVisible = true
+					self.sortIndicator.text = self.sortAToZ and "caret-up" or "caret-down"
+					musicSortAToZ = self.sortAToZ
 
-				local function onComplete(event)
-					local optionName = buttons[event.index]
+					if (self.text:lower() == "album") then
+						musicSort = "album"
+					elseif (self.text:lower() == "artist") then
+						musicSort = "artist"
+					elseif (self.text:lower() == "duration") then
+						musicSort = "duration"
+					elseif (self.text:lower() == "genre") then
+						musicSort = "genre"
+					elseif (self.text:lower() == "rating") then
+						musicSort = "rating"
+					elseif (self.text:lower() == "title") then
+						musicSort = "title"
+					end
 
-					if (event.action == "clicked") then
-						if (optionName == "Right") then
-							local origList = tableViewList[origIndex]
-							local origPreviousList = tableViewList[origIndex + 1]
-							local origCategory = categoryList[origIndex]
-							local origPreviousCategory = categoryList[origIndex + 1]
-							local targetX = tableViewList[origIndex + 1].x
-							local swapTargetX = tableViewList[origIndex].x
-							local targetCategoryX = categoryList[origIndex + 1].x
-							local swapTargetCategoryX = categoryList[origIndex].x
+					-- if we are searching, get the data again to re-order it
+					if (M.musicSearch) then
+						M:getSearchData()
+					end
 
-							-- swap positions
-							tableViewList[origIndex].x = targetX
-							tableViewList[origIndex + 1].x = swapTargetX
-							categoryList[origIndex].x = targetCategoryX
-							categoryList[origIndex + 1].x = swapTargetCategoryX
-
-							-- set new indexes
-							tableViewList[origIndex + 1].orderIndex = origIndex
-							tableViewList[origIndex].orderIndex = origIndex + 1
-							categoryList[origIndex + 1].index = origIndex
-							categoryList[origIndex].index = origIndex + 1
-
-							-- swap table items
-							tableViewList[origIndex + 1] = origList
-							tableViewList[origIndex] = origPreviousList
-							categoryList[origIndex + 1] = origCategory
-							categoryList[origIndex] = origPreviousCategory
-
-							-- push moved (left) list to front
-							tableViewList[origIndex]:toFront()
-
-							for i = origIndex + 1, #tableViewList do
-								tableViewList[i]:toFront()
-							end
-						elseif (optionName == "Left") then
-							local origList = tableViewList[origIndex]
-							local origPreviousList = tableViewList[origIndex - 1]
-							local origCategory = categoryList[origIndex]
-							local origPreviousCategory = categoryList[origIndex - 1]
-							local targetX = tableViewList[origIndex - 1].x
-							local swapTargetX = tableViewList[origIndex].x
-							local targetCategoryX = categoryList[origIndex - 1].x
-							local swapTargetCategoryX = categoryList[origIndex].x
-
-							-- swap positions
-							tableViewList[origIndex].x = targetX
-							tableViewList[origIndex - 1].x = swapTargetX
-							categoryList[origIndex].x = targetCategoryX
-							categoryList[origIndex - 1].x = swapTargetCategoryX
-
-							-- set new indexes
-							tableViewList[origIndex - 1].orderIndex = origIndex
-							tableViewList[origIndex].orderIndex = origIndex - 1
-							categoryList[origIndex - 1].index = origIndex
-							categoryList[origIndex].index = origIndex - 1
-
-							-- swap table items
-							tableViewList[origIndex - 1] = origList
-							tableViewList[origIndex] = origPreviousList
-							categoryList[origIndex - 1] = origCategory
-							categoryList[origIndex] = origPreviousCategory
-
-							-- push moved (right) list to front
-							tableViewList[origIndex]:toFront()
-
-							for i = origIndex + 1, #tableViewList do
-								tableViewList[i]:toFront()
-							end
-						else
-							print("cancel")
-						end
+					for i = 1, #tableViewList do
+						tableViewList[i]:reloadData()
 					end
 				end
 
-				for i = 1, #categoryList do
-					categoryList[i].sortIndicator.isVisible = false
+				if (event.isSecondaryButtonDown) then
+					local thisTableView = tableViewList[self.parent.index]
+					local origIndex = tableViewList[thisTableView.orderIndex].orderIndex
+					local buttons = {"Right", "Left", "Cancel"}
+
+					if (tableViewList[thisTableView.orderIndex].orderIndex == 1) then
+						buttons = {"Right", "Cancel"}
+					elseif (tableViewList[thisTableView.orderIndex].orderIndex == #tableViewList) then
+						buttons = {"Left", "Cancel"}
+					end
+
+					local function onComplete(categoryEvent)
+						local optionName = buttons[categoryEvent.index]
+
+						if (categoryEvent.action == "clicked") then
+							if (optionName == "Right") then
+								local origList = tableViewList[origIndex]
+								local origPreviousList = tableViewList[origIndex + 1]
+								local origCategory = categoryList[origIndex]
+								local origPreviousCategory = categoryList[origIndex + 1]
+								local targetX = tableViewList[origIndex + 1].x
+								local swapTargetX = tableViewList[origIndex].x
+								local targetCategoryX = categoryList[origIndex + 1].x
+								local swapTargetCategoryX = categoryList[origIndex].x
+
+								-- swap positions
+								tableViewList[origIndex].x = targetX
+								tableViewList[origIndex + 1].x = swapTargetX
+								categoryList[origIndex].x = targetCategoryX
+								categoryList[origIndex + 1].x = swapTargetCategoryX
+
+								-- set new indexes
+								tableViewList[origIndex + 1].orderIndex = origIndex
+								tableViewList[origIndex].orderIndex = origIndex + 1
+								categoryList[origIndex + 1].index = origIndex
+								categoryList[origIndex].index = origIndex + 1
+
+								-- swap table items
+								tableViewList[origIndex + 1] = origList
+								tableViewList[origIndex] = origPreviousList
+								categoryList[origIndex + 1] = origCategory
+								categoryList[origIndex] = origPreviousCategory
+
+								-- push moved (left) list to front
+								tableViewList[origIndex]:toFront()
+								categoryList[origIndex]:toFront()
+
+								for i = origIndex + 1, #tableViewList do
+									tableViewList[i]:toFront()
+									categoryList[i]:toFront()
+								end
+							elseif (optionName == "Left") then
+								local origList = tableViewList[origIndex]
+								local origPreviousList = tableViewList[origIndex - 1]
+								local origCategory = categoryList[origIndex]
+								local origPreviousCategory = categoryList[origIndex - 1]
+								local targetX = tableViewList[origIndex - 1].x
+								local swapTargetX = tableViewList[origIndex].x
+								local targetCategoryX = categoryList[origIndex - 1].x
+								local swapTargetCategoryX = categoryList[origIndex].x
+
+								-- swap positions
+								tableViewList[origIndex].x = targetX
+								tableViewList[origIndex - 1].x = swapTargetX
+								categoryList[origIndex].x = targetCategoryX
+								categoryList[origIndex - 1].x = swapTargetCategoryX
+
+								-- set new indexes
+								tableViewList[origIndex - 1].orderIndex = origIndex
+								tableViewList[origIndex].orderIndex = origIndex - 1
+								categoryList[origIndex - 1].index = origIndex
+								categoryList[origIndex].index = origIndex - 1
+
+								-- swap table items
+								tableViewList[origIndex - 1] = origList
+								tableViewList[origIndex] = origPreviousList
+								categoryList[origIndex - 1] = origCategory
+								categoryList[origIndex] = origPreviousCategory
+
+								-- push moved (right) list to front
+								tableViewList[origIndex]:toFront()
+								categoryList[origIndex]:toFront()
+
+								for i = origIndex + 1, #tableViewList do
+									tableViewList[i]:toFront()
+									categoryList[i]:toFront()
+								end
+							else
+								print("cancel")
+							end
+						end
+					end
+
+					local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 				end
-
-				self.sortAToZ = not self.sortAToZ
-				self.sortIndicator.isVisible = true
-				self.sortIndicator.text = self.sortAToZ and "caret-up" or "caret-down"
-				musicSortAToZ = self.sortAToZ
-
-				if (self.text:lower() == "album") then
-					musicSort = "album"
-				elseif (self.text:lower() == "artist") then
-					musicSort = "artist"
-				elseif (self.text:lower() == "duration") then
-					musicSort = "duration"
-				elseif (self.text:lower() == "genre") then
-					musicSort = "genre"
-				elseif (self.text:lower() == "rating") then
-					musicSort = "rating"
-				elseif (self.text:lower() == "title") then
-					musicSort = "title"
-				end
-
-				-- if we are searching, get the data again to re-order it
-				if (M.musicSearch) then
-					M:getSearchData()
-				end
-
-				for i = 1, #tableViewList do
-					tableViewList[i]:reloadData()
-				end
-
-			--local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 			end
 
 			return true
 		end
 
-		categoryTouchRect:addEventListener("touch")
+		categoryTouchRect:addEventListener("mouse")
 
 		local seperatorText =
 			display.newText(
