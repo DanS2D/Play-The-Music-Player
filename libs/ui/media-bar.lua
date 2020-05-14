@@ -69,13 +69,16 @@ function M.new(options)
 			parent = group,
 			onClick = function(event)
 				local canPlay = true
+				local currentSongIndex = audioLib.currentSongIndex
 
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
 				if (audioLib.shuffle) then
-					audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+					repeat
+						audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+					until audioLib.currentSongIndex ~= currentSongIndex
 				else
 					if (audioLib.currentSongIndex - 1 > 0) then
 						audioLib.currentSongIndex = audioLib.currentSongIndex - 1
@@ -153,13 +156,16 @@ function M.new(options)
 			parent = group,
 			onClick = function(event)
 				local canPlay = true
+				local currentSongIndex = audioLib.currentSongIndex
 
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
 				end
 
 				if (audioLib.shuffle) then
-					audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+					repeat
+						audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+					until audioLib.currentSongIndex ~= currentSongIndex
 				else
 					if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
 						audioLib.currentSongIndex = audioLib.currentSongIndex + 1

@@ -58,12 +58,15 @@ local function onAudioEvent(event)
 		musicBrainz.getCover(song)
 		musicVisualizer:start()
 	elseif (phase == "ended") then
+		local currentSongIndex = audioLib.currentSongIndex
 		mRandomSeed(osTime())
 		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
 
 		-- handle shuffle
 		if (audioLib.shuffle) then
-			audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+			repeat
+				audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
+			until audioLib.currentSongIndex ~= currentSongIndex
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
 			if (audioLib.currentSongIndex == musicList:getMusicCount()) then
