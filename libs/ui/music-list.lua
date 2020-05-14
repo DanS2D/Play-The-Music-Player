@@ -31,6 +31,7 @@ local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.
 local selectedRowIndex = 0
 local titleFont = "fonts/Roboto-Regular.ttf"
 local subTitleFont = "fonts/Roboto-Light.ttf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
 local currentRowCount = 0
@@ -353,14 +354,16 @@ function M.new()
 		local seperatorText =
 			display.newText(
 			{
-				text = "|",
+				text = "horizontal-rule",
 				left = 0,
-				y = categoryBar.contentHeight * 0.5,
-				font = subTitleFont,
-				fontSize = rowFontSize + 8,
+				y = rowHeight * 0.5 + 2,
+				font = fontAwesomeSolidFont,
+				fontSize = rowFontSize + 2,
 				align = "left"
 			}
 		)
+		seperatorText.rotation = 90
+		seperatorText.isVisible = categoryList[i].index ~= 1
 		seperatorText:setFillColor(0.8, 0.8, 0.8)
 		categoryList[i]:insert(seperatorText)
 
@@ -406,15 +409,15 @@ function M.new()
 		local sortIndicator =
 			display.newText(
 			{
-				text = "⌃",
+				text = "caret-up",
 				y = categoryBar.contentHeight * 0.5,
-				font = titleFont,
+				font = fontAwesomeSolidFont,
 				fontSize = rowFontSize,
 				align = "left"
 			}
 		)
 		sortIndicator.anchorX = 0
-		sortIndicator.x = titleText.x + titleText.contentWidth + 2
+		sortIndicator.x = titleText.x + titleText.contentWidth + 4
 		sortIndicator.isVisible = i == 1 -- TODO: read from database
 		titleText.sortIndicator = sortIndicator
 		categoryList[i].sortIndicator = sortIndicator
@@ -528,7 +531,7 @@ function M.new()
 
 				self.sortAToZ = not self.sortAToZ
 				self.sortIndicator.isVisible = true
-				self.sortIndicator.text = self.sortAToZ and "⌃" or "⌄"
+				self.sortIndicator.text = self.sortAToZ and "caret-up" or "caret-down"
 				musicSortAToZ = self.sortAToZ
 
 				if (self.text:lower() == "album") then
