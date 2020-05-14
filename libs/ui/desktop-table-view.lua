@@ -262,7 +262,7 @@ function M.new(options)
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
-		if (not useSelectedRowHighlighting) then
+		if (not useSelectedRowHighlighting or #rows <= 0) then
 			return
 		end
 
