@@ -188,6 +188,8 @@ function M:createTableView(options, index)
 					audioLib.currentSongIndex = row.index
 					audioLib.load(song)
 					audioLib.play(song)
+				else
+					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				end
 			end
 		}

@@ -28,6 +28,7 @@ local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isDisabled = false
 local searchBar = nil
 local menuBarHeight = 28
+local rowHeight = menuBarHeight + 6
 
 function M.new(options)
 	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
@@ -51,6 +52,7 @@ function M.new(options)
 	background:addEventListener(
 		"touch",
 		function()
+			group:close()
 			native.setKeyboardFocus(nil)
 			return true
 		end
@@ -71,6 +73,7 @@ function M.new(options)
 	end
 
 	function group:close()
+		isItemOpen = false
 		closeSubmenus()
 	end
 
@@ -146,7 +149,7 @@ function M.new(options)
 				top = menuBarHeight,
 				width = itemListWidth,
 				height = height,
-				rowHeight = menuBarHeight - 2,
+				rowHeight = rowHeight,
 				rowLimit = 0,
 				useSelectedRowHighlighting = false,
 				backgroundColor = {0.18, 0.18, 0.18},
@@ -325,6 +328,8 @@ function M.new(options)
 			fontSize = 18,
 			parent = group,
 			onClick = function(event)
+				group:close()
+
 				if (searchBar.text:len() > 0) then
 					searchBar.text = ""
 					musicList.musicSearch = nil
@@ -380,8 +385,8 @@ function M.new(options)
 				for j = 1, button.mainTableView:getMaxRows() do
 					local row = button.mainTableView:getRowAtIndex(j)
 					local rowXEnd = itemListWidth
-					local rowYStart = (menuBarHeight - 2) * j
-					local rowYEnd = rowYStart + (menuBarHeight - 2)
+					local rowYStart = rowHeight * j
+					local rowYEnd = rowYStart + rowHeight
 
 					if (x >= buttonXStart and x <= buttonXStart + rowXEnd) then
 						if (y >= rowYStart and y <= rowYEnd) then
@@ -400,6 +405,15 @@ function M.new(options)
 	end
 
 	Runtime:addEventListener("mouse", onMouseEvent)
+
+	local function closeListener(event)
+		if (event.close) then
+			isItemOpen = false
+			closeSubmenus()
+		end
+	end
+
+	Runtime:addEventListener("menuEvent", closeListener)
 
 	function group:onResize()
 		searchBar.x = display.contentWidth - 4

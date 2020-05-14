@@ -210,6 +210,7 @@ function M.new(options)
 			parent = group,
 			onClick = function(event)
 				local target = event.target
+				Runtime:dispatchEvent({name = "menuEvent", close = true})
 
 				if (target.isOffButton) then
 					audioLib.setVolume(audioLib.getPreviousVolume())
@@ -235,6 +236,12 @@ function M.new(options)
 	songContainerBox.strokeWidth = 1
 	songContainerBox:setFillColor(0.1, 0.1, 0.1, 0.8)
 	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+	songContainerBox:addEventListener(
+		"tap",
+		function(event)
+			Runtime:dispatchEvent({name = "menuEvent", close = true})
+		end
+	)
 	group:insert(songContainerBox)
 
 	songContainer = display.newContainer(songContainerBox.contentWidth - 140, barHeight - 14)
