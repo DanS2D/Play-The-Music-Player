@@ -28,8 +28,8 @@ local mediaBar = nil
 local musicTableView = nil
 local background = nil
 local resizeTimer = nil
-local titleFont = "fonts/Roboto-Regular.ttf"
-local subTitleFont = "fonts/Roboto-Light.ttf"
+local titleFont = "fonts/Jost-500-Medium.otf"
+local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 mRandomSeed(osTime())
 settings:load()
@@ -137,10 +137,11 @@ end
 local applicationMainMenuBar =
 	mainMenuBar.new(
 	{
-		font = titleFont,
+		font = subTitleFont,
 		items = {
 			{
 				title = "File",
+				font = subTitleFont,
 				subItems = {
 					{
 						title = "Add Music Folder",

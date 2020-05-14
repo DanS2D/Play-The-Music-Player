@@ -8,8 +8,8 @@ local headingText = nil
 local subHeadingText = nil
 local logo = nil
 local importProgressView = nil
-local titleFont = "fonts/Roboto-Regular.ttf"
-local subTitleFont = "fonts/Roboto-Light.ttf"
+local titleFont = "fonts/Jost-500-Medium.otf"
+local subTitleFont = "fonts/Jost-300-Light.otf"
 
 function M.new()
 	local group = display.newGroup()

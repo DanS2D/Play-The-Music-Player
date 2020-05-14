@@ -29,8 +29,8 @@ local rowFontSize = 18
 local rowHeight = 40
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.18, 1}}
 local selectedRowIndex = 0
-local titleFont = "fonts/Roboto-Regular.ttf"
-local subTitleFont = "fonts/Roboto-Light.ttf"
+local titleFont = "fonts/Jost-500-Medium.otf"
+local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
@@ -395,7 +395,7 @@ function M.new()
 			{
 				text = listOptions[i].categoryTitle,
 				y = categoryBar.contentHeight * 0.5,
-				font = titleFont,
+				font = subTitleFont,
 				fontSize = rowFontSize,
 				align = "left"
 			}

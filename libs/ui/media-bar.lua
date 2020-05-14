@@ -27,8 +27,8 @@ local smallButtonFontSize = 20
 local mainButtonFontSize = 28
 local controlButtonsXOffset = 10
 local barHeight = 80
-local titleFont = "fonts/Roboto-Regular.ttf"
-local subTitleFont = "fonts/Roboto-Light.ttf"
+local titleFont = "fonts/Jost-500-Medium.otf"
+local subTitleFont = "fonts/Jost-300-Light.otf"
 local songTitleText = nil
 local songAlbumText = nil
 local songProgressView = nil
@@ -519,7 +519,7 @@ function M.new(options)
 		display.newText(
 		{
 			text = "00:00/00:00",
-			font = titleFont,
+			font = subTitleFont,
 			fontSize = 14,
 			align = "left"
 		}
@@ -646,7 +646,7 @@ function M.updateSongText(song)
 		ratings.new(
 		{
 			x = 0,
-			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 5,
+			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 8,
 			fontSize = 12,
 			rating = song.rating or 0,
 			isVisible = true,
