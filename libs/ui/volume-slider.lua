@@ -86,6 +86,14 @@ function M.new(options)
 		if (phase == "began") then
 			local valueX, valueY = self:contentToLocal(event.x, event.y)
 			self:setValue(valueX)
+
+			if (type(onTouchEnded) == "function") then
+				local listenerEvent = {
+					value = valueX
+				}
+
+				onTouchEnded(listenerEvent)
+			end
 		end
 
 		return true
