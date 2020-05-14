@@ -7,10 +7,10 @@ function M.new(options)
 	local width = options.width
 	local height = options.height or 12
 	local handleWidth = options.handleWidth or 15
-	local handleHeight = options.handleHeight or 18
+	local handleHeight = options.handleHeight or 20
 	local outerColor = options.outerColor or {0.28, 0.28, 0.28, 1}
 	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
-	local handleColor = options.innerColor or {1, 1, 1, 0.8}
+	local handleColor = options.handleColor or {0.7, 0.7, 0.7, 1}
 	local initialValue = options.value or 0
 	local listener = options.listener
 	local onTouchEnded = options.onTouchEnded
@@ -35,6 +35,7 @@ function M.new(options)
 	local handle = display.newRoundedRect(0, 0, handleWidth, handleHeight, 2)
 	handle.anchorX = 0
 	handle.x = 0
+	handle.beganX = 0
 	handle:setFillColor(unpack(handleColor))
 	group:insert(handle)
 
