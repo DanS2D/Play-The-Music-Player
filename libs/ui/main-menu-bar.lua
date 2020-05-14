@@ -316,7 +316,7 @@ function M.new(options)
 
 	searchBar = native.newTextField(0, 0, 200, menuBarHeight - 5)
 	searchBar.anchorX = 1
-	searchBar.x = dWidth - 4
+	searchBar.x = display.contentWidth - 10
 	searchBar.y = menuBarHeight / 2
 	searchBar.placeholder = "search..."
 	searchBar:addEventListener("userInput", onSearchInput)
@@ -416,7 +416,7 @@ function M.new(options)
 	Runtime:addEventListener("menuEvent", closeListener)
 
 	function group:onResize()
-		searchBar.x = display.contentWidth - 4
+		searchBar.x = display.contentWidth - 10
 		clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
 		background.width = display.contentWidth
 	end
