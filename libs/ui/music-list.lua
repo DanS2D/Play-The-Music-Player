@@ -352,53 +352,13 @@ function M.new()
 		categoryList[i].index = i
 		tableViewList[i] = M:createTableView(listOptions, i)
 
-		local seperatorText =
-			display.newText(
-			{
-				text = "horizontal-rule",
-				left = 0,
-				y = rowHeight * 0.5 + 2,
-				font = fontAwesomeSolidFont,
-				fontSize = rowFontSize + 2,
-				align = "left"
-			}
-		)
-		seperatorText.rotation = 90
-		seperatorText.isVisible = categoryList[i].index ~= 1
-		seperatorText:setFillColor(0.8, 0.8, 0.8)
-		categoryList[i]:insert(seperatorText)
-
-		function seperatorText:mouse(event)
-			local phase = event.type
-
-			if (categoryList[i].index == 1 or musicCount <= 0) then
-				return
-			end
-
-			if (phase == "move") then
-				resizeCursor:show()
-			elseif (phase == "down") then
-				tableViewTarget = tableViewList[self.parent.index]
-				display.getCurrentStage():setFocus(tableViewTarget)
-				categoryTarget = categoryList[i]
-			elseif (phase == "up") then
-				tableViewTarget = nil
-				display.getCurrentStage():setFocus(nil)
-			end
-
-			return true
-		end
-
-		seperatorText:addEventListener("mouse")
-
 		local categoryTouchRect = display.newRect(0, 0, display.contentWidth, rowHeight)
 		categoryTouchRect.anchorX = 0
 		categoryTouchRect.anchorY = 0
-		categoryTouchRect.x = seperatorText.x
+		categoryTouchRect.x = 0
 		categoryTouchRect.y = 0
-		categoryTouchRect.isVisible = false
-		categoryTouchRect.isHitTestable = true
 		categoryTouchRect.sortAToZ = i == 1 or false -- TODO: read from database
+		categoryTouchRect:setFillColor(0.15, 0.15, 0.15)
 		categoryList[i]:insert(categoryTouchRect)
 
 		function categoryTouchRect:touch(event)
@@ -542,6 +502,45 @@ function M.new()
 		end
 
 		categoryTouchRect:addEventListener("touch")
+
+		local seperatorText =
+			display.newText(
+			{
+				text = "horizontal-rule",
+				left = 0,
+				y = rowHeight * 0.5 + 2,
+				font = fontAwesomeSolidFont,
+				fontSize = rowFontSize + 2,
+				align = "left"
+			}
+		)
+		seperatorText.rotation = 90
+		seperatorText.isVisible = categoryList[i].index ~= 1
+		seperatorText:setFillColor(0.8, 0.8, 0.8)
+		categoryList[i]:insert(seperatorText)
+
+		function seperatorText:mouse(event)
+			local phase = event.type
+
+			if (categoryList[i].index == 1 or musicCount <= 0) then
+				return
+			end
+
+			if (phase == "move") then
+				resizeCursor:show()
+			elseif (phase == "down") then
+				tableViewTarget = tableViewList[self.parent.index]
+				display.getCurrentStage():setFocus(tableViewTarget)
+				categoryTarget = categoryList[i]
+			elseif (phase == "up") then
+				tableViewTarget = nil
+				display.getCurrentStage():setFocus(nil)
+			end
+
+			return true
+		end
+
+		seperatorText:addEventListener("mouse")
 
 		local titleText =
 			display.newText(
