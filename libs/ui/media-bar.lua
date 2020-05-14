@@ -633,6 +633,7 @@ function M.clearPlayingSong()
 
 	levelVisualizer.isVisible = false
 	musicDuration = 0
+	playButton:setIsOn(false)
 	songTitleText:setText("")
 	songAlbumText:setText("")
 end

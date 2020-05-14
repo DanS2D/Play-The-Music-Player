@@ -75,6 +75,7 @@ local function onAudioEvent(event)
 				else
 					mediaBarLib.resetSongProgress()
 					mediaBarLib.clearPlayingSong()
+					musicVisualizer:remove()
 					audioLib.reset()
 					musicList:setSelectedRow(0)
 					return

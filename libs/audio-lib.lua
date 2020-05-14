@@ -352,6 +352,7 @@ function M.reset()
 		bassDispose(audioChannels[i])
 	end
 
+	channelHandle = nil
 	tRemove(audioChannels)
 end
 
