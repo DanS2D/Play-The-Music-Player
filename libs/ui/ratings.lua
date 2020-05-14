@@ -123,6 +123,7 @@ function M.new(options)
 	group.isVisible = isVisible
 
 	local function ratingClick(event)
+		local phase = event.phase
 		local target = event.target
 		local eventX, eventY = target:contentToLocal(event.x, event.y)
 		local fullWidth = target.contentWidth
@@ -131,7 +132,7 @@ function M.new(options)
 		local half = fullWidth / 2
 		eventX = eventX + half
 
-		if (event.numTaps == 1) then
+		if (phase == "began") then
 			-- check which part of the star we clicked
 			if (eventX < quarter) then
 				target.rating = target.index == 1 and 0 or target.index - 1
@@ -171,7 +172,7 @@ function M.new(options)
 		currentStars[i].alpha = starRating[i].isEmpty and 0.5 or 0.8
 		currentStars[i].index = i
 		currentStars[i].rating = 0
-		currentStars[i]:addEventListener("tap", ratingClick)
+		currentStars[i]:addEventListener("touch", ratingClick)
 		group:insert(currentStars[i])
 	end
 
@@ -193,7 +194,7 @@ function M.new(options)
 	function group:destroy()
 		if (#currentStars > 0) then
 			for i = 1, #currentStars do
-				currentStars[i]:removeEventListener("tap", ratingClick)
+				currentStars[i]:removeEventListener("touch", ratingClick)
 				display.remove(currentStars[i])
 				currentStars[i] = nil
 			end
