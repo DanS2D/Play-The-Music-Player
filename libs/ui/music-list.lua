@@ -391,7 +391,7 @@ function M.new()
 
 		seperatorText:addEventListener("mouse")
 
-		local categoryTouchRect = display.newRect(0, 0, listOptions[i].left, rowHeight)
+		local categoryTouchRect = display.newRect(0, 0, display.contentWidth, rowHeight)
 		categoryTouchRect.anchorX = 0
 		categoryTouchRect.anchorY = 0
 		categoryTouchRect.x = seperatorText.x
