@@ -224,13 +224,15 @@ function M.new(options)
 				else
 					audioLib.setVolume(0)
 					volumeSlider:setValue(0)
+					settings.volume = 0
+					settings:save()
 				end
 			end
 		}
 	)
 	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
 	volumeButton.y = previousButton.y
-	volumeButton:setIsOn(true)
+	volumeButton:setIsOn(settings.volume ~= 0)
 	group:insert(volumeButton)
 
 	musicVisualizerBar = musicVisualizer.new({yPos = 26, group = group})
@@ -246,6 +248,8 @@ function M.new(options)
 		"tap",
 		function(event)
 			Runtime:dispatchEvent({name = "menuEvent", close = true})
+
+			return true
 		end
 	)
 	group:insert(songContainerBox)
@@ -387,6 +391,13 @@ function M.new(options)
 		self.text = title
 		self.copy.text = title
 
+		if (self.scrollTimer) then
+			timer.cancel(self.scrollTimer)
+			self.scrollTimer = nil
+		end
+
+		Runtime:removeEventListener("enterFrame", self)
+
 		if (self.contentWidth > songContainer.contentWidth) then
 			self.copy.isVisible = true
 			self.anchorX = 0
@@ -473,6 +484,13 @@ function M.new(options)
 	function songAlbumText:setText(album)
 		self.text = album
 		self.copy.text = album
+
+		if (self.scrollTimer) then
+			timer.cancel(self.scrollTimer)
+			self.scrollTimer = nil
+		end
+
+		Runtime:removeEventListener("enterFrame", self)
 
 		if (self.contentWidth > songContainer.contentWidth) then
 			self.copy.isVisible = true
@@ -568,13 +586,18 @@ function M.setAlbumArtwork(fileName)
 
 	albumArtwork = display.newImageRect(fileName, system.DocumentsDirectory, 65, 65)
 	albumArtwork.anchorX = 0
+	albumArtwork.alpha = 0
 	albumArtwork.x = songContainerBox.x + 5
 	albumArtwork.y = songContainerBox.y - 3
 
 	if (albumArtwork) then
-		shuffleButton.x = songContainerBox.x + 90
+		transition.to(shuffleButton, {x = songContainerBox.x + 90, time = 250, transition = easing.inOutQuad})
+		transition.to(albumArtwork, {alpha = 1, transition = easing.inOutQuad})
 	else
-		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+		transition.to(
+			shuffleButton,
+			{x = songContainerBox.x + shuffleButton.contentWidth, time = 250, transition = easing.inOutQuad}
+		)
 	end
 end
 
@@ -593,9 +616,12 @@ function M.clearPlayingSong()
 	end
 
 	if (albumArtwork) then
-		shuffleButton.x = songContainerBox.x + 90
+		transition.to(shuffleButton, {x = songContainerBox.x + 90, time = 250, transition = easing.inOutQuad})
 	else
-		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+		transition.to(
+			shuffleButton,
+			{x = songContainerBox.x + shuffleButton.contentWidth, time = 250, transition = easing.inOutQuad}
+		)
 	end
 
 	levelVisualizer.isVisible = false
@@ -608,7 +634,7 @@ function M.updateSongText(song)
 	levelVisualizer.isVisible = true
 
 	if (ratingStars ~= nil) then
-		display.remove(ratingStars)
+		ratingStars:destroy()
 		ratingStars = nil
 	end
 
@@ -621,10 +647,16 @@ function M.updateSongText(song)
 		{
 			x = 0,
 			y = songAlbumText.y + songAlbumText.contentHeight * 0.5 + 5,
-			fontSize = 10,
+			fontSize = 12,
 			rating = song.rating or 0,
 			isVisible = true,
-			parent = songContainer
+			parent = songContainer,
+			onClick = function(event)
+				--print(event.rating)
+				--print(event.mp3Rating)
+				-- TODO: update database with new rating (also the mp3 file, if this is an mp3 file)
+				event.parent:update(event.rating)
+			end
 		}
 	)
 
@@ -640,9 +672,12 @@ function M.updateSongText(song)
 	songAlbumText:setText(song.album)
 
 	if (albumArtwork) then
-		shuffleButton.x = songContainerBox.x + 90
+		transition.to(shuffleButton, {x = songContainerBox.x + 90, time = 250, transition = easing.inOutQuad})
 	else
-		shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
+		transition.to(
+			shuffleButton,
+			{x = songContainerBox.x + shuffleButton.contentWidth, time = 250, transition = easing.inOutQuad}
+		)
 	end
 end
 

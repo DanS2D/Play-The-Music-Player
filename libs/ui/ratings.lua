@@ -45,8 +45,7 @@ local ratingStars = {
 	["1"] = {
 		{name = "star", font = fontAwesomeSolidFont},
 		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont},
-		isEmpty = true,
+		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
 		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
 		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
@@ -108,66 +107,100 @@ local ratingStars = {
 	}
 }
 
-local function create(currentStars, starList, fontSize, group)
-	if (#currentStars > 0) then
-		for i = 1, #currentStars do
-			display.remove(currentStars[i])
-			currentStars[i] = nil
-		end
-
-		currentStars = nil
-		currentStars = {}
-	end
-
-	for i = 1, #starList do
-		currentStars[i] =
-			display.newText(
-			{
-				text = starList[i].name,
-				font = starList[i].font,
-				fontSize = fontSize,
-				align = "center"
-			}
-		)
-
-		currentStars[i].x = i == 1 and 0 or currentStars[i - 1].x + currentStars[i - 1].contentWidth
-		currentStars[i].y = 0
-		currentStars[i].alpha = starList[i].isEmpty and 0.5 or 0.8
-		group:insert(currentStars[i])
-	end
-end
-
 function M.new(options)
 	local currentStars = {}
 	local parent = options.parent or display.getCurrentStage()
 	local starRating = ratingStars[tostring(options.rating)]
-	local fontSize = options.fontSize or 8
+	local fontSize = options.fontSize or 10
 	local x = options.x or 0
 	local y = options.y or 0
 	local isVisible = options.isVisible or false
+	local onClick = options.onClick
 	local group = display.newGroup()
 	group.anchorX = 0.5
 	group.anchorY = 0.5
 	group.anchorChildren = true
 	group.isVisible = isVisible
 
-	create(currentStars, starRating, fontSize, group)
-	group.x = x
-	group.y = y
+	local function ratingClick(event)
+		local target = event.target
+		local eventX, eventY = target:contentToLocal(event.x, event.y)
+		local fullWidth = target.contentWidth
+		local currentIndex = target.index
+		local quarter = fullWidth / 4
+		local half = fullWidth / 2
+		eventX = eventX + half
 
-	function group:update(songRating)
-		local newRating = ratingStars[tostring(songRating)]
+		if (event.numTaps == 1) then
+			-- check which part of the star we clicked
+			if (eventX < quarter) then
+				target.rating = target.index == 1 and 0 or target.index - 1
+			elseif (eventX > quarter and eventX < half) then
+				target.rating = target.index == 1 and 0.5 or target.index - 1 + 0.5
+			elseif (eventX > half + (quarter / 2)) then
+				target.rating = target.index
+			end
 
-		create(currentStars, newRating, fontSize, self)
+			if (type(onClick) == "function") then
+				local starEvent = {
+					rating = target.rating,
+					parent = target.parent,
+					mp3Rating = ratingsInverse[tostring(target.rating)]
+				}
+				onClick(starEvent)
+			end
+		end
 
-		self.isVisible = true
-		self.anchorChildren = true
-		self.x = x
-		self.y = y
-		parent:insert(self)
+		return true
 	end
 
+	for i = 1, #starRating do
+		currentStars[i] =
+			display.newText(
+			{
+				text = starRating[i].name,
+				font = starRating[i].font,
+				fontSize = fontSize,
+				align = "center"
+			}
+		)
+
+		currentStars[i].anchorX = 0
+		currentStars[i].x = i == 1 and 0 or currentStars[i - 1].x + currentStars[i - 1].contentWidth
+		currentStars[i].y = 0
+		currentStars[i].alpha = starRating[i].isEmpty and 0.5 or 0.8
+		currentStars[i].index = i
+		currentStars[i].rating = 0
+		currentStars[i]:addEventListener("tap", ratingClick)
+		group:insert(currentStars[i])
+	end
+
+	group.x = x
+	group.y = y
 	parent:insert(group)
+
+	function group:update(newRating)
+		if (#currentStars > 0) then
+			local currentRating = ratingStars[tostring(newRating)]
+
+			for i = 1, #currentStars do
+				currentStars[i].text = currentRating[i].name
+				currentStars[i].alpha = currentRating[i].isEmpty and 0.5 or 0.8
+			end
+		end
+	end
+
+	function group:destroy()
+		if (#currentStars > 0) then
+			for i = 1, #currentStars do
+				currentStars[i]:removeEventListener("tap", ratingClick)
+				display.remove(currentStars[i])
+				currentStars[i] = nil
+			end
+
+			currentStars = nil
+		end
+	end
 
 	return group
 end

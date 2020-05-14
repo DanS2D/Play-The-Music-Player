@@ -123,7 +123,13 @@ function M:createTableView(options, index)
 							fontSize = 10,
 							isVisible = true,
 							rating = musicData and musicData[row.index] and musicData[row.index][options[index].rowTitle] or 0,
-							parent = row
+							parent = row,
+							onClick = function(event)
+								--print(event.rating)
+								--print(event.mp3Rating)
+								-- TODO: update database with new rating (also the mp3 file, if this is an mp3 file)
+								event.parent:update(event.rating)
+							end
 						}
 					)
 				else
