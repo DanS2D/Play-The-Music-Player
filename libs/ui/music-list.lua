@@ -689,9 +689,7 @@ function M:reloadData(hardReload)
 end
 
 function M:setSelectedRow(rowIndex)
-	for i = 1, #tableViewList do
-		tableViewList[i]:setRowSelected(rowIndex)
-	end
+	selectedRowIndex = rowIndex
 end
 
 function M:populate()
