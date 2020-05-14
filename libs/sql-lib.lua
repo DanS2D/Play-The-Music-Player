@@ -248,6 +248,10 @@ function M:getMusicRowByGenre(index, ascending)
 	return getMusicRowBy(index, ascending, "genre")
 end
 
+function M:getMusicRowByRating(index, ascending)
+	return getMusicRowBy(index, ascending, "rating")
+end
+
 function M:getMusicRowByTitle(index, ascending)
 	return getMusicRowBy(index, ascending, "title")
 end

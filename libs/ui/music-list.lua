@@ -52,6 +52,8 @@ function M:getRow(rowIndex)
 			return sqlLib:getMusicRowByDuration(rowIndex, musicSortAToZ)
 		elseif (musicSort == "genre") then
 			return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
+		elseif (musicSort == "rating") then
+			return sqlLib:getMusicRowByRating(rowIndex, musicSortAToZ)
 		elseif (musicSort == "title") then
 			return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
 		end
@@ -529,16 +531,18 @@ function M.new()
 				self.sortIndicator.text = self.sortAToZ and "⌃" or "⌄"
 				musicSortAToZ = self.sortAToZ
 
-				if (self.text:lower() == "title") then
-					musicSort = "title"
+				if (self.text:lower() == "album") then
+					musicSort = "album"
 				elseif (self.text:lower() == "artist") then
 					musicSort = "artist"
-				elseif (self.text:lower() == "album") then
-					musicSort = "album"
-				elseif (self.text:lower() == "genre") then
-					musicSort = "genre"
 				elseif (self.text:lower() == "duration") then
 					musicSort = "duration"
+				elseif (self.text:lower() == "genre") then
+					musicSort = "genre"
+				elseif (self.text:lower() == "rating") then
+					musicSort = "rating"
+				elseif (self.text:lower() == "title") then
+					musicSort = "title"
 				end
 
 				-- if we are searching, get the data again to re-order it
