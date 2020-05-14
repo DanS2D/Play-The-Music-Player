@@ -204,6 +204,10 @@ function M:createTableView(options, index)
 				else
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				end
+			end,
+			onRowMouseClick = function(event)
+				local row = event.row
+				--print("row " .. self:getRow(row.index).title .. button .. " button")
 			end
 		}
 	)

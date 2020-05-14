@@ -7,6 +7,7 @@ local mMin = math.min
 local mMax = math.max
 local mModf = math.modf
 local selectedRowIndex = 0
+local dispatchedRowClickEvent = false
 
 function M.new(options)
 	local x = options.left or 0
@@ -24,6 +25,7 @@ function M.new(options)
 		options.onRowRender or
 		error("desktop-table-view() options.onRowRender function expected, got ", type(options.onRowRender))
 	local onRowClick = options.onRowClick
+	local onRowMouseClick = options.onRowMouseClick
 	local rows = {}
 	local lastMouseScrollWasUp = false
 	local didMouseScroll = false
@@ -51,6 +53,27 @@ function M.new(options)
 		}
 
 		onRowClick(rowEvent)
+	end
+
+	local function onRowMouse(event)
+		local phase = event.type
+		local target = event.target
+
+		if (phase == "down") then
+			if (event.isSecondaryButtonDown or event.isMiddleButtonDown) then
+				if (type(onRowMouseClick) == "function") then
+					local rowEvent = {
+						row = target,
+						isSecondaryButton = event.isSecondaryButtonDown,
+						isMiddleButton = event.isMiddleButtonDown
+					}
+
+					onRowMouseClick(rowEvent)
+				end
+			end
+		end
+
+		return true
 	end
 
 	function tableView:createRows(params)
@@ -263,6 +286,16 @@ function M.new(options)
 		end
 	end
 
+	function tableView:getRowAtClickPosition(event)
+		local eventX, eventY = self:contentToLocal(event.x, event.y)
+
+		for i = 1, maxRows do
+			if (eventY >= rows[i].y and eventY <= rows[i].y + rowHeight) then
+				return rows[i]
+			end
+		end
+	end
+
 	function tableView:mouse(event)
 		local eventType = event.type
 		local scrollY = event.scrollY
@@ -293,6 +326,23 @@ function M.new(options)
 			end
 		else
 			didMouseScroll = false
+		end
+
+		if (eventType == "down" and not dispatchedRowClickEvent) then
+			if (event.isSecondaryButtonDown or event.isMiddleButtonDown) then
+				if (type(onRowMouseClick) == "function") then
+					local rowEvent = {
+						row = self:getRowAtClickPosition(event),
+						isSecondaryButton = event.isSecondaryButtonDown,
+						isMiddleButton = event.isMiddleButtonDown
+					}
+
+					onRowMouseClick(rowEvent)
+					dispatchedRowClickEvent = true
+				end
+			end
+		elseif (eventType == "up") then
+			dispatchedRowClickEvent = false
 		end
 
 		return true
