@@ -36,6 +36,9 @@ local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
 local currentRowCount = 0
+local allowCategoryDragLeft = true
+local allowCategoryDragRight = true
+local draggingCategoryRight = false
 local topPosition = 121
 
 function M:getRow(rowIndex)
@@ -230,13 +233,45 @@ local function moveColumns(event)
 
 	if (tableViewTarget) then
 		if (phase == "moved") then
-			tableViewTarget.x = mFloor(event.x)
-			categoryTarget.x = mFloor(event.x)
+			local oldX = tableViewTarget.x
+			draggingCategoryRight = event.x > oldX
+
+			if (allowCategoryDragRight and draggingCategoryRight) then
+				local minPosition = display.contentWidth - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
+
+				if (categoryTarget.index < #categoryList) then
+					minPosition =
+						categoryList[tableViewTarget._index + 1].x - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
+				end
+
+				tableViewTarget.x = mMin(minPosition, mFloor(event.x))
+				categoryTarget.x = mMin(minPosition, mFloor(event.x))
+				allowCategoryDragLeft = true
+			end
+
+			if (allowCategoryDragLeft and not draggingCategoryRight) then
+				allowCategoryDragRight = true
+				tableViewTarget.x =
+					mMax(
+					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
+						categoryList[tableViewTarget._index - 1].title.contentWidth +
+						10,
+					mFloor(event.x)
+				)
+				categoryTarget.x =
+					mMax(
+					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
+						categoryList[tableViewTarget._index - 1].title.contentWidth +
+						10,
+					mFloor(event.x)
+				)
+			end
 		end
 
 		if (phase == "ended" or phase == "cancelled") then
 			resizeCursor:hide()
 			tableViewTarget = nil
+			categoryTarget = nil
 		end
 	end
 
@@ -556,6 +591,7 @@ function M.new()
 		titleText.x = seperatorText.x + seperatorText.contentWidth * 0.35
 		titleText.sortAToZ = i == 1 or false -- TODO: read from database
 		categoryTouchRect.text = titleText.text
+		categoryList[i].title = titleText
 		titleText:setFillColor(1, 1, 1)
 		categoryList[i]:insert(titleText)
 
