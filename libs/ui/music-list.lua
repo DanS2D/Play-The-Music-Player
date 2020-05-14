@@ -292,6 +292,8 @@ local function onMouseEvent(event)
 			display.getCurrentStage():setFocus(nil)
 		end
 	end
+
+	resizeCursor:hide()
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
@@ -318,16 +320,6 @@ function M.new()
 	categoryBar.x = 0
 	categoryBar.y = topPosition
 	categoryBar:setFillColor(0.15, 0.15, 0.15)
-
-	function categoryBar:mouse(event)
-		local phase = event.type
-
-		if (phase == "move") then
-			resizeCursor:hide()
-		end
-	end
-
-	categoryBar:addEventListener("mouse")
 
 	local listOptions = {
 		{
@@ -539,6 +531,8 @@ function M.new()
 
 					local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 				end
+			elseif (phase == "move") then
+				resizeCursor:hide()
 			end
 
 			return true
