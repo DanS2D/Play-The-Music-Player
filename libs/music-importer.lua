@@ -212,4 +212,8 @@ function M.setTotalProgress(progress)
 	importProgress:setTotalProgress(progress)
 end
 
+function M:onResize()
+	importProgress:onResize()
+end
+
 return M

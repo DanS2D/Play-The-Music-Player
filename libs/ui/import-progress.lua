@@ -24,7 +24,7 @@ function M.new()
 			fontSize = 24
 		}
 	)
-	headingText.x = dCenterX
+	headingText.x = display.contentCenterX
 	headingText.y = 240
 	headingText:setFillColor(0.9, 0.9, 0.9)
 	group:insert(headingText)
@@ -39,7 +39,7 @@ function M.new()
 			fontSize = 20
 		}
 	)
-	subHeadingText.x = dCenterX
+	subHeadingText.x = display.contentCenterX
 	subHeadingText.y = headingText.y + headingText.contentHeight + 5
 	subHeadingText:setFillColor(0.9, 0.9, 0.9)
 	group:insert(subHeadingText)
@@ -48,17 +48,18 @@ function M.new()
 		progressView.new(
 		{
 			width = (dWidth / 2) - 20,
+			height = 12,
 			allowTouch = false
 		}
 	)
-	importProgressView.x = dCenterX - importProgressView.contentWidth * 0.5
-	importProgressView.y = subHeadingText.y + subHeadingText.contentHeight + 5
+	importProgressView.x = display.contentCenterX - importProgressView.contentWidth * 0.5
+	importProgressView.y = subHeadingText.y + subHeadingText.contentHeight + 7
 	importProgressView.isVisible = false
 	group:insert(importProgressView)
 
 	logo = display.newImageRect("img/icons/play.png", 60, 60)
-	logo.x = dCenterX
-	logo.y = importProgressView.y + importProgressView.contentHeight + (logo.contentHeight * 0.5) + 5
+	logo.x = display.contentCenterX
+	logo.y = importProgressView.y + importProgressView.contentHeight + (logo.contentHeight * 0.5) + 8
 	group:insert(logo)
 
 	function group:updateHeading(text)
@@ -87,6 +88,13 @@ function M.new()
 
 	function group:showProgressBar()
 		importProgressView.isVisible = true
+	end
+
+	function group:onResize()
+		headingText.x = display.contentCenterX
+		subHeadingText.x = display.contentCenterX
+		importProgressView.x = display.contentCenterX - importProgressView.contentWidth * 0.5
+		logo.x = display.contentCenterX
 	end
 
 	return group
