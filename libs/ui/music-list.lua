@@ -303,7 +303,7 @@ end
 Runtime:addEventListener("mouse", onMouseEvent)
 
 local function onEnterFrame(event)
-	if (#tableViewList > 0 and selectedRowIndex > 0) then
+	if (#tableViewList > 0) then
 		for i = 1, #tableViewList do
 			tableViewList[i]:setRowSelected(selectedRowIndex)
 		end
