@@ -318,6 +318,13 @@ local function createCategories()
 		categoryTouchRect.y = 0
 		categoryTouchRect.sortAToZ = i == 1 or false -- TODO: read from database
 		categoryTouchRect:setFillColor(0.15, 0.15, 0.15)
+		categoryTouchRect:addEventListener(
+			"tap",
+			function()
+				categoryListRightClickMenu:close()
+				return true
+			end
+		)
 		categoryList[i]:insert(categoryTouchRect)
 
 		function categoryTouchRect:mouse(event)

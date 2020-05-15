@@ -352,8 +352,10 @@ function M.new(options)
 						y = event.y
 					}
 
-					onRowMouseClick(rowEvent)
-					dispatchedRowClickEvent = true
+					if (rowEvent.row) then
+						onRowMouseClick(rowEvent)
+						dispatchedRowClickEvent = true
+					end
 				end
 			end
 		elseif (eventType == "up") then
