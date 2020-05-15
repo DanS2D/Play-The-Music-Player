@@ -10,7 +10,7 @@ local audioLib = require("libs.audio-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
-local rightClickMenuLib = require("libs.ui.right-click-menu")
+local rightClickMenu = require("libs.ui.right-click-menu")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -36,7 +36,9 @@ local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 --local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
-local rightClickMenu = nil
+local selectedCategoryTableView = nil
+local musicListRightClickMenu = nil
+local categoryListRightClickMenu = nil
 local currentRowCount = 0
 local allowCategoryDragLeft = true
 local allowCategoryDragRight = true
@@ -115,7 +117,7 @@ function M:createTableView(options, index)
 					self.musicResultsLimit = 1
 					parent:setRowLimit(rowLimit)
 
-					if (parent._index == 1) then
+					if (parent.orderIndex == 1) then
 						self:getRowData(row.index)
 					end
 				end
@@ -166,7 +168,7 @@ function M:createTableView(options, index)
 					row:insert(rowTitleText)
 				end
 
-				if (parent._index >= #options) then
+				if (parent.orderIndex >= #options) then
 					if (not self.musicSearch) then
 						currentRowCount = currentRowCount + 1
 
@@ -188,7 +190,7 @@ function M:createTableView(options, index)
 				local parent = row.parent
 
 				if (numClicks == 1) then
-					rightClickMenu:close()
+					musicListRightClickMenu:close()
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				elseif (numClicks > 1) then
 					local song = self:getRow(row.index)
@@ -215,7 +217,8 @@ function M:createTableView(options, index)
 				local row = event.row
 
 				if (event.isSecondaryButton) then
-					rightClickMenu:open(event.x, event.y)
+					categoryListRightClickMenu:close()
+					musicListRightClickMenu:open(event.x, event.y)
 				end
 				--print("row " .. self:getRow(row.index).title .. button .. " button")
 			end
@@ -224,7 +227,6 @@ function M:createTableView(options, index)
 	tView.leftPos = options[index].left
 	tView.topPos = topPosition + rowHeight
 	tView.orderIndex = index
-	tView._index = #tableViewList + 1
 
 	function tView:populate()
 		--print("Creating initial rows")
@@ -332,7 +334,7 @@ local function createCategories()
 			end
 
 			if (phase == "down") then
-				if (event.isPrimaryButtonDown) then
+				if (event.isPrimaryButtonDown and not categoryListRightClickMenu:isOpen()) then
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 
 					for i = 1, #categoryList do
@@ -369,101 +371,23 @@ local function createCategories()
 				end
 
 				if (event.isSecondaryButtonDown) then
+					selectedCategoryTableView = tableViewList[self.parent.index]
+
+					musicListRightClickMenu:close()
+
+					if (tableViewList[selectedCategoryTableView.orderIndex].orderIndex == 1) then
+						categoryListRightClickMenu:disableOption(1)
+						categoryListRightClickMenu:enableOption(2)
+					elseif (tableViewList[selectedCategoryTableView.orderIndex].orderIndex == #tableViewList) then
+						categoryListRightClickMenu:enableOption(1)
+						categoryListRightClickMenu:disableOption(2)
+					else
+						categoryListRightClickMenu:enableOption(1)
+						categoryListRightClickMenu:enableOption(2)
+					end
+
+					categoryListRightClickMenu:open(event.x, event.y)
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
-
-					local thisTableView = tableViewList[self.parent.index]
-					local origIndex = tableViewList[thisTableView.orderIndex].orderIndex
-					local buttons = {"Right", "Left", "Cancel"}
-
-					if (tableViewList[thisTableView.orderIndex].orderIndex == 1) then
-						buttons = {"Right", "Cancel"}
-					elseif (tableViewList[thisTableView.orderIndex].orderIndex == #tableViewList) then
-						buttons = {"Left", "Cancel"}
-					end
-
-					local function onComplete(categoryEvent)
-						local optionName = buttons[categoryEvent.index]
-
-						if (categoryEvent.action == "clicked") then
-							if (optionName == "Right") then
-								local origList = tableViewList[origIndex]
-								local origPreviousList = tableViewList[origIndex + 1]
-								local origCategory = categoryList[origIndex]
-								local origPreviousCategory = categoryList[origIndex + 1]
-								local targetX = tableViewList[origIndex + 1].x
-								local swapTargetX = tableViewList[origIndex].x
-								local targetCategoryX = categoryList[origIndex + 1].x
-								local swapTargetCategoryX = categoryList[origIndex].x
-
-								-- swap positions
-								tableViewList[origIndex].x = targetX
-								tableViewList[origIndex + 1].x = swapTargetX
-								categoryList[origIndex].x = targetCategoryX
-								categoryList[origIndex + 1].x = swapTargetCategoryX
-
-								-- set new indexes
-								tableViewList[origIndex + 1].orderIndex = origIndex
-								tableViewList[origIndex].orderIndex = origIndex + 1
-								categoryList[origIndex + 1].index = origIndex
-								categoryList[origIndex].index = origIndex + 1
-
-								-- swap table items
-								tableViewList[origIndex + 1] = origList
-								tableViewList[origIndex] = origPreviousList
-								categoryList[origIndex + 1] = origCategory
-								categoryList[origIndex] = origPreviousCategory
-
-								-- push moved (left) list to front
-								tableViewList[origIndex]:toFront()
-								categoryList[origIndex]:toFront()
-
-								for i = origIndex + 1, #tableViewList do
-									tableViewList[i]:toFront()
-									categoryList[i]:toFront()
-								end
-							elseif (optionName == "Left") then
-								local origList = tableViewList[origIndex]
-								local origPreviousList = tableViewList[origIndex - 1]
-								local origCategory = categoryList[origIndex]
-								local origPreviousCategory = categoryList[origIndex - 1]
-								local targetX = tableViewList[origIndex - 1].x
-								local swapTargetX = tableViewList[origIndex].x
-								local targetCategoryX = categoryList[origIndex - 1].x
-								local swapTargetCategoryX = categoryList[origIndex].x
-
-								-- swap positions
-								tableViewList[origIndex].x = targetX
-								tableViewList[origIndex - 1].x = swapTargetX
-								categoryList[origIndex].x = targetCategoryX
-								categoryList[origIndex - 1].x = swapTargetCategoryX
-
-								-- set new indexes
-								tableViewList[origIndex - 1].orderIndex = origIndex
-								tableViewList[origIndex].orderIndex = origIndex - 1
-								categoryList[origIndex - 1].index = origIndex
-								categoryList[origIndex].index = origIndex - 1
-
-								-- swap table items
-								tableViewList[origIndex - 1] = origList
-								tableViewList[origIndex] = origPreviousList
-								categoryList[origIndex - 1] = origCategory
-								categoryList[origIndex] = origPreviousCategory
-
-								-- push moved (right) list to front
-								tableViewList[origIndex]:toFront()
-								categoryList[origIndex]:toFront()
-
-								for i = origIndex + 1, #tableViewList do
-									tableViewList[i]:toFront()
-									categoryList[i]:toFront()
-								end
-							else
-								print("cancel")
-							end
-						end
-					end
-
-					local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 				end
 			elseif (phase == "move") then
 			--resizeCursor:hide()
@@ -583,7 +507,7 @@ local function moveColumns(event)
 
 				if (categoryTarget.index < #categoryList) then
 					minPosition =
-						categoryList[tableViewTarget._index + 1].x - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
+						categoryList[tableViewTarget.orderIndex + 1].x - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
 				end
 
 				tableViewTarget.x = mMin(minPosition, mFloor(event.x))
@@ -595,15 +519,15 @@ local function moveColumns(event)
 				allowCategoryDragRight = true
 				tableViewTarget.x =
 					mMax(
-					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
-						categoryList[tableViewTarget._index - 1].title.contentWidth +
+					categoryList[tableViewTarget.orderIndex - 1].x + categoryList[tableViewTarget.orderIndex - 1].title.x +
+						categoryList[tableViewTarget.orderIndex - 1].title.contentWidth +
 						10,
 					mFloor(event.x)
 				)
 				categoryTarget.x =
 					mMax(
-					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
-						categoryList[tableViewTarget._index - 1].title.contentWidth +
+					categoryList[tableViewTarget.orderIndex - 1].x + categoryList[tableViewTarget.orderIndex - 1].title.x +
+						categoryList[tableViewTarget.orderIndex - 1].title.contentWidth +
 						10,
 					mFloor(event.x)
 				)
@@ -650,33 +574,126 @@ end
 
 Runtime:addEventListener("enterFrame", onEnterFrame)
 
+local function handleCategorySwapping(optionName)
+	local origIndex = tableViewList[selectedCategoryTableView.orderIndex].orderIndex
+
+	if (optionName == "right") then
+		local origList = tableViewList[origIndex]
+		local origPreviousList = tableViewList[origIndex + 1]
+		local origCategory = categoryList[origIndex]
+		local origPreviousCategory = categoryList[origIndex + 1]
+		local targetX = tableViewList[origIndex + 1].x
+		local swapTargetX = tableViewList[origIndex].x
+		local targetCategoryX = categoryList[origIndex + 1].x
+		local swapTargetCategoryX = categoryList[origIndex].x
+
+		-- swap positions
+		tableViewList[origIndex].x = targetX
+		tableViewList[origIndex + 1].x = swapTargetX
+		categoryList[origIndex].x = targetCategoryX
+		categoryList[origIndex + 1].x = swapTargetCategoryX
+
+		-- set new indexes
+		tableViewList[origIndex + 1].orderIndex = origIndex
+		tableViewList[origIndex].orderIndex = origIndex + 1
+		categoryList[origIndex + 1].index = origIndex
+		categoryList[origIndex].index = origIndex + 1
+
+		-- swap table items
+		tableViewList[origIndex + 1] = origList
+		tableViewList[origIndex] = origPreviousList
+		categoryList[origIndex + 1] = origCategory
+		categoryList[origIndex] = origPreviousCategory
+
+		-- push moved (left) list to front
+		tableViewList[origIndex]:toFront()
+		categoryList[origIndex]:toFront()
+
+		for i = origIndex + 1, #tableViewList do
+			tableViewList[i]:toFront()
+			categoryList[i]:toFront()
+		end
+	elseif (optionName == "left") then
+		local origList = tableViewList[origIndex]
+		local origPreviousList = tableViewList[origIndex - 1]
+		local origCategory = categoryList[origIndex]
+		local origPreviousCategory = categoryList[origIndex - 1]
+		local targetX = tableViewList[origIndex - 1].x
+		local swapTargetX = tableViewList[origIndex].x
+		local targetCategoryX = categoryList[origIndex - 1].x
+		local swapTargetCategoryX = categoryList[origIndex].x
+
+		-- swap positions
+		tableViewList[origIndex].x = targetX
+		tableViewList[origIndex - 1].x = swapTargetX
+		categoryList[origIndex].x = targetCategoryX
+		categoryList[origIndex - 1].x = swapTargetCategoryX
+
+		-- set new indexes
+		tableViewList[origIndex - 1].orderIndex = origIndex
+		tableViewList[origIndex].orderIndex = origIndex - 1
+		categoryList[origIndex - 1].index = origIndex
+		categoryList[origIndex].index = origIndex - 1
+
+		-- swap table items
+		tableViewList[origIndex - 1] = origList
+		tableViewList[origIndex] = origPreviousList
+		categoryList[origIndex - 1] = origCategory
+		categoryList[origIndex] = origPreviousCategory
+
+		-- push moved (right) list to front
+		tableViewList[origIndex]:toFront()
+		categoryList[origIndex]:toFront()
+
+		for i = origIndex + 1, #tableViewList do
+			tableViewList[i]:toFront()
+			categoryList[i]:toFront()
+		end
+	end
+end
+
 function M.new()
 	createCategories()
-	rightClickMenu =
-		rightClickMenuLib.new(
+
+	categoryListRightClickMenu =
+		rightClickMenu.new(
 		{
 			items = {
 				{
-					title = "Edit Metadata",
-					icon = "edit",
+					title = "Move Left",
+					icon = "arrow-left",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+						handleCategorySwapping("left")
+					end
+				},
+				{
+					title = "Move Right",
+					icon = "arrow-right",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+						handleCategorySwapping("right")
+					end
+				},
+				{
+					title = "Hide",
+					icon = "eye",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
 					onClick = function(event)
 					end
 				},
 				{
-					title = "Remove From Library",
-					icon = "database",
+					title = "Auto Size All Column",
+					icon = "arrows-alt-h",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
-					onClick = function(event)
-					end
-				},
-				{
-					title = "Remove From Library & Disk",
-					icon = "trash-alt",
-					iconFont = fontAwesomeSolidFont,
-					font = titleFont,
+					closeOnClick = true,
 					onClick = function(event)
 					end
 				},
@@ -685,13 +702,58 @@ function M.new()
 					icon = "times-circle",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
+					closeOnClick = true,
 					onClick = function(event)
-						rightClickMenu:close()
 					end
 				}
 			}
 		}
 	)
+
+	musicListRightClickMenu =
+		rightClickMenu.new(
+		{
+			items = {
+				{
+					title = "Edit Metadata",
+					icon = "edit",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Remove From Library",
+					icon = "database",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Remove From Library & Disk",
+					icon = "trash-alt",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Close",
+					icon = "times-circle",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					closeOnClick = true,
+					onClick = function(event)
+					end
+				}
+			}
+		}
+	)
+
 	return tableViewList
 end
 

@@ -55,14 +55,25 @@ function M.new(options)
 				subItemText.anchorX = 0
 				subItemText.x = 35
 				row:insert(subItemText)
+
+				if (items[row.index].disabled) then
+					icon.alpha = 0.5
+					subItemText.alpha = 0.5
+				end
 			end,
 			onRowClick = function(event)
 				local phase = event.phase
 				local row = event.row
 				local onClick = items[row.index].onClick
 
-				if (type(items[row.index].onClick) == "function") then
-					items[row.index].onClick(event)
+				if (not items[row.index].disabled) then
+					if (type(items[row.index].onClick) == "function") then
+						items[row.index].onClick(event)
+
+						if (items[row.index].closeOnClick) then
+							row.parent:close()
+						end
+					end
 				end
 
 				return true
@@ -98,6 +109,8 @@ function M.new(options)
 				end
 			end
 		end
+
+		return (event.isSecondaryButtonDown) -- let right clicks seep through to below objects
 	end
 
 	menu:addEventListener("mouse", onMouseEvent)
@@ -121,6 +134,20 @@ function M.new(options)
 		self.x = display.contentWidth
 		self.y = display.contentCenterY
 		self.isVisible = false
+	end
+
+	function menu:isOpen()
+		return self.isVisible
+	end
+
+	function menu:disableOption(index)
+		items[index].disabled = true
+		menu:reloadData()
+	end
+
+	function menu:enableOption(index)
+		items[index].disabled = false
+		menu:reloadData()
 	end
 
 	return menu
