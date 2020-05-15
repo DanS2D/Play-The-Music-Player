@@ -64,7 +64,7 @@ function M.new(options)
 
 		for j = 1, #menuButtons do
 			if (j ~= target.index) then
-				menuButtons[j]:setFillColor(unpack(menuButtons[j].origFill.default))
+				menuButtons[j].alpha = 1
 				menuButtons[j]:closeSubmenu()
 			end
 		end
@@ -80,28 +80,13 @@ function M.new(options)
 	for i = 1, #items do
 		local tableViewParams = {}
 
-		local tempItemText =
-			display.newText(
-			{
-				text = items[i].title,
-				font = font,
-				fontSize = fontSize + 4,
-				height = menuBarHeight,
-				align = "left"
-			}
-		)
-		tempItemText.isVisible = false
-
-		local realWidth = tempItemText.contentWidth
-		display.remove(tempItemText)
-		tempItemText = nil
-
 		local mainButton =
 			buttonLib.new(
 			{
 				iconName = items[i].title,
 				font = font,
 				fontSize = fontSize + 4,
+				fillColor = {1, 1, 1},
 				onClick = function(event)
 					local target = event.target
 
@@ -124,10 +109,7 @@ function M.new(options)
 		mainButton.x = i == 1 and 10 or menuButtons[i - 1].x + menuButtons[i - 1].contentWidth + 10
 		mainButton.y = menuBarHeight * 0.5
 		mainButton.index = i
-		mainButton.origFill = {
-			default = {1, 1, 1},
-			over = {1, 1, 1, 0.6}
-		}
+		mainButton.alpha = 1
 
 		function mainButton:openSubmenu()
 			self.mainTableView.isVisible = true
@@ -314,7 +296,7 @@ function M.new(options)
 		return true
 	end
 
-	searchBar = native.newTextField(0, 0, 200, menuBarHeight - 5)
+	searchBar = native.newTextField(display.contentWidth, -200, 200, menuBarHeight - 5)
 	searchBar.anchorX = 1
 	searchBar.x = display.contentWidth - 10
 	searchBar.y = menuBarHeight / 2
@@ -367,17 +349,17 @@ function M.new(options)
 						if (isItemOpen) then
 							closeSubmenus(button)
 							button:openSubmenu()
-							button:setFillColor(unpack(button.origFill.over))
+							button.alpha = 0.8
 						else
 							closeSubmenus()
-							button:setFillColor(unpack(button.origFill.over))
+							button.alpha = 0.8
 						end
 					else
-						button:setFillColor(unpack(button.origFill.default))
+						button.alpha = 1
 					end
 				else
 					if (not isItemOpen) then
-						button:setFillColor(unpack(button.origFill.default))
+						button.alpha = 1
 					end
 				end
 
