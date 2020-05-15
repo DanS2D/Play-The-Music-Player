@@ -5,11 +5,12 @@ local M = {
 	musicResultsLimit = 0,
 	rowCreationTimers = {}
 }
-local mousecursor = require("plugin.mousecursor")
+--local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
+local rightClickMenuLib = require("libs.ui.right-click-menu")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -33,13 +34,17 @@ local selectedRowIndex = 0
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
-local resizeCursor = mousecursor.newCursor("resize left right")
+--local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
+local rightClickMenu = nil
 local currentRowCount = 0
 local allowCategoryDragLeft = true
 local allowCategoryDragRight = true
 local draggingCategoryRight = false
 local topPosition = 121
+local previousIndex = nil
+local previousMaxRows = nil
+local newMaxRows = nil
 
 function M:getRow(rowIndex)
 	local row = nil
@@ -182,7 +187,9 @@ function M:createTableView(options, index)
 				local row = event.row
 				local parent = row.parent
 
-				if (numClicks > 1) then
+				if (numClicks == 1) then
+					rightClickMenu:close()
+				elseif (numClicks > 1) then
 					local song = self:getRow(row.index)
 
 					if (song == nil) then
@@ -207,6 +214,10 @@ function M:createTableView(options, index)
 			end,
 			onRowMouseClick = function(event)
 				local row = event.row
+
+				if (event.isSecondaryButton) then
+					rightClickMenu:open(event.x, event.y)
+				end
 				--print("row " .. self:getRow(row.index).title .. button .. " button")
 			end
 		}
@@ -228,91 +239,7 @@ function M:createTableView(options, index)
 	return tView
 end
 
-local function moveColumns(event)
-	local phase = event.phase
-
-	if (musicCount <= 0) then
-		return
-	end
-
-	if (tableViewTarget) then
-		if (phase == "moved") then
-			local oldX = tableViewTarget.x
-			draggingCategoryRight = event.x > oldX
-
-			if (allowCategoryDragRight and draggingCategoryRight) then
-				local minPosition = display.contentWidth - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
-
-				if (categoryTarget.index < #categoryList) then
-					minPosition =
-						categoryList[tableViewTarget._index + 1].x - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
-				end
-
-				tableViewTarget.x = mMin(minPosition, mFloor(event.x))
-				categoryTarget.x = mMin(minPosition, mFloor(event.x))
-				allowCategoryDragLeft = true
-			end
-
-			if (allowCategoryDragLeft and not draggingCategoryRight) then
-				allowCategoryDragRight = true
-				tableViewTarget.x =
-					mMax(
-					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
-						categoryList[tableViewTarget._index - 1].title.contentWidth +
-						10,
-					mFloor(event.x)
-				)
-				categoryTarget.x =
-					mMax(
-					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
-						categoryList[tableViewTarget._index - 1].title.contentWidth +
-						10,
-					mFloor(event.x)
-				)
-			end
-		end
-
-		if (phase == "ended" or phase == "cancelled") then
-			resizeCursor:hide()
-			tableViewTarget = nil
-			categoryTarget = nil
-		end
-	end
-
-	return true
-end
-
-Runtime:addEventListener("touch", moveColumns)
-
-local function onMouseEvent(event)
-	local eventType = event.type
-
-	if (musicCount <= 0) then
-		return
-	end
-
-	if (eventType == "up") then
-		if (tableViewTarget) then
-			display.getCurrentStage():setFocus(nil)
-		end
-	end
-
-	resizeCursor:hide()
-end
-
-Runtime:addEventListener("mouse", onMouseEvent)
-
-local function onEnterFrame(event)
-	if (#tableViewList > 0) then
-		for i = 1, #tableViewList do
-			tableViewList[i]:setRowSelected(selectedRowIndex)
-		end
-	end
-end
-
-Runtime:addEventListener("enterFrame", onEnterFrame)
-
-function M.new()
+local function createCategories()
 	local extraSmallColumnSize = display.contentWidth / 15
 	local smallColumnSize = display.contentWidth / 10
 	local smallMediumColumnSize = display.contentWidth / 8
@@ -536,7 +463,7 @@ function M.new()
 					local alert = native.showAlert("Move Column", "Choose a direction to move this column to.", buttons, onComplete)
 				end
 			elseif (phase == "move") then
-				resizeCursor:hide()
+			--resizeCursor:hide()
 			end
 
 			return true
@@ -568,7 +495,7 @@ function M.new()
 			end
 
 			if (phase == "move") then
-				resizeCursor:show()
+				--resizeCursor:show()
 			elseif (phase == "down") then
 				tableViewTarget = tableViewList[self.parent.index]
 				display.getCurrentStage():setFocus(tableViewTarget)
@@ -620,6 +547,156 @@ function M.new()
 		categoryList[i]:insert(sortIndicator)
 	end
 
+	function categoryList:destroy()
+		display.remove(categoryBar)
+		categoryBar = nil
+
+		for i = 1, #categoryList do
+			for j = 1, categoryList[i].numChildren do
+				display.remove(categoryList[i][j])
+				categoryList[i][j] = nil
+			end
+
+			display.remove(categoryList[i])
+			categoryList[i] = nil
+		end
+	end
+end
+
+local function moveColumns(event)
+	local phase = event.phase
+
+	if (musicCount <= 0) then
+		return
+	end
+
+	if (tableViewTarget) then
+		if (phase == "moved") then
+			local oldX = tableViewTarget.x
+			draggingCategoryRight = event.x > oldX
+
+			if (allowCategoryDragRight and draggingCategoryRight) then
+				local minPosition = display.contentWidth - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
+
+				if (categoryTarget.index < #categoryList) then
+					minPosition =
+						categoryList[tableViewTarget._index + 1].x - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
+				end
+
+				tableViewTarget.x = mMin(minPosition, mFloor(event.x))
+				categoryTarget.x = mMin(minPosition, mFloor(event.x))
+				allowCategoryDragLeft = true
+			end
+
+			if (allowCategoryDragLeft and not draggingCategoryRight) then
+				allowCategoryDragRight = true
+				tableViewTarget.x =
+					mMax(
+					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
+						categoryList[tableViewTarget._index - 1].title.contentWidth +
+						10,
+					mFloor(event.x)
+				)
+				categoryTarget.x =
+					mMax(
+					categoryList[tableViewTarget._index - 1].x + categoryList[tableViewTarget._index - 1].title.x +
+						categoryList[tableViewTarget._index - 1].title.contentWidth +
+						10,
+					mFloor(event.x)
+				)
+			end
+		end
+
+		if (phase == "ended" or phase == "cancelled") then
+			--resizeCursor:hide()
+			tableViewTarget = nil
+			categoryTarget = nil
+		end
+	end
+
+	return true
+end
+
+Runtime:addEventListener("touch", moveColumns)
+
+local function onMouseEvent(event)
+	local eventType = event.type
+
+	if (musicCount <= 0) then
+		return
+	end
+
+	if (eventType == "up") then
+		if (tableViewTarget) then
+			display.getCurrentStage():setFocus(nil)
+		end
+	end
+
+	--resizeCursor:hide()
+end
+
+Runtime:addEventListener("mouse", onMouseEvent)
+
+local function onEnterFrame(event)
+	if (#tableViewList > 0) then
+		for i = 1, #tableViewList do
+			tableViewList[i]:setRowSelected(selectedRowIndex)
+		end
+	end
+end
+
+Runtime:addEventListener("enterFrame", onEnterFrame)
+
+function M.new()
+	createCategories()
+	rightClickMenu =
+		rightClickMenuLib.new(
+		{
+			items = {
+				{
+					title = "Edit Metadata",
+					icon = "edit",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Remove From Database",
+					icon = "database",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Remove From Filesystem",
+					icon = "hdd",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Remove From Database & Filesystem",
+					icon = "trash-alt",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					onClick = function(event)
+					end
+				},
+				{
+					title = "Close",
+					icon = "times-circle",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					onClick = function(event)
+						rightClickMenu:close()
+					end
+				}
+			}
+		}
+	)
 	return tableViewList
 end
 
@@ -645,6 +722,12 @@ function M:removeAllRows()
 
 	for i = 1, #tableViewList do
 		tableViewList[i]:deleteAllRows()
+	end
+end
+
+function M:scrollToIndex(rowIndex)
+	for i = 1, #tableViewList do
+		tableViewList[i]:scrollToIndex(rowIndex)
 	end
 end
 
@@ -679,6 +762,23 @@ function M:reloadData(hardReload)
 			tableViewList[i]:scrollToTop()
 		else
 			--print("previous index was: ", prevIndex)
+			if (previousIndex ~= nil) then
+				if (previousMaxRows == newMaxRows) then
+					prevIndex = previousIndex
+				elseif (previousMaxRows < newMaxRows) then
+					prevIndex = previousIndex + (newMaxRows - previousMaxRows)
+				elseif (previousMaxRows > newMaxRows) then
+					prevIndex = previousIndex - (previousMaxRows - newMaxRows)
+				end
+
+				musicData = {}
+				local p = prevIndex
+				prevIndex = previousIndex + p
+				previousIndex = nil
+			end
+
+			print("search: scrolling to index ", prevIndex)
+
 			tableViewList[i]:scrollToIndex(prevIndex)
 		end
 	end
@@ -723,9 +823,48 @@ end
 
 function M:recreateMusicList()
 	if (musicCount > 0) then
-		musicData = {}
+		previousIndex = tableViewList[1]:getRealIndex()
+		previousMaxRows = tableViewList[1]:getMaxRows()
 		currentRowCount = 0
+
+		print("previous index prior to reload: ", previousIndex)
+
+		if (self.musicSearch == nil) then
+			musicData = {}
+		end
+
+		categoryList:destroy()
+
+		for i = 1, #tableViewList do
+			tableViewList[i]:destroy()
+			tableViewList[i] = nil
+		end
+
+		tableViewList = nil
+		tableViewList = {}
+		createCategories()
 		self:populate()
+
+		newMaxRows = tableViewList[1]:getMaxRows()
+
+		--print("old max rows: ", previousMaxRows, " new max rows: ", newMaxRows)
+
+		-- scroll to the correct index, factoring in the difference in row count
+
+		if (self.musicSearch == nil) then
+			if (previousMaxRows == newMaxRows) then
+				self:scrollToIndex(previousIndex)
+			elseif (previousMaxRows < newMaxRows) then
+				self:scrollToIndex(previousIndex + (newMaxRows - previousMaxRows))
+			elseif (previousMaxRows > newMaxRows) then
+				self:scrollToIndex(previousIndex - (previousMaxRows - newMaxRows))
+			end
+		else
+			--	self.musicResultsLimit = sqlLib:musicCount()
+			--	self:getSearchData()
+			--	self:setMusicCount(sqlLib:searchCount())
+			--	self:reloadData(true)
+		end
 	end
 end
 

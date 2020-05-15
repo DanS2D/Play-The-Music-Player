@@ -73,15 +73,16 @@ settings =
 				["win32-sim"] = { url="http://127.0.0.1:81/tinyfiledialogs_plugin.tgz?" .. os.time() },
 			},
 		},
-		["plugin.mousecursor"] = {
-			publisherId = "com.spiralcodestudio", 
+		--[[
+		["plugin.mouseCursor"] = {
+			publisherId = "com.revolt64", 
 			supportedPlatforms = { 
 				iphone = false,
 				android = false,
 				macos = false,
-				["win32-sim"] = { url="http://127.0.0.1:81/mousecursor_plugin.tgz?" .. os.time() },
+				["win32-sim"] = { url="http://127.0.0.1:81/mouseCursor_plugin.tgz?" .. os.time() },
 			},
-		},
+		},--]]
 		["plugin.bass"] =
 		{
 			publisherId = "com.revolt64",

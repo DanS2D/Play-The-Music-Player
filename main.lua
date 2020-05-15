@@ -34,16 +34,6 @@ local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 mRandomSeed(osTime())
 settings:load()
 
---local devices = bass.getDevices()
---print(type(devices), "num elements", #devices)
---[[
-for i = 1, #devices do
-	--print(devices[i].name)
-	if devices[i].name:lower():find("headset") ~= 0 then
-	--print("setting device to headset")
-	--bass.setDevice(devices[i].index)
-	end
-end--]]
 local function onAudioEvent(event)
 	local phase = event.phase
 	local song = event.song
@@ -484,10 +474,40 @@ end
 display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
+local function onResize(event)
+	background.width = display.contentWidth
+	background.height = display.contentHeight - 161
+
+	applicationMainMenuBar:onResize()
+	mediaBarLib:onResize()
+	musicImporter:onResize()
+	musicList:onResize()
+
+	if (sqlLib:musicCount() > 0) then
+		if (resizeTimer) then
+			timer.cancel(resizeTimer)
+			resizeTimer = nil
+		end
+
+		resizeTimer =
+			timer.performWithDelay(
+			500,
+			function()
+				musicList:recreateMusicList()
+			end
+		)
+	end
+end
+
+Runtime:addEventListener("resize", onResize)
+
 local function onSystemEvent(event)
 	if (event.type == "applicationExit") then
+		sqlLib:close()
 		audioLib.reset()
 		transition.cancel()
+		Runtime:removeEventListener("key", keyEventListener)
+		Runtime:removeEventListener("resize", onResize)
 
 		for id, value in pairs(timer._runlist) do
 			timer.cancel(value)
@@ -496,39 +516,6 @@ local function onSystemEvent(event)
 end
 
 Runtime:addEventListener("system", onSystemEvent)
-
-local oldHeight = display.contentHeight
-
-local function onResize(event)
-	--print(display.contentWidth, display.contentHeight)
-	background.width = display.contentWidth
-	background.height = display.contentHeight - 161
-
-	applicationMainMenuBar:onResize()
-	mediaBarLib:onResize()
-	musicList:onResize()
-
-	if (display.contentHeight > oldHeight or display.contentHeight < oldHeight) then
-		if (sqlLib:musicCount() > 0) then
-			if (resizeTimer) then
-				timer.cancel(resizeTimer)
-				resizeTimer = nil
-			end
-
-			resizeTimer =
-				timer.performWithDelay(
-				500,
-				function()
-					musicList:recreateMusicList()
-				end
-			)
-		end
-
-		oldHeight = display.contentHeight
-	end
-end
-
-Runtime:addEventListener("resize", onResize)
 
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)

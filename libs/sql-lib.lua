@@ -414,4 +414,9 @@ function M:searchCount()
 	return count
 end
 
+function M:close()
+	database:close()
+	database = nil
+end
+
 return M

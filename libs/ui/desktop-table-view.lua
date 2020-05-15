@@ -124,6 +124,9 @@ function M.new(options)
 				display.remove(rows[i])
 				rows[i] = nil
 			end
+
+			rows = nil
+			rows = {}
 		end
 	end
 
@@ -134,6 +137,14 @@ function M.new(options)
 				rows[index][i] = nil
 			end
 		end
+	end
+
+	function tableView:destroy()
+		selectedRowIndex = 0
+		self:deleteAllRows()
+		Runtime:removeEventListener("mouse", self)
+		display.remove(self)
+		self = nil
 	end
 
 	function tableView:dispatchRowEvent(rowIndex)
@@ -262,7 +273,7 @@ function M.new(options)
 	end
 
 	function tableView:setRowSelected(rowIndex, viaScroll)
-		if (not useSelectedRowHighlighting or #rows <= 0) then
+		if (not useSelectedRowHighlighting or not rows or #rows <= 0) then
 			return
 		end
 
@@ -275,12 +286,14 @@ function M.new(options)
 
 		if (selectedRowIndex >= 0) then
 			for i = 1, maxRows do
-				if (rows[i].index == selectedRowIndex) then
-					-- set the selected row to its over color
-					rows[i]._background:setFillColor(unpack(overRowColor))
-				else
-					-- reset other rows to their default color
-					rows[i]._background:setFillColor(unpack(defaultRowColor))
+				if (rows[i]) then
+					if (rows[i].index == selectedRowIndex) then
+						-- set the selected row to its over color
+						rows[i]._background:setFillColor(unpack(overRowColor))
+					else
+						-- reset other rows to their default color
+						rows[i]._background:setFillColor(unpack(defaultRowColor))
+					end
 				end
 			end
 		end
@@ -334,7 +347,9 @@ function M.new(options)
 					local rowEvent = {
 						row = self:getRowAtClickPosition(event),
 						isSecondaryButton = event.isSecondaryButtonDown,
-						isMiddleButton = event.isMiddleButtonDown
+						isMiddleButton = event.isMiddleButtonDown,
+						x = event.x,
+						y = event.y
 					}
 
 					onRowMouseClick(rowEvent)
