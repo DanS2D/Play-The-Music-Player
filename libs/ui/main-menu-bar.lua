@@ -99,6 +99,7 @@ function M.new(options)
 					if (not isItemOpen) then
 						closeSubmenus()
 					else
+						target.alpha = 0.8
 						target:openSubmenu()
 						closeSubmenus(target)
 					end
@@ -246,6 +247,31 @@ function M.new(options)
 				return true
 			end
 		)
+		mainButton.mainTableView:addEventListener(
+			"mouse",
+			function(event)
+				local eventType = event.type
+
+				if (eventType == "move") then
+					local x, y = event.target:contentToLocal(event.x, event.y)
+
+					-- handle subItems (the tableview contents)
+					for i = 1, event.target:getMaxRows() do
+						local row = event.target:getRowAtIndex(i)
+						local rowYStart = rowHeight * (i - 1)
+						local rowYEnd = rowHeight * i
+
+						if (y >= rowYStart and y <= rowYEnd) then
+							row._background:setFillColor(unpack(rowColor.over))
+						else
+							row._background:setFillColor(unpack(rowColor.default))
+						end
+					end
+				end
+
+				return true
+			end
+		)
 		mainButton.mainTableView.isVisible = false
 		menuButtons[i] = mainButton
 
@@ -360,26 +386,6 @@ function M.new(options)
 				else
 					if (not isItemOpen) then
 						button.alpha = 1
-					end
-				end
-
-				-- handle subItems (the tableview contents)
-				for j = 1, button.mainTableView:getMaxRows() do
-					local row = button.mainTableView:getRowAtIndex(j)
-					local rowXEnd = itemListWidth
-					local rowYStart = rowHeight * j
-					local rowYEnd = rowYStart + rowHeight
-
-					if (x >= buttonXStart and x <= buttonXStart + rowXEnd) then
-						if (y >= rowYStart and y <= rowYEnd) then
-							if (isItemOpen) then
-								row._background:setFillColor(unpack(rowColor.over))
-							else
-								row._background:setFillColor(unpack(rowColor.default))
-							end
-						else
-							row._background:setFillColor(unpack(rowColor.default))
-						end
 					end
 				end
 			end

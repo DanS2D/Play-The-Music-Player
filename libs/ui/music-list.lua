@@ -189,6 +189,7 @@ function M:createTableView(options, index)
 
 				if (numClicks == 1) then
 					rightClickMenu:close()
+					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				elseif (numClicks > 1) then
 					local song = self:getRow(row.index)
 
@@ -208,8 +209,6 @@ function M:createTableView(options, index)
 					audioLib.currentSongIndex = row.index
 					audioLib.load(song)
 					audioLib.play(song)
-				else
-					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				end
 			end,
 			onRowMouseClick = function(event)
@@ -334,6 +333,8 @@ local function createCategories()
 
 			if (phase == "down") then
 				if (event.isPrimaryButtonDown) then
+					Runtime:dispatchEvent({name = "menuEvent", close = true})
+
 					for i = 1, #categoryList do
 						categoryList[i].sortIndicator.isVisible = false
 					end
@@ -368,6 +369,8 @@ local function createCategories()
 				end
 
 				if (event.isSecondaryButtonDown) then
+					Runtime:dispatchEvent({name = "menuEvent", close = true})
+
 					local thisTableView = tableViewList[self.parent.index]
 					local origIndex = tableViewList[thisTableView.orderIndex].orderIndex
 					local buttons = {"Right", "Left", "Cancel"}
@@ -662,7 +665,7 @@ function M.new()
 					end
 				},
 				{
-					title = "Remove From Database",
+					title = "Remove From Library",
 					icon = "database",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
@@ -670,15 +673,7 @@ function M.new()
 					end
 				},
 				{
-					title = "Remove From Filesystem",
-					icon = "hdd",
-					iconFont = fontAwesomeSolidFont,
-					font = titleFont,
-					onClick = function(event)
-					end
-				},
-				{
-					title = "Remove From Database & Filesystem",
+					title = "Remove From Library & Disk",
 					icon = "trash-alt",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
