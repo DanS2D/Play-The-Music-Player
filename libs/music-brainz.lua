@@ -3,6 +3,7 @@ local json = require("json")
 local lfs = require("lfs")
 local tag = require("plugin.taglib")
 local fileUtils = require("libs.file-utils")
+local pureMagic = require("libs.pure-magic")
 local sFormat = string.format
 local urlRequestListener = nil
 local downloadListener = nil
@@ -29,17 +30,17 @@ local function dispatchCoverEvent()
 end
 
 local function isMp3File(song)
-	return (song.fileName:match("^.+(%..+)$"):lower() == ".mp3")
+	return (song.fileName:fileExtension() == "mp3")
 end
 
 local function isFlacFile(song)
-	return (song.fileName:match("^.+(%..+)$"):lower() == ".flac")
+	return (song.fileName:fileExtension() == "flac")
 end
 
 local function isMp4File(song)
-	local extension = song.fileName:match("^.+(%..+)$"):lower()
+	local extension = song.fileName:fileExtension()
 
-	return (extension == ".mva" or extension == "m4v")
+	return (extension == "m4a" or extension == "m4v")
 end
 
 local function canGetCoverFromAudioFile(song)
@@ -49,6 +50,7 @@ end
 local function getCoverFromAudioFile(song)
 	if (isMp3File(song) or isFlacFile(song) or isMp4File(song)) then
 		print("Getting cover from file")
+
 		tag.getArtwork(
 			{
 				fileName = song.fileName,
@@ -137,7 +139,7 @@ downloadListener = function(event)
 
 		local path = system.pathForFile(currentCoverFileName, system.DocumentsDirectory)
 		--local fName = "04cc22c81455179997b2478966005f57.png"
-		local pureMagic = require("libs.pure-magic")
+
 		local mimetype = pureMagic.via_path(path)
 		--print("mime type: ", mimetype)
 
@@ -218,8 +220,16 @@ function M.getCover(song)
 
 	-- check if the file exists
 	if (coverOnDisk) then
-		currentCoverFileName = fileName
-		dispatchCoverEvent()
+		local cPath = documentsPath .. "\\" .. fileName
+		local mimetype = pureMagic.via_path(cPath)
+
+		if (mimetype == "image/jpeg" or mimetype == "image/png") then
+			currentCoverFileName = fileName
+			dispatchCoverEvent()
+		else
+			os.remove(cPath)
+			setOrGetData()
+		end
 	else
 		if (canGetCoverFromAudioFile(song)) then
 			getCoverFromAudioFile(song)
@@ -229,10 +239,18 @@ function M.getCover(song)
 				local coverOnDiskExists, coverFileName = coverExists(song)
 
 				if (coverOnDiskExists) then
+					local cPath = documentsPath .. "\\" .. coverFileName
+					local mimetype = pureMagic.via_path(cPath)
 					--print("found cover " .. coverFileName .. " cancelling timer now")
-					currentCoverFileName = coverFileName
-					dispatchCoverEvent()
-					timer.cancel(event.source)
+
+					if (mimetype == "image/jpeg" or mimetype == "image/png") then
+						currentCoverFileName = coverFileName
+						dispatchCoverEvent()
+						timer.cancel(event.source)
+					else
+						timer.cancel(event.source)
+						setOrGetData()
+					end
 				end
 
 				if (event.count >= 20) then

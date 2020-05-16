@@ -22,4 +22,12 @@ function string:urlEncode(str)
 	return wString
 end
 
+function string:fileExtension(str)
+	local wString = str or self
+	wString = wString:match("^.+(%..+)$"):lower()
+	wString = wString:sub(2, wString:len())
+
+	return wString
+end
+
 return M

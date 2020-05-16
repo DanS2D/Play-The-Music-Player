@@ -14,19 +14,7 @@ local importProgress = importProgressLib.new()
 local onFinished = nil
 
 local function isMusicFile(fileName)
-	local fileExtension = fileName:match("^.+(%..+)$")
-	local isMusic = false
-
-	for i = 1, #audioLib.supportedFormats do
-		local currentFormat = audioLib.supportedFormats[i]
-
-		if (fileExtension == sFormat(".%s", currentFormat)) then
-			isMusic = true
-			break
-		end
-	end
-
-	return isMusic
+	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
 function M.getFolderList(path, onComplete)
@@ -139,8 +127,9 @@ function M.scanFolders()
 			for file in lfs.dir(path) do
 				if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
 					local fullPath = path .. "\\" .. file
+					local isDir = lfs.attributes(fullPath, "mode") == "directory"
 
-					if (isMusicFile(fullPath)) then
+					if (not isDir and isMusicFile(file)) then
 						if (fileUtils:fileSize(fullPath) > 0) then
 							local tags = tag.get({fileName = file, filePath = path})
 							local musicData = {

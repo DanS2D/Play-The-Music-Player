@@ -25,84 +25,48 @@ settings =
 	},
 
 	window =
-		{
-			defaultMode = "normal",
-			minViewWidth = 850,
-			minViewHeight = 564,
-			defaultViewWidth = 1650,
-			defaultViewHeight = 1024,
-			resizable = true,
-			enableMinimizeButton = true,
-			enableMaximizeButton = false,
-			enableCloseButton = true,
-			suspendWhenMinimized = false,
-			titleText = {
-				default = "Play - The Music Player", -- if not language specific entry is found
-				["en‐us"] = "Play - The Music Player", -- USA
-				["en‐gb"] = "Play - The Music Player", -- britain
-				["en"] = "Play - The Music Player", -- general english
-				["de"] = "Abspielen - Der Musik-Player", -- german
-				["fr"] = "Jouer - Le lecteur de musique", -- french
-				["es"] = "Play - El reproductor de música", -- spanish
-				["pt"] = "Tocar - The Music Player", -- portugese
-				["it"] = "Gioca - Il lettore musicale", -- italian
-				["nl"] = "Afspelen - De muziekspeler", -- dutch
-				["pl"] = "Odtwarzanie - Odtwarzacz muzyki", -- polish
-				["ru"] = "Играть - Музыкальный игрок", -- russian
-				["da"] = "Afspil - Musikafspilleren", -- danish
-				["fi"] = "Toista - musiikkisoitin", -- finnish
-				["el"] = "Παίξτε - Το πρόγραμμα αναπαραγωγής μουσικής", -- greek
-				["no"] = "Spill - musikkspilleren", -- norwegian
-				["ro"] = "Play - Playerul muzical", -- romanian
-				["sv"] = "Spela - musikspelaren", -- swedish
-				["tr"] = "Çal - Müzik Çalar", -- turkish
-			},
+	{
+		defaultMode = "normal",
+		minViewWidth = 850,
+		minViewHeight = 564,
+		defaultViewWidth = 1650,
+		defaultViewHeight = 1024,
+		resizable = true,
+		enableMinimizeButton = true,
+		enableMaximizeButton = false,
+		enableCloseButton = true,
+		suspendWhenMinimized = false,
+		titleText = {
+			default = "Play - The Music Player", -- if not language specific entry is found
+			["en‐us"] = "Play - The Music Player", -- USA
+			["en‐gb"] = "Play - The Music Player", -- britain
+			["en"] = "Play - The Music Player", -- general english
+			["de"] = "Abspielen - Der Musik-Player", -- german
+			["fr"] = "Jouer - Le lecteur de musique", -- french
+			["es"] = "Play - El reproductor de música", -- spanish
+			["pt"] = "Tocar - The Music Player", -- portugese
+			["it"] = "Gioca - Il lettore musicale", -- italian
+			["nl"] = "Afspelen - De muziekspeler", -- dutch
+			["pl"] = "Odtwarzanie - Odtwarzacz muzyki", -- polish
+			["ru"] = "Играть - Музыкальный игрок", -- russian
+			["da"] = "Afspil - Musikafspilleren", -- danish
+			["fi"] = "Toista - musiikkisoitin", -- finnish
+			["el"] = "Παίξτε - Το πρόγραμμα αναπαραγωγής μουσικής", -- greek
+			["no"] = "Spill - musikkspilleren", -- norwegian
+			["ro"] = "Play - Playerul muzical", -- romanian
+			["sv"] = "Spela - musikspelaren", -- swedish
+			["tr"] = "Çal - Müzik Çalar", -- turkish
 		},
+	},
 
 	--
 	-- Plugins section
 	--
 	plugins =
 	{
-		["plugin.tinyfiledialogs"] = {
-			publisherId = "com.xibalbastudios", 
-			supportedPlatforms = { 
-				iphone = false,
-				android = false,
-				macos = false,
-				["win32-sim"] = { url="http://127.0.0.1:81/tinyfiledialogs_plugin.tgz?" .. os.time() },
-			},
-		},
-		--[[
-		["plugin.mouseCursor"] = {
-			publisherId = "com.revolt64", 
-			supportedPlatforms = { 
-				iphone = false,
-				android = false,
-				macos = false,
-				["win32-sim"] = { url="http://127.0.0.1:81/mouseCursor_plugin.tgz?" .. os.time() },
-			},
-		},--]]
-		["plugin.bass"] =
-		{
-			publisherId = "com.revolt64",
-			supportedPlatforms = { 
-				iphone = false,
-				android = false,
-				macos = false,
-				["win32-sim"] = { url="http://127.0.0.1:81/bass_plugin.tgz?" .. os.time() },
-			},
-		},
-		["plugin.taglib"] =
-		{
-			publisherId = "com.revolt64",
-			supportedPlatforms = { 
-				iphone = false,
-				android = false,
-				macos = false,
-				["win32-sim"] = { url="http://127.0.0.1:81/taglib_plugin.tgz?" .. os.time() },
-			},
-		},
+		["plugin.tinyfiledialogs"] = {publisherId = "com.xibalbastudios"},
+		["plugin.bass"] = {publisherId = "com.revolt64"},
+		["plugin.taglib"] = {publisherId = "com.revolt64"},
 	},
 
 	--
@@ -110,7 +74,6 @@ settings =
 	--
 	excludeFiles =
 	{
-		-- Exclude unnecessary files for each platform
-		all = { ".vscode", ".git", "*.md", "*.txt", "*.ico", "Icon.png", ".gitignore" },
+		all = { ".vscode", ".git", "*.md", "*.txt", "*.ico", "Icon.png", ".gitignore", "*.iss" },
 	},
 }

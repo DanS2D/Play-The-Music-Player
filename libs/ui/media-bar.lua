@@ -343,7 +343,7 @@ function M.new(options)
 	)
 	songTitleText.anchorX = 0
 	songTitleText.x = -(songTitleText.contentWidth * 0.5)
-	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 10
+	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 7
 	songTitleText.scrollTimer = nil
 	songTitleText:setFillColor(0.9, 0.9, 0.9)
 	songContainer:insert(songTitleText)
