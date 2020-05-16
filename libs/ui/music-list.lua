@@ -7,10 +7,12 @@ local M = {
 }
 --local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
+local fileUtils = require("libs.file-utils")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
 local rightClickMenu = require("libs.ui.right-click-menu")
+local alertPopupLib = require("libs.ui.alert-popup")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -31,6 +33,7 @@ local rowFontSize = 18
 local rowHeight = 40
 local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.18, 1}}
 local selectedRowIndex = 0
+local rightClickRowIndex = 0
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
@@ -39,6 +42,7 @@ local musicData = {}
 local selectedCategoryTableView = nil
 local musicListRightClickMenu = nil
 local categoryListRightClickMenu = nil
+local alertPopup = alertPopupLib.create()
 local currentRowCount = 0
 local allowCategoryDragLeft = true
 local allowCategoryDragRight = true
@@ -89,11 +93,13 @@ function M:getRowData(rowIndex)
 end
 
 function M:createTableView(options, index)
-	local tView =
+	local tView = nil
+
+	tView =
 		desktopTableView.new(
 		{
 			left = categoryList[index].x,
-			top = topPosition + rowHeight,
+			top = topPosition + rowHeight - 10,
 			width = display.contentWidth,
 			height = display.contentHeight - 100,
 			rowHeight = rowHeight,
@@ -162,9 +168,11 @@ function M:createTableView(options, index)
 					rowTitleText.anchorX = 0
 					rowTitleText.x = 10
 
+					-- TODO: remove this when the scrollToIndex works reliably for song searches after resizing
 					if (rowTitleText.text:lower() == "lady (hear me tonight)") then
 						rowTitleText:setFillColor(1, 0, 0)
 					end
+
 					row:insert(rowTitleText)
 				end
 
@@ -192,7 +200,7 @@ function M:createTableView(options, index)
 				if (numClicks == 1) then
 					musicListRightClickMenu:close()
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
-				elseif (numClicks > 1) then
+				elseif (numClicks >= 2) then
 					local song = self:getRow(row.index)
 
 					if (song == nil) then
@@ -217,10 +225,17 @@ function M:createTableView(options, index)
 				local row = event.row
 
 				if (event.isSecondaryButton) then
+					rightClickRowIndex = row.index
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:open(event.x, event.y)
 				end
-				--print("row " .. self:getRow(row.index).title .. button .. " button")
+			end,
+			onRowScroll = function(event)
+				if (tView.orderIndex == 1) then
+					for i = 1, #tableViewList do
+						tableViewList[i]:setRowSelected(selectedRowIndex)
+					end
+				end
 			end
 		}
 	)
@@ -246,7 +261,9 @@ local function createCategories()
 	local smallMediumColumnSize = display.contentWidth / 8
 	local mediumColumnSize = display.contentWidth / 5
 	local largeColumnSize = display.contentWidth / 3
-	categoryBar = display.newRect(0, 0, display.contentWidth, rowHeight)
+	local categoryHeight = (rowHeight - 10)
+
+	categoryBar = display.newRect(0, 0, display.contentWidth, categoryHeight)
 	categoryBar.anchorX = 0
 	categoryBar.anchorY = 0
 	categoryBar.x = 0
@@ -311,7 +328,7 @@ local function createCategories()
 		categoryList[i].index = i
 		tableViewList[i] = M:createTableView(listOptions, i)
 
-		local categoryTouchRect = display.newRect(0, 0, display.contentWidth, rowHeight)
+		local categoryTouchRect = display.newRect(0, 0, display.contentWidth, categoryHeight)
 		categoryTouchRect.anchorX = 0
 		categoryTouchRect.anchorY = 0
 		categoryTouchRect.x = 0
@@ -410,7 +427,7 @@ local function createCategories()
 			{
 				text = "horizontal-rule",
 				left = 0,
-				y = rowHeight * 0.5 + 2,
+				y = categoryHeight * 0.5 + 2,
 				font = fontAwesomeSolidFont,
 				fontSize = rowFontSize + 2,
 				align = "left"
@@ -571,16 +588,6 @@ end
 
 Runtime:addEventListener("mouse", onMouseEvent)
 
-local function onEnterFrame(event)
-	if (#tableViewList > 0) then
-		for i = 1, #tableViewList do
-			tableViewList[i]:setRowSelected(selectedRowIndex)
-		end
-	end
-end
-
-Runtime:addEventListener("enterFrame", onEnterFrame)
-
 local function handleCategorySwapping(optionName)
 	local origIndex = tableViewList[selectedCategoryTableView.orderIndex].orderIndex
 
@@ -737,6 +744,24 @@ function M.new()
 					font = titleFont,
 					closeOnClick = true,
 					onClick = function(event)
+						local song = M:getRow(rightClickRowIndex)
+
+						local function onRemoved()
+							if (audioLib.currentSong and audioLib.currentSong.fileName == song.fileName) then
+								audioLib.reset()
+								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
+							end
+
+							sqlLib:removeMusic(song.id)
+							M.reloadData()
+						end
+
+						alertPopup:setTitle("Really remove from Library?")
+						alertPopup:setMessage(
+							"This action cannot be reversed.\nThe song will be deleted from your library, and you'll have to import it again to get it back.\n\nAre you sure you wish to proceed?"
+						)
+						alertPopup:setButtonCallbacks({onConfirm = onRemoved})
+						alertPopup:show()
 					end
 				},
 				{
@@ -746,6 +771,25 @@ function M.new()
 					font = titleFont,
 					closeOnClick = true,
 					onClick = function(event)
+						local song = M:getRow(rightClickRowIndex)
+
+						local function onRemoved()
+							if (audioLib.currentSong and audioLib.currentSong.fileName == song.fileName) then
+								audioLib.reset()
+								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
+							end
+
+							sqlLib:removeMusic(song.id)
+							fileUtils:removeFile(song.fileName, song.filePath)
+							M.reloadData()
+						end
+
+						alertPopup:setTitle("Really remove from Library and Disk?")
+						alertPopup:setMessage(
+							"This action cannot be reversed.\nThe song will be removed from your library and the file will be deleted from your hard-drive and will not be sent to the recycle bin.\n\nAre you sure you wish to proceed?"
+						)
+						alertPopup:setButtonCallbacks({onConfirm = onRemoved})
+						alertPopup:show()
 					end
 				},
 				{
@@ -816,6 +860,8 @@ function M:reloadData(hardReload)
 	end
 
 	for i = 1, #tableViewList do
+		tableViewList[i]:setRowSelected(selectedRowIndex)
+
 		if (hardReload) then
 			if (prevIndex == 0) then
 				prevIndex = tableViewList[i]:getRealIndex()
@@ -854,6 +900,10 @@ end
 
 function M:setSelectedRow(rowIndex)
 	selectedRowIndex = rowIndex
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:setRowSelected(selectedRowIndex)
+	end
 end
 
 function M:populate()
@@ -883,6 +933,24 @@ function M:onResize()
 			tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
 		end
 	end
+end
+
+function M:getTableViewListCount()
+	return #tableViewList
+end
+
+function M:destroy()
+	currentRowCount = 0
+	musicData = {}
+	self.musicSearch = nil
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:destroy()
+		tableViewList[i] = nil
+	end
+
+	tableViewList = nil
+	tableViewList = {}
 end
 
 function M:recreateMusicList()

@@ -1,9 +1,4 @@
 local M = {
-	tableList = {
-		settings = "settings",
-		music = "music",
-		playlists = "playlists"
-	},
 	lastSearchQuery = nil
 }
 local sqlite3 = require("sqlite3")
@@ -165,6 +160,13 @@ function M:insertMusic(musicData)
 	stmt:step()
 	stmt:finalize()
 	musicData = nil
+	stmt = nil
+end
+
+function M:removeMusic(id)
+	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id=%d; ]], id))
+	stmt:step()
+	stmt:finalize()
 	stmt = nil
 end
 

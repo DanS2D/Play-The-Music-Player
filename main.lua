@@ -11,10 +11,13 @@ local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
 local settings = require("libs.settings")
 local musicImporter = require("libs.music-importer")
+local fileUtils = require("libs.file-utils")
 local musicVisualizer = require("libs.ui.music-visualizer")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
+local alertPopupLib = require("libs.ui.alert-popup")
+local alertPopup = alertPopupLib.create()
 local sFormat = string.format
 local mMin = math.min
 local mRandom = math.random
@@ -28,10 +31,13 @@ local mediaBar = nil
 local musicTableView = nil
 local background = nil
 local resizeTimer = nil
+local oldWidth = display.contentWidth
+local oldHeight = display.contentHeight
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 mRandomSeed(osTime())
+display.setDefault("background", 0.1, 0.1, 0.1, 0.8)
 settings:load()
 
 local function onAudioEvent(event)
@@ -50,7 +56,7 @@ local function onAudioEvent(event)
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
 		mRandomSeed(osTime())
-		audioLib.currentSongIndex = mMin(audioLib.currentSongIndex + 1, musicList:getMusicCount())
+		audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 
 		-- handle shuffle
 		if (audioLib.shuffle) then
@@ -59,7 +65,7 @@ local function onAudioEvent(event)
 			until audioLib.currentSongIndex ~= currentSongIndex
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
-			if (audioLib.currentSongIndex == musicList:getMusicCount()) then
+			if (audioLib.currentSongIndex > musicList:getMusicCount()) then
 				if (audioLib.loopAll) then
 					audioLib.currentSongIndex = 1
 				else
@@ -116,11 +122,20 @@ Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 local function populateTableViews()
 	if (sqlLib:musicCount() > 0) then
 		mainMenuBar.setEnabled(true)
-		settings.musicFolderPaths[#settings.musicFolderPaths + 1] = lastChosenPath
-		settings:save()
+
+		if (lastChosenPath ~= nil) then
+			settings.musicFolderPaths[#settings.musicFolderPaths + 1] = lastChosenPath
+			settings:save()
+		end
+
 		musicImporter.pushProgessToFront()
 		musicImporter.showProgressBar()
-		musicList:populate()
+
+		if (musicList:getTableViewListCount() <= 0) then
+			musicTableView = musicList.new()
+		end
+
+		musicList:populate() --################################################ << CPU HOG ########################################################################
 	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
 end
@@ -181,8 +196,45 @@ local applicationMainMenuBar =
 						end
 					},
 					{
+						title = "Delete Music Library",
+						iconName = "trash",
+						onClick = function()
+							local function onRemoved()
+								local databasePath = system.pathForFile("", system.DocumentsDirectory)
+								sqlLib:close()
+								audioLib:reset()
+								musicList:destroy()
+								fileUtils:removeFile("music.db", databasePath)
+
+								timer.performWithDelay(
+									100,
+									function()
+										print(#settings.musicFolderPaths)
+										settings.musicFolderPaths = {}
+										print(#settings.musicFolderPaths)
+										settings:load()
+										mediaBarLib.resetSongProgress()
+										mediaBarLib.clearPlayingSong()
+										musicImporter.updateHeading("Welcome To Play!")
+										musicImporter.updateSubHeading("To get started, click `file > add music folder` to import your music")
+										musicImporter.hideProgressBar()
+										musicImporter.pushProgessToFront()
+										musicImporter.showProgress()
+									end
+								)
+							end
+
+							alertPopup:setTitle("Really delete your music Library?")
+							alertPopup:setMessage(
+								"This action cannot be reversed.\nYour library (database only) will be removed and cannot be recovered. Your music files will not be touched.\n\nAre you sure you wish to proceed?"
+							)
+							alertPopup:setButtonCallbacks({onConfirm = onRemoved})
+							alertPopup:show()
+						end
+					},
+					{
 						title = "Exit",
-						iconName = "portal-exit",
+						iconName = "power-off",
 						onClick = function()
 							native.requestExit()
 						end
@@ -287,6 +339,7 @@ local applicationMainMenuBar =
 					}
 				}
 			},
+			--[[
 			{
 				title = "Visualizer",
 				subItems = {
@@ -364,7 +417,7 @@ local applicationMainMenuBar =
 						end
 					}
 				}
-			},
+			},--]]
 			{
 				title = "Help",
 				subItems = {
@@ -417,6 +470,7 @@ background.anchorY = 0
 background.x = 0
 background.y = 161
 background:setFillColor(0.10, 0.10, 0.10, 1)
+
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
 background:toFront()
@@ -475,6 +529,11 @@ display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
 
 local function onResize(event)
+	if (alertPopupLib:isOpen()) then
+		native.setProperty("windowSize", {width = oldWidth, height = oldHeight})
+		return
+	end
+
 	background.width = display.contentWidth
 	background.height = display.contentHeight - 161
 
@@ -497,6 +556,9 @@ local function onResize(event)
 			end
 		)
 	end
+
+	oldWidth = display.contentWidth
+	oldHeight = display.contentHeight
 end
 
 Runtime:addEventListener("resize", onResize)
@@ -519,4 +581,4 @@ Runtime:addEventListener("system", onSystemEvent)
 
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)
-populateTableViews()
+populateTableViews() --################################################ << CPU HOG ########################################################################

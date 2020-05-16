@@ -4,6 +4,7 @@ local musicList = require("libs.ui.music-list")
 local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
 local desktopTableView = require("libs.ui.desktop-table-view")
+local alertPopupLib = require("libs.ui.alert-popup")
 local mAbs = math.abs
 local mMin = math.min
 local mMax = math.max
@@ -296,6 +297,12 @@ function M.new(options)
 	local function onSearchInput(event)
 		local phase = event.phase
 		local target = event.target
+
+		if (alertPopupLib:isOpen()) then
+			target.text = ""
+			native.setKeyboardFocus(nil)
+			return
+		end
 
 		if (sqlLib.musicCount() <= 0 or isDisabled) then
 			target.text = ""

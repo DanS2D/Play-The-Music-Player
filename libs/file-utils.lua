@@ -48,32 +48,6 @@ function M:saveTable(t, filename, location)
 	end
 end
 
-function M:copyFile(filename, destination)
-	assert(type(filename) == "string", "string expected for the first parameter but got " .. type(filename) .. " instead.")
-	assert(
-		type(destination) == "table",
-		"table expected for the second paramter but got " .. type(destination) .. " instead."
-	)
-	--local sourceDBpath = system.pathForFile(filename, system.ResourceDirectory)
-	-- io.open opens a file at path; returns nil if no file found
-	local readHandle, errorString = io.open(filename, "rb")
-	assert(readHandle, "Database at " .. filename .. " could not be read from system.ResourceDirectory")
-	assert(type(destination.filename) == "string", "filename should be a string, its a " .. type(destination.filename))
-	print(type(destination.baseDir))
-	assert(type(destination.baseDir) == "userdata", "baseName should be a valid system directory")
-
-	local destinationDBpath = system.pathForFile(destination.filename, destination.baseDir)
-	local writeHandle, writeErrorString = io.open(destinationDBpath, "wb")
-	assert(writeHandle, "Could not open " .. destination.filename .. " for writing.")
-
-	local contents = readHandle:read("*a")
-	writeHandle:write(contents)
-
-	io.close(writeHandle)
-	io.close(readHandle)
-	return true
-end
-
 function M:fileExists(filePath, baseDir)
 	local path = system.pathForFile(filePath, baseDir or system.DocumentsDirectory)
 	local file = io.open(path, "r")
@@ -91,9 +65,9 @@ function M:fileSize(filePath)
 	local file = io.open(filePath, "rb")
 
 	if (file) then
-		local current = file:seek() -- get current position
-		local size = file:seek("end") -- get file size
-		file:seek("set", current) -- restore position
+		local current = file:seek()
+		local size = file:seek("end")
+		file:seek("set", current)
 		io.close(file)
 		file = nil
 
@@ -101,6 +75,22 @@ function M:fileSize(filePath)
 	end
 
 	return 0
+end
+
+function M:removeFile(fileName, filePath)
+	local seperator = filePath:ends("\\") and "" or "\\"
+	local fullPath = sFormat("%s%s%s", filePath, seperator, fileName)
+	local file = io.open(fullPath, "r")
+	local result = false
+	local reason = "File doesn't exist"
+
+	if (file) then
+		io.close(file)
+		file = nil
+		result, reason = os.remove(fullPath)
+	end
+
+	return result, reason
 end
 
 return M

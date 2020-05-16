@@ -33,9 +33,10 @@ local function updateVisualizer()
 	return true
 end
 
-Runtime:addEventListener("enterFrame", updateVisualizer)
+--Runtime:addEventListener("enterFrame", updateVisualizer)
 
 function M.new(options)
+	--[[
 	if (toboolean(settings.showVisualizer)) then
 		local visualizerList = settings.selectedVisualizers
 		local visualizers = {}
@@ -71,42 +72,45 @@ function M.new(options)
 				emitter:start()
 			end
 		end
-	end
-
+	end--]]
 	return emitter
 end
 
 function M:pause()
+	--[[
 	if (toboolean(settings.showVisualizer)) then
 		if (emitter) then
 			emitter:pause()
 		end
-	end
+	end--]]
 end
 
 function M:start()
+	--[[
 	if (toboolean(settings.showVisualizer)) then
 		if (emitter) then
 			emitter:start()
 		end
-	end
+	end--]]
 end
 
 function M:restart()
+	--[[
 	if (toboolean(settings.showVisualizer)) then
 		self:remove()
 		self.new({})
 	else
 		self:remove()
-	end
+	end--]]
 end
 
 function M:remove()
+	--[[
 	if (emitter) then
 		emitter:stop()
 		display.remove(emitter)
 		emitter = nil
-	end
+	end--]]
 end
 
 return M

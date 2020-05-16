@@ -227,7 +227,11 @@ function M.new(options)
 
 				if (target.isOffButton) then
 					audioLib.setVolume(audioLib.getPreviousVolume())
-					volumeSlider:setValue(audioLib.getVolume() * 100)
+					local newVolume = audioLib.getVolume() * 100
+
+					volumeSlider:setValue(newVolume)
+					settings.volume = newVolume
+					settings:save()
 				else
 					audioLib.setVolume(0)
 					volumeSlider:setValue(0)
@@ -242,7 +246,7 @@ function M.new(options)
 	volumeButton:setIsOn(settings.volume ~= 0)
 	group:insert(volumeButton)
 
-	musicVisualizerBar = musicVisualizer.new({yPos = 26, group = group})
+	--musicVisualizerBar = musicVisualizer.new({yPos = 26, group = group}) --################################################ << CPU HOG ########################################################################
 
 	songContainerBox = display.newRoundedRect(0, 0, mMax(489, display.contentWidth / 2), barHeight, 2)
 	songContainerBox.anchorX = 0
@@ -267,13 +271,12 @@ function M.new(options)
 	songContainer.y = songContainerBox.y - 3
 	group:insert(songContainer)
 
-	--[[
-	local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
-	rect.anchorX = 0
-	rect.x = songContainer.x
-	rect.y = songContainer.y
-	group:insert(rect)
-	--]]
+	--local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
+	--rect.anchorX = 0
+	--rect.x = songContainer.x
+	--rect.y = songContainer.y
+	--group:insert(rect)
+
 	shuffleButton =
 		switchLib.new(
 		{
@@ -361,7 +364,7 @@ function M.new(options)
 	songContainer:insert(songTitleText.copy)
 
 	function songTitleText:restartListener()
-		Runtime:removeEventListener("enterFrame", self)
+		self:removeEventListener("enterFrame", self)
 
 		if (self.scrollTimer) then
 			timer.cancel(self.scrollTimer)
@@ -372,7 +375,7 @@ function M.new(options)
 			timer.performWithDelay(
 			3000,
 			function()
-				Runtime:addEventListener("enterFrame", self)
+				self:addEventListener("enterFrame", self)
 			end
 		)
 	end
@@ -403,7 +406,7 @@ function M.new(options)
 			self.scrollTimer = nil
 		end
 
-		Runtime:removeEventListener("enterFrame", self)
+		self:removeEventListener("enterFrame", self)
 
 		if (self.contentWidth > songContainer.contentWidth) then
 			self.copy.isVisible = true
@@ -455,7 +458,7 @@ function M.new(options)
 
 	function songAlbumText:restartListener()
 		local startTime = songTitleText.scrollTimer == nil and 3000 or 6000
-		Runtime:removeEventListener("enterFrame", self)
+		self:removeEventListener("enterFrame", self)
 
 		if (self.scrollTimer) then
 			timer.cancel(self.scrollTimer)
@@ -466,7 +469,7 @@ function M.new(options)
 			timer.performWithDelay(
 			startTime,
 			function()
-				Runtime:addEventListener("enterFrame", self)
+				self:addEventListener("enterFrame", self)
 			end
 		)
 	end
@@ -497,7 +500,7 @@ function M.new(options)
 			self.scrollTimer = nil
 		end
 
-		Runtime:removeEventListener("enterFrame", self)
+		self:removeEventListener("enterFrame", self)
 
 		if (self.contentWidth > songContainer.contentWidth) then
 			self.copy.isVisible = true
@@ -517,7 +520,7 @@ function M.new(options)
 	end
 
 	levelVisualizer = levelVisualization.new()
-	levelVisualizer.x = songContainerBox.x + 28
+	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 16
 	levelVisualizer.y = songContainerBox.y + songContainerBox.contentHeight * 0.5 - 12
 	levelVisualizer.isVisible = false
 	group:insert(levelVisualizer)
@@ -562,6 +565,18 @@ function M.new(options)
 
 	return group
 end
+
+local function mediaBarEventListener(event)
+	local phase = event.phase
+
+	if (phase == "clearSong") then
+		M.clearPlayingSong()
+	end
+
+	return true
+end
+
+Runtime:addEventListener("mediaBar", mediaBarEventListener)
 
 function M.resetSongProgress()
 	playBackTimeText.text = "00:00/00:00"
@@ -631,7 +646,13 @@ function M.clearPlayingSong()
 		)
 	end
 
+	if (ratingStars ~= nil) then
+		ratingStars:destroy()
+		ratingStars = nil
+	end
+
 	levelVisualizer.isVisible = false
+	playBackTimeText.isVisible = false
 	musicDuration = 0
 	playButton:setIsOn(false)
 	songTitleText:setText("")
@@ -668,14 +689,14 @@ function M.updateSongText(song)
 		}
 	)
 
-	--[[
-	songTitleText:setText(
-		"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg"
-	)
+	--songTitleText:setText(
+	--	"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg"
+	--)
 
-	songAlbumText:setText(
-		"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg. so so so long"
-	)--]]
+	--songAlbumText:setText(
+	--	"This is a ludicrously long text string to get scrolling text working again. Wow, is it long. omg. so so so long"
+	--)
+	playBackTimeText.isVisible = true
 	songTitleText:setText(song.title)
 	songAlbumText:setText(song.album)
 

@@ -95,7 +95,8 @@ local M = {
 	loopOne = false,
 	loopAll = false,
 	shuffle = false,
-	currentSongIndex = 0
+	currentSongIndex = 0,
+	currentSong = nil
 }
 local bass = require("plugin.bass")
 local settings = require("libs.settings")
@@ -164,6 +165,7 @@ local function loadAudio(song)
 	end
 
 	currentSong = song
+	M.currentSong = song
 
 	if (channelHandle ~= nil) then
 		bassStop(channelHandle)
@@ -189,6 +191,8 @@ local function playAudio(song)
 	end
 
 	currentSong = song
+	M.currentSong = song
+
 	bassPlay(channelHandle)
 	tRemove(audioChannels)
 	audioChannels[#audioChannels + 1] = channelHandle

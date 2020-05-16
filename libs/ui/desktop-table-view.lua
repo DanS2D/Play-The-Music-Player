@@ -26,6 +26,7 @@ function M.new(options)
 		error("desktop-table-view() options.onRowRender function expected, got ", type(options.onRowRender))
 	local onRowClick = options.onRowClick
 	local onRowMouseClick = options.onRowMouseClick
+	local onRowScroll = options.onRowScroll
 	local rows = {}
 	local lastMouseScrollWasUp = false
 	local didMouseScroll = false
@@ -289,10 +290,14 @@ function M.new(options)
 				if (rows[i]) then
 					if (rows[i].index == selectedRowIndex) then
 						-- set the selected row to its over color
-						rows[i]._background:setFillColor(unpack(overRowColor))
+						if (rows[i]._background.fill.r < defaultRowColor[1]) then
+							rows[i]._background:setFillColor(unpack(overRowColor))
+						end
 					else
 						-- reset other rows to their default color
-						rows[i]._background:setFillColor(unpack(defaultRowColor))
+						if (rows[i]._background.fill.r > defaultRowColor[1]) then
+							rows[i]._background:setFillColor(unpack(defaultRowColor))
+						end
 					end
 				end
 			end
@@ -336,6 +341,10 @@ function M.new(options)
 						realRowIndex = rowLimit
 					end
 				end
+			end
+
+			if (type(onRowScroll) == "function") then
+				onRowScroll()
 			end
 		else
 			didMouseScroll = false
