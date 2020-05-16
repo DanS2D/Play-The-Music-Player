@@ -198,6 +198,7 @@ function M:createTableView(options, index)
 				local parent = row.parent
 
 				if (numClicks == 1) then
+					categoryListRightClickMenu:close()
 					musicListRightClickMenu:close()
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				elseif (numClicks >= 2) then
