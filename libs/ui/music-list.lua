@@ -449,12 +449,20 @@ local function createCategories()
 			if (phase == "move") then
 				--resizeCursor:show()
 			elseif (phase == "down") then
+				for i = 1, #tableViewList do
+					tableViewList[i]:lockScroll(true)
+				end
+
 				tableViewTarget = tableViewList[self.parent.index]
 				display.getCurrentStage():setFocus(tableViewTarget)
 				categoryTarget = categoryList[i]
 			elseif (phase == "up") then
 				tableViewTarget = nil
 				display.getCurrentStage():setFocus(nil)
+
+				for i = 1, #tableViewList do
+					tableViewList[i]:lockScroll(false)
+				end
 			end
 
 			return true
@@ -581,6 +589,10 @@ local function onMouseEvent(event)
 	if (eventType == "up") then
 		if (tableViewTarget) then
 			display.getCurrentStage():setFocus(nil)
+
+			for i = 1, #tableViewList do
+				tableViewList[i]:lockScroll(false)
+			end
 		end
 	end
 

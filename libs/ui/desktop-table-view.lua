@@ -6,6 +6,7 @@ local tRemove = table.remove
 local mMin = math.min
 local mMax = math.max
 local mModf = math.modf
+local lType = type
 local selectedRowIndex = 0
 local dispatchedRowClickEvent = false
 
@@ -190,6 +191,10 @@ function M.new(options)
 		return onScreen
 	end
 
+	function tableView:lockScroll(lock)
+		lockScrolling = lock
+	end
+
 	function tableView:moveRow(index, position)
 		rows[index].y = position
 	end
@@ -343,7 +348,7 @@ function M.new(options)
 				end
 			end
 
-			if (type(onRowScroll) == "function") then
+			if (lType(onRowScroll) == "function") then
 				onRowScroll()
 			end
 		else
