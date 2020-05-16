@@ -531,7 +531,7 @@ function M.new(options)
 			text = "00:00/00:00",
 			font = subTitleFont,
 			fontSize = 14,
-			align = "left"
+			align = "right"
 		}
 	)
 	playBackTimeText.anchorX = 1
@@ -726,7 +726,7 @@ function M:onResize()
 	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
 	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
 	songProgressView.x = songContainerBox.x
-	levelVisualizer.x = songContainerBox.x + 28
+	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 16
 
 	if (albumArtwork) then
 		albumArtwork.x = songContainerBox.x + 5
