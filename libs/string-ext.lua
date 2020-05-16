@@ -2,6 +2,7 @@ local M = {}
 local sFormat = string.format
 local sGsub = string.gsub
 local sByte = string.byte
+local isWindows = system.getInfo("platform") == "win32"
 
 function string:urlEncode(str)
 	local wString = str or self
@@ -29,5 +30,7 @@ function string:fileExtension(str)
 
 	return wString
 end
+
+string.pathSeparator = isWindows and "\\" or "/"
 
 return M

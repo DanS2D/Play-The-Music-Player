@@ -61,7 +61,7 @@ function M.getFolderList(path, onComplete)
 
 		for file in lfs.dir(paths[1]) do
 			if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
-				local fullPath = paths[1] .. "\\" .. file
+				local fullPath = paths[1] .. string.pathSeparator .. file
 				local isDir = lfs.attributes(fullPath, "mode") == "directory"
 
 				if (isDir) then
@@ -126,7 +126,7 @@ function M.scanFolders()
 
 			for file in lfs.dir(path) do
 				if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
-					local fullPath = path .. "\\" .. file
+					local fullPath = path .. string.pathSeparator .. file
 					local isDir = lfs.attributes(fullPath, "mode") == "directory"
 
 					if (not isDir and isMusicFile(file)) then

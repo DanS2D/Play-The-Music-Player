@@ -3,6 +3,7 @@
 -- Licensed under the MIT license.
 
 local function basename(path)
+	-- TODO: this may fail on mac
 	local basename_match = path:match("[/\\]([^/\\]+)$")
 	if basename_match then
 		return basename_match, nil

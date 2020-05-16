@@ -78,8 +78,8 @@ function M:fileSize(filePath)
 end
 
 function M:removeFile(fileName, filePath)
-	local seperator = filePath:ends("\\") and "" or "\\"
-	local fullPath = sFormat("%s%s%s", filePath, seperator, fileName)
+	local separator = filePath:ends(string.pathSeparator) and "" or string.pathSeparator
+	local fullPath = sFormat("%s%s%s", filePath, separator, fileName)
 	local file = io.open(fullPath, "r")
 	local result = false
 	local reason = "File doesn't exist"

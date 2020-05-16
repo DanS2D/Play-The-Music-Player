@@ -220,7 +220,7 @@ function M.getCover(song)
 
 	-- check if the file exists
 	if (coverOnDisk) then
-		local cPath = documentsPath .. "\\" .. fileName
+		local cPath = documentsPath .. string.pathSeparator .. fileName
 		local mimetype = pureMagic.via_path(cPath)
 
 		if (mimetype == "image/jpeg" or mimetype == "image/png") then
@@ -239,7 +239,7 @@ function M.getCover(song)
 				local coverOnDiskExists, coverFileName = coverExists(song)
 
 				if (coverOnDiskExists) then
-					local cPath = documentsPath .. "\\" .. coverFileName
+					local cPath = documentsPath .. string.pathSeparator .. coverFileName
 					local mimetype = pureMagic.via_path(cPath)
 					--print("found cover " .. coverFileName .. " cancelling timer now")
 
