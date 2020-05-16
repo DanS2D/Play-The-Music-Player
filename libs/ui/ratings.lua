@@ -134,9 +134,7 @@ function M.new(options)
 
 		if (phase == "began") then
 			-- check which part of the star we clicked
-			if (eventX < quarter) then
-				target.rating = target.index == 1 and 0 or target.index - 1
-			elseif (eventX > quarter and eventX < half) then
+			if (eventX > 0 and eventX < half) then
 				target.rating = target.index == 1 and 0.5 or target.index - 1 + 0.5
 			elseif (eventX > half + (quarter / 2)) then
 				target.rating = target.index
