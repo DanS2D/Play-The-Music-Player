@@ -2,7 +2,6 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
-local tfd = require("plugin.tinyfiledialogs")
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
 local luaExt = require("libs.lua-ext")
@@ -158,7 +157,7 @@ local applicationMainMenuBar =
 							audioLib.reset()
 							musicVisualizer.pause()
 							mainMenuBar.setEnabled(false)
-							local selectedPath = tfd.selectFolderDialog({title = "Select Music Folder"})
+							local selectedPath = musicImporter.showFolderSelectDialog()
 							local previousPaths = settings.musicFolderPaths
 							local hasUsedPath = false
 
@@ -190,9 +189,17 @@ local applicationMainMenuBar =
 						end
 					},
 					{
-						title = "Add Music File",
+						title = "Add Music File(s)",
 						iconName = "file-music",
 						onClick = function()
+							local function onComplete()
+								musicList:removeAllRows()
+								musicImporter.pushProgessToFront()
+								musicImporter.showProgressBar()
+								populateTableViews()
+							end
+
+							musicImporter.showFileSelectDialog(onComplete)
 						end
 					},
 					{

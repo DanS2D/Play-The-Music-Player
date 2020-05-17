@@ -33,4 +33,14 @@ end
 
 string.pathSeparator = isWindows and "\\" or "/"
 
+function string:getFileNameAndPath(str)
+	local wString = str or self
+	local lastPathSeparatorPos = wString:match(sFormat("%s%s", "^.*()", string.pathSeparator))
+
+	local fileName = wString:sub(lastPathSeparatorPos + 1, wString:len())
+	local filePath = wString:sub(1, lastPathSeparatorPos - 1)
+
+	return fileName, filePath
+end
+
 return M

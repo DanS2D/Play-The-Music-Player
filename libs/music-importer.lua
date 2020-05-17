@@ -1,6 +1,7 @@
 local M = {}
 local tag = require("plugin.taglib")
 local lfs = require("lfs")
+local tfd = require("plugin.tinyFileDialogs")
 local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
@@ -12,6 +13,8 @@ local tRemove = table.remove
 local musicFolders = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
+local isWindows = system.getInfo("platform") == "win32"
+local userHomeDirectoryMusicPath = isWindows and "%HOMEPATH%\\Music\\" or "~/Music"
 
 local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
@@ -166,6 +169,89 @@ function M.scanFolders()
 	end
 
 	scanTimer = timer.performWithDelay(iterationDelay, checkContents)
+end
+
+function M.showFolderSelectDialog()
+	return tfd.openFolderDialog({title = "Select Music Folder", initialPath = userHomeDirectoryMusicPath})
+end
+
+function M.showFileSelectDialog(onComplete)
+	local json = require("json")
+
+	-- local saveFilePath =
+	-- 	tfd.saveFileDialog(
+	-- 	{
+	-- 		title = "Save As",
+	-- 		initialPath = userHomeDirectoryMusicPath .. "\\fuckBalls.mp3",
+	-- 		filters = audioLib.fileSelectFilter,
+	-- 		singleFilterDescription = "Audio Files| *.mp3;*.flac;*.ogg;*.wav;*.ape;*.vgm;*.mod etc"
+	-- 	}
+	-- )
+
+	local foundFiles =
+		tfd.openFileDialog(
+		{
+			title = "Select Music Files (limited to 32 files)",
+			initialPath = userHomeDirectoryMusicPath,
+			filters = audioLib.fileSelectFilter,
+			singleFilterDescription = "Audio Files| *.mp3;*.flac;*.ogg;*.wav;*.ape;*.vgm;*.mod etc",
+			multiSelect = true
+		}
+	)
+
+	if (foundFiles ~= nil) then
+		M.scanFiles(foundFiles, onComplete)
+	end
+end
+
+function M.scanFiles(files, onComplete)
+	if (type(files) == "string") then
+		local fileName, filePath = files:getFileNameAndPath()
+		local tags = tag.get({fileName = fileName, filePath = filePath})
+		local musicData = {
+			fileName = fileName,
+			filePath = filePath,
+			title = tags.title:len() > 0 and tags.title or fileName,
+			artist = tags.artist,
+			album = tags.album,
+			genre = tags.genre,
+			comment = tags.comment,
+			year = tags.year,
+			trackNumber = tags.trackNumber,
+			rating = ratings:convert(tags.rating),
+			duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+			bitrate = tags.bitrate,
+			sampleRate = tags.sampleRate
+		}
+		print("found file: " .. fileName)
+		sqlLib:insertMusic(musicData)
+	elseif (type(files) == "table") then
+		for i = 1, #files do
+			local fileName, filePath = files[i]:getFileNameAndPath()
+			local tags = tag.get({fileName = fileName, filePath = filePath})
+			local musicData = {
+				fileName = fileName,
+				filePath = filePath,
+				title = tags.title:len() > 0 and tags.title or fileName,
+				artist = tags.artist,
+				album = tags.album,
+				genre = tags.genre,
+				comment = tags.comment,
+				year = tags.year,
+				trackNumber = tags.trackNumber,
+				rating = ratings:convert(tags.rating),
+				duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+				bitrate = tags.bitrate,
+				sampleRate = tags.sampleRate
+			}
+			print("found file: " .. fileName)
+			sqlLib:insertMusic(musicData)
+		end
+	end
+
+	if (type(onComplete) == "function") then
+		onComplete()
+	end
 end
 
 function M.pushProgessToFront()

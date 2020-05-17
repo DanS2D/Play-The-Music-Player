@@ -4,7 +4,6 @@ local M = {
 		["mpc"] = 1,
 		["ape"] = 1,
 		["ac3"] = 1,
-		["wav"] = 1,
 		["aiff"] = 1,
 		["mp3"] = 1,
 		["mp2"] = 1,
@@ -21,6 +20,8 @@ local M = {
 }
 local bass = require("plugin.bass")
 local settings = require("libs.settings")
+local sFormat = string.format
+local tInsert = table.insert
 local tRemove = table.remove
 local bassDispose = bass.dispose
 local bassFadeIn = bass.fadeIn
@@ -43,6 +44,28 @@ local channelHandle = nil
 local currentSong = nil
 local previousVolume = 1.0
 local audioChannels = {}
+
+-- chiptunes formats:
+-- ZX Spectrum (ASC, FTC, GTR, PSC, PSG, PSM, PT1/PT2/PT3, SQT, STC/ST1/ST3, STP, VTX, YM, TurboSound tracks, AY with embedded player, TXT files for Vortex Tracker II, CHI, DMM, DST, ET1, PDT, SQD, STR, TFC, TFD, TFE)
+-- PC (669, AMF, DMF, FAR, FNK, GDM, IMF, IT, LIQ, PSM, MDL, MTM, PTM, RTM, S3M, STIM, STM, STX, ULT, V2M, XM)
+-- Amiga (DBM, EMOD, MOD, MTN, IMS, MED, OKT, PT36, SFX, AHX)
+-- Atari (DTM, GTK, TCB, SAP, RMT)
+-- Acorn (DTT)
+-- Sam Coupe (COP)
+-- Commodore 64/128 MOS6581 (SID)
+-- Amstrad CPC (AYC)
+-- Super Nintendo (SPC)
+-- Multiplatform (MTC, VGM, VGZ, GYM)
+-- Nintendo (NSF, NSFe)
+-- GameBoy (GBS, GSF)
+-- TurboGrafX (HES)
+-- MSX (KSS)
+-- PlayStation (PSF, PSF2, AT3, AT9)
+-- Ultra64 (USF)
+-- Nintendo DS (2SF)
+-- Dreamcast (DSF)
+-- Saturn (SSF)
+
 local chipTunesFormats = {
 	["asc"] = 1,
 	["ftc"] = 1,
@@ -79,7 +102,6 @@ local chipTunesFormats = {
 	["imf"] = 1,
 	["it"] = 1,
 	["liq"] = 1,
-	["psm"] = 1,
 	["mdl"] = 1,
 	["mtm"] = 1,
 	["ptm"] = 1,
@@ -130,35 +152,20 @@ local chipTunesFormats = {
 	["dsf"] = 1,
 	["ssf"] = 1
 }
+M.fileSelectFilter = {}
 
-for i = 1, #chipTunesFormats do
-	M.supportedFormats[#M.supportedFormats + 1] = chipTunesFormats[i]
+for k, v in pairs(chipTunesFormats) do
+	M.supportedFormats[k] = v
+	--Office Files|*.doc;*.xls;*.ppt
+end
+
+for k, v in pairs(M.supportedFormats) do
+	tInsert(M.fileSelectFilter, sFormat("*.%s", k))
 end
 
 local function isChiptunes(song)
 	return chipTunesFormats[song.fileName:fileExtension()] ~= nil
 end
-
--- chiptunes formats:
--- ZX Spectrum (ASC, FTC, GTR, PSC, PSG, PSM, PT1/PT2/PT3, SQT, STC/ST1/ST3, STP, VTX, YM, TurboSound tracks, AY with embedded player, TXT files for Vortex Tracker II, CHI, DMM, DST, ET1, PDT, SQD, STR, TFC, TFD, TFE)
--- PC (669, AMF, DMF, FAR, FNK, GDM, IMF, IT, LIQ, PSM, MDL, MTM, PTM, RTM, S3M, STIM, STM, STX, ULT, V2M, XM)
--- Amiga (DBM, EMOD, MOD, MTN, IMS, MED, OKT, PT36, SFX, AHX)
--- Atari (DTM, GTK, TCB, SAP, RMT)
--- Acorn (DTT)
--- Sam Coupe (COP)
--- Commodore 64/128 MOS6581 (SID)
--- Amstrad CPC (AYC)
--- Super Nintendo (SPC)
--- Multiplatform (MTC, VGM, VGZ, GYM)
--- Nintendo (NSF, NSFe)
--- GameBoy (GBS, GSF)
--- TurboGrafX (HES)
--- MSX (KSS)
--- PlayStation (PSF, PSF2, AT3, AT9)
--- Ultra64 (USF)
--- Nintendo DS (2SF)
--- Dreamcast (DSF)
--- Saturn (SSF)
 
 local function dispatchPlayEvent(song)
 	local event = {

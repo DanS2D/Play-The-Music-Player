@@ -64,7 +64,7 @@ settings =
 	--
 	plugins =
 	{
-		["plugin.tinyfiledialogs"] = {publisherId = "com.xibalbastudios"},
+		["plugin.tinyFileDialogs"] = {publisherId = "com.revolt64"},
 		["plugin.bass"] = {publisherId = "com.revolt64"},
 		["plugin.taglib"] = {publisherId = "com.revolt64"},
 	},
