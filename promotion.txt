@@ -1,0 +1,5 @@
+"The free, lightweight media player for all platforms. Install anywhere and run minimised without impacting system performance"
+
+"No tracking, Play doesn't collect analytics of any kind"
+
+Tagline: "Just play"

@@ -1,0 +1,7 @@
+Welcome to Play! The minimalist, sleek and lean music player.
+
+I hope you enjoy your experience with Play.
+If you have any feature requests, or run into any issues, please report them
+via the help menu in the program.
+
+Enjoy!

@@ -10,6 +10,7 @@ local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
 local ratings = require("libs.ui.ratings")
 local volumeSliderLib = require("libs.ui.volume-slider")
+local playlistDropdownLib = require("libs.ui.playlist-dropdown")
 local settings = require("libs.settings")
 local dScreenOriginX = display.screenOriginX
 local dScreenOriginY = display.dScreenOriginY
@@ -36,6 +37,7 @@ local previousButton = nil
 local playButton = nil
 local nextButton = nil
 local shuffleButton = nil
+local libraryButton = nil
 local volumeButton = nil
 local volumeSlider = nil
 local ratingStars = nil
@@ -43,6 +45,7 @@ local playBackTimeText = nil
 local albumArtwork = nil
 local songContainerBox = nil
 local songContainer = nil
+local playlistDropdown = nil
 local musicVisualizerBar = nil
 local loopButton = nil
 local levelVisualizer = nil
@@ -270,6 +273,23 @@ function M.new(options)
 	songContainer.x = songContainerBox.x + 105
 	songContainer.y = songContainerBox.y - 3
 	group:insert(songContainer)
+
+	libraryButton =
+		buttonLib.new(
+		{
+			iconName = "album-collection",
+			fontSize = mainButtonFontSize,
+			parent = group,
+			onClick = function(event)
+			end
+		}
+	)
+	libraryButton.x = songContainerBox.x - libraryButton.contentWidth - 10
+	libraryButton.y = previousButton.y
+	group:insert(libraryButton)
+
+	playlistDropdown =
+		playlistDropdownLib.new({x = songContainerBox.x + songContainerBox.contentWidth, y = previousButton.y})
 
 	--local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
 	--rect.anchorX = 0
@@ -724,6 +744,8 @@ function M:onResize()
 	songContainer.x = songContainerBox.x + 105
 	shuffleButton.x = songContainerBox.x + 90
 	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
+	libraryButton.x = songContainerBox.x - libraryButton.contentWidth - 10
+	playlistDropdown.x = songContainerBox.x + songContainerBox.contentWidth
 	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
 	songProgressView.x = songContainerBox.x
 	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 16
