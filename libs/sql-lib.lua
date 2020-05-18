@@ -183,6 +183,23 @@ function M:createPlaylist(name)
 	stmt = nil
 end
 
+function M:getPlaylists()
+	local stmt = database:prepare(sFormat([[ SELECT * FROM `playlists`; ]]))
+	local playlists = {}
+
+	for row in stmt:nrows() do
+		playlists[#playlists + 1] = {
+			id = row.id,
+			name = row.name
+		}
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return playlists
+end
+
 function M:updatePlaylistName(currentName, newName)
 	local hash = cDigest(crypto.md5, currentName)
 
