@@ -13,22 +13,22 @@ local settingsBinds =
 	"(:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers)"
 local musicBinds =
 	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :duration, :bitrate, :sampleRate, :sortTitle, :albumSearch, :artistSearch, :titleSearch)"
-
+local playListTableBinds = "(:key, :md5, :name)"
 local function createTables()
 	-- the playlist table simply holds the name and id of the playlists. Each playlist should be
 	-- it's own table. When adding a playlist, add it's name and primary key to the playlists table so it can be referenced.
 	-- when removing it, also remove its entry from the playlists master table.
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
+		[[CREATE TABLE IF NOT EXISTS `settings` (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]]
+		[[CREATE TABLE IF NOT EXISTS `music` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
-	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, md5 TEXT);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS musicIndex on music (album, artist, genre, title);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS musicAlbumIndex on music (album);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS musicArtistIndex on music (artist);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS musicTitleIndex on music (title);]])
+	database:exec([[CREATE TABLE IF NOT EXISTS `playlists` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]])
+	database:exec([[CREATE INDEX IF NOT EXISTS `musicIndex` on music (album, artist, genre, title);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS `musicAlbumIndex` on music (album);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS `musicArtistIndex` on music (artist);]])
+	database:exec([[CREATE INDEX IF NOT EXISTS `musicTitleIndex` on music (title);]])
 end
 
 local function escapeString(string)
@@ -141,6 +141,98 @@ function M:getSettings()
 	return settings
 end
 
+function M:createPlaylist(name)
+	database:exec(
+		sFormat(
+			[[CREATE TABLE IF NOT EXISTS `%sPlaylist` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]],
+			name
+		)
+	)
+	local hash = cDigest(crypto.md5, name)
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `playlists` VALUES %s; ]], playListTableBinds))
+	stmt:bind_names({name = name, md5 = hash})
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:updatePlaylistName(currentName, newName)
+	local hash = cDigest(crypto.md5, currentName)
+
+	local stmt =
+		database:prepare(sFormat([[ UPDATE `playlists` SET name='%s' WHERE md5='%s'; ]], escapeString(newName), hash))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(sFormat([[ UPDATE `playlists` SET md5='%s' WHERE md5='%s'; ]], cDigest(crypto.md5, newName), hash))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(sFormat([[ ALTER TABLE `%sPlaylist` RENAME TO '%sPlayList'; ]], currentName, escapeString(newName)))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:removePlaylist(playlistName)
+	local hash = cDigest(crypto.md5, playlistName)
+	local stmt = database:prepare(sFormat([[ DELETE FROM `playlists` WHERE md5='%s'; ]], hash))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare(sFormat([[ DROP TABLE '%sPlaylist'; ]], playlistName))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:addToPlaylist(playlistName, musicData)
+	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
+	local stmt =
+		database:prepare(
+		sFormat([[ INSERT OR IGNORE INTO `%sPlaylist` VALUES '%s'; ]], escapeString(playlistName), musicBinds)
+	)
+
+	stmt:bind_names(
+		{
+			fileName = musicData.fileName,
+			filePath = musicData.filePath,
+			md5 = hash,
+			title = musicData.title,
+			artist = musicData.artist,
+			album = musicData.album,
+			genre = musicData.genre,
+			comment = musicData.comment,
+			year = musicData.year,
+			trackNumber = musicData.trackNumber,
+			rating = musicData.rating,
+			duration = musicData.duration,
+			bitrate = musicData.bitrate,
+			sampleRate = musicData.sampleRate,
+			sortTitle = musicData.title,
+			albumSearch = musicData.album:stripAccents(),
+			artistSearch = musicData.artist:stripAccents(),
+			titleSearch = musicData.title:stripAccents()
+		}
+	)
+	stmt:step()
+	stmt:finalize()
+	musicData = nil
+	stmt = nil
+end
+
+function M:removeFromPlaylist(playlistName, id)
+	local stmt = database:prepare(sFormat([[ DELETE FROM `%sPlaylist` WHERE id=`%d`; ]], playlistName, id))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
 function M:insertMusic(musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
 	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `music` VALUES %s; ]], musicBinds))
@@ -149,7 +241,7 @@ function M:insertMusic(musicData)
 		{
 			fileName = musicData.fileName,
 			filePath = musicData.filePath,
-			md5 = hash, -- use this when doing music database lookups
+			md5 = hash,
 			title = musicData.title,
 			artist = musicData.artist,
 			album = musicData.album,
@@ -174,14 +266,14 @@ function M:insertMusic(musicData)
 end
 
 function M:removeMusic(id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id=%d; ]], id))
+	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id='%d'; ]], id))
 	stmt:step()
 	stmt:finalize()
 	stmt = nil
 end
 
 function M:getMusicRow(index)
-	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id=%d; ]], index))
+	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id='%d'; ]], index))
 	local music = nil
 
 	for row in stmt:nrows() do
