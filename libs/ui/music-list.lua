@@ -766,7 +766,13 @@ function M.new()
 							end
 
 							sqlLib:removeMusic(song.id)
-							M.reloadData()
+
+							if (M.musicSearch == nil) then
+								M:reloadData(true)
+								M:reloadData()
+							else
+								M:reloadData(true)
+							end
 						end
 
 						alertPopup:setTitle("Really remove from Library?")
@@ -794,7 +800,13 @@ function M.new()
 
 							sqlLib:removeMusic(song.id)
 							fileUtils:removeFile(song.fileName, song.filePath)
-							M.reloadData()
+
+							if (M.musicSearch == nil) then
+								M:reloadData(true)
+								M:reloadData()
+							else
+								M:reloadData(true)
+							end
 						end
 
 						alertPopup:setTitle("Really remove from Library and Disk?")
