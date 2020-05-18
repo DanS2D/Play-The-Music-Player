@@ -289,7 +289,9 @@ function M.new(options)
 	group:insert(libraryButton)
 
 	playlistDropdown =
-		playlistDropdownLib.new({x = songContainerBox.x + songContainerBox.contentWidth, y = previousButton.y})
+		playlistDropdownLib.new(
+		{x = songContainerBox.x + songContainerBox.contentWidth, y = previousButton.y, parent = group}
+	)
 
 	--local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
 	--rect.anchorX = 0

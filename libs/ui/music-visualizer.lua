@@ -4,8 +4,6 @@ local fileUtils = require("libs.file-utils")
 local settings = require("libs.settings")
 local sFormat = string.format
 local mRandom = math.random
-local mRandomSeed = math.randomseed
-local osTime = os.time
 local emitter = nil
 local visualizerDataPath = "data/visualizers/"
 local visualizerImagePath = "img/particles/"
@@ -50,8 +48,6 @@ function M.new(options)
 		end
 
 		if (#visualizers > 0) then
-			mRandomSeed(osTime())
-
 			local visualizerName = visualizers[mRandom(1, #visualizers)].name
 			local emitterParams =
 				fileUtils:loadTable(sFormat("%s%s.json", visualizerDataPath, visualizerName), system.ResourceDirectory)
