@@ -67,6 +67,7 @@ local accentedCharacters = {
 	["þ"] = "p",
 	["ÿ"] = "y"
 }
+string.pathSeparator = isWindows and "\\" or "/"
 
 function string:urlEncode(str)
 	local wString = str or self
@@ -101,8 +102,6 @@ function string:fileExtension(str)
 
 	return wString
 end
-
-string.pathSeparator = isWindows and "\\" or "/"
 
 function string:getFileNameAndPath(str)
 	local wString = str or self

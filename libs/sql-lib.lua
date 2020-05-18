@@ -35,6 +35,33 @@ local function escapeString(string)
 	return string:gsub("'", "''")
 end
 
+local function buildUpdateString(data)
+	local builtString = ""
+	local index = 1
+
+	for k, v in pairs(data) do
+		if (k ~= "key" and k ~= "id") then
+			if (index == 1) then
+				if (type(v) == "string") then
+					builtString = sFormat("%s = '%s'", k, v)
+				elseif (type(v) == "number") then
+					builtString = sFormat("%s = '%d'", k, v)
+				end
+			else
+				if (type(v) == "string") then
+					builtString = sFormat("%s, %s = '%s'", builtString, k, v)
+				elseif (type(v) == "number") then
+					builtString = sFormat("%s, %s = '%d'", builtString, k, v)
+				end
+			end
+
+			index = index + 1
+		end
+	end
+
+	return builtString
+end
+
 function M:open()
 	if (database == nil) then
 		local databasePath = system.pathForFile("music.db", system.DocumentsDirectory)
@@ -227,7 +254,7 @@ function M:addToPlaylist(playlistName, musicData)
 end
 
 function M:removeFromPlaylist(playlistName, id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `%sPlaylist` WHERE id=`%d`; ]], playlistName, id))
+	local stmt = database:prepare(sFormat([[ DELETE FROM `%sPlaylist` WHERE id=%d; ]], playlistName, id))
 	stmt:step()
 	stmt:finalize()
 	stmt = nil
@@ -266,14 +293,25 @@ function M:insertMusic(musicData)
 end
 
 function M:removeMusic(id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id='%d'; ]], id))
+	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id=%d; ]], id))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:updateMusic(musicData)
+	--print(musicData.id)
+	--print(buildUpdateString(musicData))
+
+	local values = buildUpdateString(musicData)
+	local stmt = database:prepare(sFormat([[ UPDATE `music` SET %s WHERE id=%d; ]], values, musicData.id))
 	stmt:step()
 	stmt:finalize()
 	stmt = nil
 end
 
 function M:getMusicRow(index)
-	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id='%d'; ]], index))
+	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id=%d; ]], index))
 	local music = nil
 
 	for row in stmt:nrows() do
