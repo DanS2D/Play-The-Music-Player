@@ -31,6 +31,10 @@ local function createTables()
 	database:exec([[CREATE INDEX IF NOT EXISTS musicTitleIndex on music (title);]])
 end
 
+local function escapeString(string)
+	return string:gsub("'", "''")
+end
+
 function M:open()
 	if (database == nil) then
 		local databasePath = system.pathForFile("music.db", system.DocumentsDirectory)
@@ -265,7 +269,7 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 	-- %% SEARCH %% == anywhere in the string
 	-- SEARCH %% == begins with string
 	-- %% SEARCH == ends with string
-	local likeQuery = sFormat("LIKE '%%%s%%'", search)
+	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
 	local artistQuery = sFormat("OR artist %s", likeQuery)
 	local titleQuery = sFormat("OR title %s", likeQuery)
 	self.lastSearchQuery = sFormat([[WHERE album %s %s %s; ]], likeQuery, artistQuery, titleQuery)
@@ -325,7 +329,7 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 	-- %% SEARCH %% == anywhere in the string
 	-- SEARCH %% == begins with string
 	-- %% SEARCH == ends with string
-	local likeQuery = sFormat("LIKE '%%%s%%'", search)
+	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
 	local artistQuery = sFormat("OR artist %s", likeQuery)
 	local titleQuery = sFormat("OR title %s", likeQuery)
 	self.lastSearchQuery = sFormat([[WHERE album %s %s %s; ]], likeQuery, artistQuery, titleQuery)
