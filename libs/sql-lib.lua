@@ -12,7 +12,7 @@ local database = nil
 local settingsBinds =
 	"(:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :selectedVisualizers)"
 local musicBinds =
-	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :duration, :bitrate, :sampleRate)"
+	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :duration, :bitrate, :sampleRate, :sortTitle)"
 
 local function createTables()
 	-- the playlist table simply holds the name and id of the playlists. Each playlist should be
@@ -22,7 +22,7 @@ local function createTables()
 		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, UNIQUE(md5));]]
+		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, UNIQUE(md5));]]
 	)
 	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, md5 TEXT);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS musicIndex on music (album, artist, genre, title);]])
@@ -160,7 +160,8 @@ function M:insertMusic(musicData)
 			rating = musicData.rating,
 			duration = musicData.duration,
 			bitrate = musicData.bitrate,
-			sampleRate = musicData.sampleRate
+			sampleRate = musicData.sampleRate,
+			sortTitle = musicData.title
 		}
 	)
 	stmt:step()
@@ -193,7 +194,8 @@ function M:getMusicRow(index)
 			publisher = row.publisher,
 			title = row.title,
 			track = row.track,
-			duration = row.duration
+			duration = row.duration,
+			sortTitle = row.sortTitle
 		}
 	end
 
@@ -230,7 +232,8 @@ local function getMusicRowBy(index, ascending, filter)
 			publisher = row.publisher,
 			title = row.title,
 			track = row.track,
-			duration = row.duration
+			duration = row.duration,
+			sortTitle = row.sortTitle
 		}
 	end
 
@@ -261,7 +264,7 @@ function M:getMusicRowByRating(index, ascending)
 end
 
 function M:getMusicRowByTitle(index, ascending)
-	return getMusicRowBy(index, ascending, "title")
+	return getMusicRowBy(index, ascending, "sortTitle")
 end
 
 function M:getMusicRowBySearch(index, ascending, search, limit)
@@ -280,7 +283,7 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT 1 OFFSET %d; ]],
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY sortTitle %s LIMIT 1 OFFSET %d; ]],
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -292,7 +295,7 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY title %s LIMIT 1; ]],
+				[[ SELECT * FROM `music` WHERE album %s %s %s ORDER BY sortTitle %s LIMIT 1; ]],
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -314,7 +317,8 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 			publisher = row.publisher,
 			title = row.title,
 			track = row.track,
-			duration = row.duration
+			duration = row.duration,
+			sortTitle = row.sortTitle
 		}
 	end
 
@@ -378,7 +382,8 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 			publisher = row.publisher,
 			title = row.title,
 			track = row.track,
-			duration = row.duration
+			duration = row.duration,
+			sortTitle = row.sortTitle
 		}
 	end
 
