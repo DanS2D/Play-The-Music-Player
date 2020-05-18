@@ -319,7 +319,7 @@ function M.new(options)
 				musicList:reloadData()
 			else
 				musicList.musicResultsLimit = sqlLib:musicCount()
-				musicList.musicSearch = currentText
+				musicList.musicSearch = currentText:stripAccents()
 				musicList:getSearchData()
 				musicList:setMusicCount(sqlLib:searchCount())
 				musicList:reloadData(true)
