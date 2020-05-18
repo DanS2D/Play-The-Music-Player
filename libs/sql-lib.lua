@@ -22,9 +22,9 @@ local function createTables()
 		[[CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER);]]
+		[[CREATE TABLE IF NOT EXISTS music (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, UNIQUE(md5));]]
 	)
-	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, key INTEGER);]])
+	database:exec([[CREATE TABLE IF NOT EXISTS playlists (id INTEGER PRIMARY KEY, name TEXT, md5 TEXT);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS musicIndex on music (album, artist, genre, title);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS musicAlbumIndex on music (album);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS musicArtistIndex on music (artist);]])
@@ -109,39 +109,41 @@ function M:getSettings()
 	local stmt = database:prepare([[ SELECT * FROM `settings`; ]])
 	local settings = nil
 
-	for row in stmt:nrows() do
-		settings = {
-			musicFolderPaths = jDecode(row.musicFolderPaths),
-			volume = row.volume,
-			loopOne = row.loopOne,
-			loopAll = row.loopAll,
-			shuffle = row.shuffle,
-			lastPlayedSongIndex = row.lastPlayedSongIndex,
-			lastPlayedSongTime = jDecode(row.lastPlayedSongTime),
-			fadeInTrack = row.fadeInTrack,
-			fadeOutTrack = row.fadeOutTrack,
-			crossFade = row.crossFade,
-			displayAlbumArtwork = row.displayAlbumArtwork,
-			columnOrder = jDecode(row.columnOrder),
-			hiddenColumns = jDecode(row.hiddenColumns),
-			columnSizes = jDecode(row.columnSizes),
-			lastUsedColumn = row.lastUsedColumn,
-			lastUsedColumnSortAToZ = row.lastUsedColumnSortAToZ,
-			showVisualizer = row.showVisualizer,
-			selectedVisualizers = jDecode(row.selectedVisualizers),
-			lastView = row.lastView
-		}
-	end
+	if (stmt) then
+		for row in stmt:nrows() do
+			settings = {
+				musicFolderPaths = jDecode(row.musicFolderPaths),
+				volume = row.volume,
+				loopOne = row.loopOne,
+				loopAll = row.loopAll,
+				shuffle = row.shuffle,
+				lastPlayedSongIndex = row.lastPlayedSongIndex,
+				lastPlayedSongTime = jDecode(row.lastPlayedSongTime),
+				fadeInTrack = row.fadeInTrack,
+				fadeOutTrack = row.fadeOutTrack,
+				crossFade = row.crossFade,
+				displayAlbumArtwork = row.displayAlbumArtwork,
+				columnOrder = jDecode(row.columnOrder),
+				hiddenColumns = jDecode(row.hiddenColumns),
+				columnSizes = jDecode(row.columnSizes),
+				lastUsedColumn = row.lastUsedColumn,
+				lastUsedColumnSortAToZ = row.lastUsedColumnSortAToZ,
+				showVisualizer = row.showVisualizer,
+				selectedVisualizers = jDecode(row.selectedVisualizers),
+				lastView = row.lastView
+			}
+		end
 
-	stmt:finalize()
-	stmt = nil
+		stmt:finalize()
+		stmt = nil
+	end
 
 	return settings
 end
 
 function M:insertMusic(musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
-	local stmt = database:prepare(sFormat([[ INSERT INTO `music` VALUES %s; ]], musicBinds))
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `music` VALUES %s; ]], musicBinds))
 
 	stmt:bind_names(
 		{

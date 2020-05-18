@@ -173,15 +173,15 @@ local applicationMainMenuBar =
 
 								if (not hasUsedPath) then
 									lastChosenPath = selectedPath
-									background:toFront()
-									musicList:removeAllRows()
-									musicImporter.pushProgessToFront()
-									musicImporter.showProgressBar()
-									musicImporter.getFolderList(lastChosenPath, populateTableViews)
 								else
-									mainMenuBar.setEnabled(true)
-									playInterruptedSong()
+									lastChosenPath = nil
 								end
+
+								background:toFront()
+								musicList:removeAllRows()
+								musicImporter.pushProgessToFront()
+								musicImporter.showProgressBar()
+								musicImporter.getFolderList(lastChosenPath, populateTableViews)
 							else
 								mainMenuBar.setEnabled(true)
 								playInterruptedSong()
