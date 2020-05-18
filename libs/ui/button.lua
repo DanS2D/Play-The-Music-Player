@@ -30,8 +30,7 @@ function M.new(options)
 		local target = event.target
 		local targetHalfWidth = (target.contentWidth * 0.5)
 		local targetHalfHeight = (target.contentHeight * 0.5)
-		local eventX = event.x
-		local eventY = event.y
+		local eventX, eventY = target:contentToLocal(event.x, event.y)
 
 		if (phase == "began") then
 			display.getCurrentStage():setFocus(target)
@@ -39,14 +38,8 @@ function M.new(options)
 		elseif (phase == "ended" or phase == "cancelled") then
 			target.alpha = 1
 
-			local xCheck = (eventX >= target.x - targetHalfWidth and eventX <= target.x + targetHalfWidth)
-
-			if (target.anchorX == 0) then
-				xCheck = (eventX >= target.x and eventX <= target.x + target.contentWidth)
-			end
-
-			if (xCheck) then
-				if (eventY >= target.y - targetHalfHeight and eventY <= target.y + targetHalfHeight) then
+			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then
+				if (eventY + targetHalfHeight >= 0 and eventY + targetHalfHeight <= target.contentHeight) then
 					if (type(onClick) == "function") then
 						onClick(event)
 					end

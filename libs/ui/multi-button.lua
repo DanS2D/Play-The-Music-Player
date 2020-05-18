@@ -32,8 +32,8 @@ function M.new(options)
 				target.alpha = 1
 			end
 
-			if (eventX >= target.x - targetHalfWidth and eventX <= target.x + targetHalfWidth) then
-				if (eventY >= target.y - targetHalfHeight and eventY <= target.y + targetHalfHeight) then
+			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then
+				if (eventY + targetHalfHeight >= 0 and eventY + targetHalfHeight <= target.contentHeight) then
 					local index = target.index + 1
 
 					if (index > #buttons) then
