@@ -203,9 +203,7 @@ function M.new(options)
 	function tableView:moveAllRowsDown()
 		for i = 1, maxRows do
 			self:moveRow(i, rows[i].y + rowHeight)
-		end
 
-		for i = 1, maxRows do
 			if (not self:isRowOnScreen(i)) then
 				self:deleteRowContents(i)
 				self:moveRow(i, 0)
@@ -219,9 +217,7 @@ function M.new(options)
 	function tableView:moveAllRowsUp()
 		for i = 1, maxRows do
 			self:moveRow(i, rows[i].y - rowHeight)
-		end
 
-		for i = 1, maxRows do
 			if (not self:isRowOnScreen(i)) then
 				self:deleteRowContents(i)
 				self:moveRow(i, visibleRows * rowHeight)
