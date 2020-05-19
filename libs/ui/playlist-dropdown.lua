@@ -66,7 +66,7 @@ function M.new(options)
 		tableView =
 			desktopTableView.new(
 			{
-				left = display.contentWidth - width - 47,
+				left = display.contentWidth - width - 46,
 				top = self.y + 24,
 				width = width,
 				height = height,
@@ -260,6 +260,12 @@ function M.new(options)
 
 				isOpen = not isOpen
 
+				if (isOpen) then
+					playListCaret:rotate(180)
+				else
+					playListCaret:rotate(-180)
+				end
+
 				if (type(onClick) == "function") then
 					onClick(event)
 				end
@@ -295,6 +301,16 @@ function M.new(options)
 			fontSize = smallButtonFontSize,
 			parent = group,
 			onClick = function(event)
+				if (sqlLib:totalMusicCount() <= 0) then
+					alertPopup:onlyUseOkButton()
+					alertPopup:setTitle("No Music Added!")
+					alertPopup:setMessage(
+						"You haven't added any music yet!\nYou can create playlists after you have imported some music to your library."
+					)
+					alertPopup:show()
+					return
+				end
+
 				playlistCreatePopup:show()
 			end
 		}
