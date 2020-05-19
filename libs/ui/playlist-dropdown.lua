@@ -3,6 +3,7 @@ local sqlLib = require("libs.sql-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local alertPopupLib = require("libs.ui.alert-popup")
 local buttonLib = require("libs.ui.button")
+local musicList = require("libs.ui.music-list")
 local mRound = math.round
 local sFormat = string.format
 local tInsert = table.insert
@@ -155,6 +156,7 @@ function M.new(options)
 					if (type(onPlaylistClick) == "function" and not ingoreTouch) then
 						--event.playlistName = itemData.name
 						sqlLib.currentMusicTable = sFormat("%sPlaylist", itemData.name)
+						musicList.musicSearch = nil
 						onPlaylistClick(event)
 						row.parent.isVisible = false
 						isOpen = false
@@ -231,6 +233,34 @@ function M.new(options)
 			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
+				local currentMusicTable = sqlLib.currentMusicTable
+				local playlists = sqlLib:getPlaylists()
+
+				sqlLib.currentMusicTable = "music"
+
+				if (sqlLib:musicCount() <= 0) then
+					alertPopup:onlyUseOkButton()
+					alertPopup:setTitle("No Music Added!")
+					alertPopup:setMessage(
+						"You haven't added any music yet!\nYou can't add a playlist until you've added some music to your library."
+					)
+					alertPopup:show()
+					sqlLib.currentMusicTable = currentMusicTable
+					return
+				end
+
+				if (#playlists <= 0) then
+					alertPopup:onlyUseOkButton()
+					alertPopup:setTitle("No Playlists Created!")
+					alertPopup:setMessage(
+						"You haven't created any playlists yet!\nYou can add a playlist by clicking the + button above the playlist button."
+					)
+					alertPopup:show()
+					sqlLib.currentMusicTable = currentMusicTable
+					return
+				end
+
+				sqlLib.currentMusicTable = currentMusicTable
 				isOpen = not isOpen
 
 				if (type(onClick) == "function") then

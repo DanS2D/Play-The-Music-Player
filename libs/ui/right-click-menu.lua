@@ -141,7 +141,7 @@ function M.new(options)
 				local maxRows = mRound((display.contentHeight - (self.y + (rowHeight * (i - 1)))) / rowHeight)
 				local subMenuHeight = rowHeight * maxRows
 
-				print("num of subitems: ", #subItemData)
+				--print("num of subitems: ", #subItemData)
 
 				if (maxRows > #subItemData) then
 					maxRows = #subItemData
