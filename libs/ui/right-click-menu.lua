@@ -58,6 +58,23 @@ function M.new(options)
 				subItemText.x = 35
 				row:insert(subItemText)
 
+				if (items[row.index].hasSubmenu) then
+					local subMenuIcon =
+						display.newText(
+						{
+							x = 0,
+							y = (rowContentHeight * 0.5),
+							text = "caret-right",
+							font = items[row.index].iconFont,
+							fontSize = fontSize,
+							align = "left"
+						}
+					)
+					subMenuIcon.anchorX = 1
+					subMenuIcon.x = rowContentWidth - subMenuIcon.contentWidth
+					row:insert(subMenuIcon)
+				end
+
 				if (items[row.index].disabled) then
 					icon.alpha = 0.5
 					subItemText.alpha = 0.5
