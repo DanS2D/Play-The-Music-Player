@@ -368,8 +368,9 @@ local function createCategories()
 	}
 
 	for i = 1, #listOptions do
+		local leftPosition = 30
 		categoryList[i] = display.newGroup()
-		categoryList[i].x = i == 1 and 0 or categoryList[i - 1].x + listOptions[i - 1].left
+		categoryList[i].x = i == 1 and leftPosition or categoryList[i - 1].x + listOptions[i - 1].left
 		categoryList[i].y = topPosition
 		categoryList[i].index = i
 		tableViewList[i] = M:createTableView(listOptions, i)
@@ -480,14 +481,13 @@ local function createCategories()
 			}
 		)
 		seperatorText.rotation = 90
-		seperatorText.isVisible = categoryList[i].index ~= 1
 		seperatorText:setFillColor(0.8, 0.8, 0.8)
 		categoryList[i]:insert(seperatorText)
 
 		function seperatorText:mouse(event)
 			local phase = event.type
 
-			if (categoryList[i].index == 1 or sqlLib:currentMusicCount() <= 0) then
+			if (tableViewList[self.parent.index].orderIndex == 1 or sqlLib:currentMusicCount() <= 0) then
 				return
 			end
 
@@ -498,9 +498,11 @@ local function createCategories()
 					tableViewList[i]:lockScroll(true)
 				end
 
+				print(self.parent.index)
+
 				tableViewTarget = tableViewList[self.parent.index]
 				display.getCurrentStage():setFocus(tableViewTarget)
-				categoryTarget = categoryList[i]
+				categoryTarget = categoryList[self.parent.index]
 			elseif (phase == "up") then
 				tableViewTarget = nil
 				display.getCurrentStage():setFocus(nil)
