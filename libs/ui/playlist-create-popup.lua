@@ -35,6 +35,7 @@ local function onConfirm()
 		alertPopup:setButtonCallbacks(
 			{
 				onOK = function()
+					native.setKeyboardFocus(playlistTextField)
 					playlistTextField.isVisible = true
 				end
 			}
@@ -203,6 +204,7 @@ function M.create()
 		confirmButton.y = background.y + background.contentHeight * 0.5 - confirmButton.contentHeight
 
 		self.isVisible = true
+		native.setKeyboardFocus(playlistTextField)
 		self:toFront()
 	end
 

@@ -38,6 +38,7 @@ function M.new(options)
 			tInsert(playlists, 1, "No Playlists Created")
 		end
 
+		local ingoreTouch = false
 		local rowHeight = 40
 		local maxRows = mRound(display.contentHeight - self.y) / #playlists
 		local totalRowHeight = rowHeight * #playlists
@@ -103,6 +104,26 @@ function M.new(options)
 					subItemText.anchorX = 0
 					subItemText.x = 35
 					row:insert(subItemText)
+
+					local trashIcon =
+						buttonLib.new(
+						{
+							iconName = "trash-alt",
+							fontSize = fontSize,
+							parent = group,
+							onClick = function(event)
+								ingoreTouch = true
+								sqlLib:removePlaylist(itemData.name)
+								sqlLib.currentMusicTable = "music"
+								row.parent.isVisible = false
+								isOpen = false
+							end
+						}
+					)
+					trashIcon.anchorX = 1
+					trashIcon.x = rowContentWidth - trashIcon.contentWidth
+					trashIcon.y = rowContentHeight * 0.5
+					row:insert(trashIcon)
 				end,
 				onRowClick = function(event)
 					local phase = event.phase
@@ -113,7 +134,7 @@ function M.new(options)
 						return
 					end
 
-					if (type(onPlaylistClick) == "function") then
+					if (type(onPlaylistClick) == "function" and not ingoreTouch) then
 						--event.playlistName = itemData.name
 						sqlLib.currentMusicTable = sFormat("%sPlaylist", itemData.name)
 						onPlaylistClick(event)
@@ -213,6 +234,11 @@ function M.new(options)
 	)
 	addNewPlaylistButton.x = playListButton.x + playListButton.contentWidth * 0.5 + addNewPlaylistButton.contentWidth * 0.7
 	addNewPlaylistButton.y = playListButton.y - playListButton.contentHeight * 0.5
+
+	function group:close()
+		self:destroyDropdownMenu()
+		isOpen = false
+	end
 
 	--group.anchorX = 0.5
 	--group.anchorY = 0.5
