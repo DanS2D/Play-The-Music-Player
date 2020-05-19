@@ -26,6 +26,10 @@ function M.new(options)
 
 	function group:destroyDropdownMenu()
 		if (tableView) then
+			display.remove(tableView.outLineCaret)
+			display.remove(tableView.outlineRect)
+			tableView.outLineCaret = nil
+			tableView.outlineRect = nil
 			tableView:destroy()
 			tableView = nil
 		end
@@ -45,6 +49,7 @@ function M.new(options)
 		local maxRows = mRound(display.contentHeight - self.y) / #playlists
 		local totalRowHeight = rowHeight * #playlists
 		local width = 500
+		local height = rowHeight * #playlists
 		local rowColor = {default = {0.15, 0.15, 0.15}, over = {0.20, 0.20, 0.20}}
 		local fontSize = (rowHeight / 2.5)
 
@@ -57,10 +62,10 @@ function M.new(options)
 		tableView =
 			desktopTableView.new(
 			{
-				left = display.contentWidth - width - 40,
+				left = display.contentWidth - width - 47,
 				top = self.y + 24,
 				width = width,
-				height = rowHeight * #playlists,
+				height = height,
 				rowHeight = rowHeight,
 				maxRows = maxRows,
 				rowLimit = #playlists,
@@ -194,6 +199,28 @@ function M.new(options)
 
 		tableView:reloadData()
 		tableView:addEventListener("mouse", onMouseEvent)
+
+		tableView.outlineRect = display.newRoundedRect(0, 0, width + 2, height + 2, 2)
+		tableView.outlineRect.strokeWidth = 1
+		tableView.outlineRect:setFillColor(0.15, 0.15, 0.15)
+		tableView.outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+		tableView.outlineRect.x = tableView.x + tableView.contentWidth * 0.5 - 1
+		tableView.outlineRect.y = tableView.y + tableView.contentHeight * 0.5 - 1
+
+		tableView.outLineCaret =
+			display.newText(
+			{
+				text = "caret-up",
+				font = fontAwesomeSolidFont,
+				fontSize = fontSize,
+				align = "center"
+			}
+		)
+		tableView.outLineCaret.x = tableView.outlineRect.x
+		tableView.outLineCaret.y = tableView.outlineRect.y - tableView.outlineRect.contentHeight * 0.5 - 1
+		tableView.outLineCaret:setFillColor(0.7, 0.7, 0.7)
+
+		tableView:toFront()
 	end
 
 	local playListButton =
