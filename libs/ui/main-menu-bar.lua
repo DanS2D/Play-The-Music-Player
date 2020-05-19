@@ -311,6 +311,7 @@ function M.new(options)
 
 		if (phase == "began") then
 			musicList:closeRightClickMenus()
+			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
 		elseif (phase == "editing") then
 			local currentText = event.text
 

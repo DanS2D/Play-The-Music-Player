@@ -612,6 +612,8 @@ local function mediaBarEventListener(event)
 
 	if (phase == "clearSong") then
 		M.clearPlayingSong()
+	elseif (phase == "closePlaylists") then
+		playlistDropdown:close()
 	end
 
 	return true
