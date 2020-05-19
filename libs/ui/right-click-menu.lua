@@ -1,6 +1,7 @@
 local M = {}
 local desktopTableView = require("libs.ui.desktop-table-view")
 local mRound = math.round
+local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
 	local x = options.left or display.contentWidth
@@ -12,6 +13,7 @@ function M.new(options)
 	local rowColor = {default = {0.15, 0.15, 0.15}, over = {0.20, 0.20, 0.20}}
 	local subItems = {}
 	local subMenuXPosition = 0
+	local height = rowHeight * #items
 
 	local menu =
 		desktopTableView.new(
@@ -19,7 +21,7 @@ function M.new(options)
 			left = 0,
 			top = 0,
 			width = width,
-			height = rowHeight * #items,
+			height = height,
 			rowHeight = rowHeight,
 			rowLimit = #items,
 			useSelectedRowHighlighting = false,
@@ -110,9 +112,19 @@ function M.new(options)
 		end
 	)
 
+	menu.outlineRect = display.newRoundedRect(0, 0, width + 2, height + 2, 2)
+	menu.outlineRect.strokeWidth = 1
+	menu.outlineRect:setFillColor(0.15, 0.15, 0.15)
+	menu.outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+	menu.outlineRect.x = menu.x + menu.contentWidth * 0.5 - 1
+	menu.outlineRect.y = menu.y + menu.contentHeight * 0.5 - 1
+	menu.outlineRect.isVisible = false
+
 	function menu:destroySubmenus()
 		if (#subItems > 0) then
 			for i = 1, #subItems do
+				display.remove(subItems[i].outlineRect)
+				subItems[i].outlineRect = nil
 				subItems[i]:destroy()
 				subItems[i] = nil
 			end
@@ -126,21 +138,23 @@ function M.new(options)
 		for i = 1, #items do
 			if (type(items[i].subItems) == "function") then
 				local subItemData = items[i].subItems()
-				local maxRows = mRound((display.contentHeight - (self.y + (rowHeight * (i - 1)))) / rowHeight) - 1
+				local maxRows = mRound((display.contentHeight - (self.y + (rowHeight * (i - 1)))) / rowHeight)
+				local subMenuHeight = rowHeight * maxRows
 
-				--print("num of subitems: ", #subItemData)
+				print("num of subitems: ", #subItemData)
 
 				if (maxRows > #subItemData) then
 					maxRows = #subItemData
+					subMenuHeight = rowHeight * maxRows
 				end
 
 				subItems[#subItems + 1] =
 					desktopTableView.new(
 					{
-						left = subMenuXPosition,
+						left = subMenuXPosition + 5,
 						top = self.y + (rowHeight * (i - 1)),
 						width = width,
-						height = rowHeight * #subItemData,
+						height = subMenuHeight,
 						rowHeight = rowHeight,
 						maxRows = maxRows,
 						rowLimit = #subItemData,
@@ -257,6 +271,14 @@ function M.new(options)
 				subItems[#subItems].isValid = #subItemData > 0
 				subItems[#subItems]:reloadData()
 				subItems[#subItems]:addEventListener("mouse", onMouseEvent)
+
+				subItems[#subItems].outlineRect = display.newRoundedRect(0, 0, width + 2, subMenuHeight + 2, 2)
+				subItems[#subItems].outlineRect.strokeWidth = 1
+				subItems[#subItems].outlineRect:setFillColor(0.15, 0.15, 0.15)
+				subItems[#subItems].outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+				subItems[#subItems].outlineRect.x = subItems[#subItems].x + subItems[#subItems].contentWidth * 0.5 - 1
+				subItems[#subItems].outlineRect.y = subItems[#subItems].y + subItems[#subItems].contentHeight * 0.5 - 1
+				subItems[#subItems].outlineRect.isVisible = false
 			end
 		end
 	end
@@ -278,6 +300,7 @@ function M.new(options)
 						for j = 1, #subItems do
 							if (subItems[j].index == i and subItems[j].isVisible == false) then
 								subItems[j]:lockScroll(false)
+								subItems[j].outlineRect.isVisible = true
 								subItems[j].isVisible = true
 							end
 						end
@@ -289,6 +312,7 @@ function M.new(options)
 						for j = 1, #subItems do
 							if (subItems[j].index == i and subItems[j].isVisible == true) then
 								subItems[j]:lockScroll(true)
+								subItems[j].outlineRect.isVisible = false
 								subItems[j].isVisible = false
 							end
 						end
@@ -322,7 +346,10 @@ function M.new(options)
 
 		self.x = x
 		self.y = y
+		self.outlineRect.x = self.x + self.contentWidth * 0.5 - 1
+		self.outlineRect.y = self.y + self.contentHeight * 0.5 - 1
 		self:reloadData()
+		self.outlineRect:toFront()
 		self:toFront()
 		self:destroySubmenus()
 		self:createSubmenus()
@@ -332,12 +359,14 @@ function M.new(options)
 		end
 
 		self.isVisible = true
+		self.outlineRect.isVisible = true
 	end
 
 	function menu:close()
 		self.x = display.contentWidth
 		self.y = display.contentCenterY
 		self.isVisible = false
+		self.outlineRect.isVisible = false
 		self:destroySubmenus()
 	end
 
