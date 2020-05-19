@@ -4,6 +4,7 @@ local desktopTableView = require("libs.ui.desktop-table-view")
 local alertPopupLib = require("libs.ui.alert-popup")
 local buttonLib = require("libs.ui.button")
 local musicList = require("libs.ui.music-list")
+local playlistCreatePopupLib = require("libs.ui.playlist-create-popup")
 local mRound = math.round
 local sFormat = string.format
 local tInsert = table.insert
@@ -13,6 +14,7 @@ local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local alertPopup = alertPopupLib.create()
+local playlistCreatePopup = playlistCreatePopupLib.create()
 
 function M.new(options)
 	local group = display.newGroup()
@@ -298,8 +300,7 @@ function M.new(options)
 			fontSize = smallButtonFontSize,
 			parent = group,
 			onClick = function(event)
-				--sqlLib:createPlaylist("dance")
-				--sqlLib:updatePlaylistName("dance", "rock")
+				playlistCreatePopup:show()
 			end
 		}
 	)
