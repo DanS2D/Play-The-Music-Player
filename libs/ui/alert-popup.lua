@@ -8,6 +8,7 @@ local background = nil
 local group = display.newGroup()
 local maxDisplayWidth = 1650
 local maxDisplayHeight = 1024
+local onlyUseOkButton = false
 local created = false
 
 function M.create()
@@ -19,8 +20,10 @@ function M.create()
 	local background = nil
 	local titleText = nil
 	local messageText = nil
+	local okButton = nil
 	local cancelButton = nil
 	local confirmButton = nil
+	local onOK = nil
 	local onCancel = nil
 	local onConfirm = nil
 
@@ -100,6 +103,11 @@ function M.create()
 			messageText = nil
 		end
 
+		if (okButton) then
+			display.remove(okButton)
+			okButton = nil
+		end
+
 		if (cancelButton) then
 			display.remove(cancelButton)
 			cancelButton = nil
@@ -130,40 +138,65 @@ function M.create()
 		messageText:setFillColor(1, 1, 1)
 		self:insert(messageText)
 
-		cancelButton =
-			buttonLib.new(
-			{
-				iconName = "window-close No",
-				fontSize = maxHeight * 0.03,
-				parent = self,
-				onClick = function(event)
-					self:hide()
-
-					if (type(onCancel) == "function") then
-						onCancel()
-					end
-				end
-			}
-		)
-		cancelButton.x = background.x - cancelButton.contentWidth
-		cancelButton.y = background.y + background.contentHeight * 0.5 - cancelButton.contentHeight
-
-		confirmButton =
-			buttonLib.new(
-			{
-				iconName = "check-circle Yes",
-				fontSize = maxHeight * 0.03,
-				parent = self,
-				onClick = function(event)
-					if (type(onConfirm) == "function") then
+		if (onlyUseOkButton) then
+			okButton =
+				buttonLib.new(
+				{
+					iconName = "check-circle OK",
+					fontSize = maxHeight * 0.03,
+					parent = self,
+					onClick = function(event)
 						self:hide()
-						onConfirm()
+
+						if (type(onOK) == "function") then
+							self:hide()
+							onOK()
+						end
 					end
-				end
-			}
-		)
-		confirmButton.x = background.x + confirmButton.contentWidth
-		confirmButton.y = background.y + background.contentHeight * 0.5 - confirmButton.contentHeight
+				}
+			)
+			okButton.x = background.x
+			okButton.y = background.y + background.contentHeight * 0.5 - okButton.contentHeight
+		else
+			cancelButton =
+				buttonLib.new(
+				{
+					iconName = "window-close No",
+					fontSize = maxHeight * 0.03,
+					parent = self,
+					onClick = function(event)
+						self:hide()
+
+						if (type(onCancel) == "function") then
+							onCancel()
+						end
+					end
+				}
+			)
+			cancelButton.x = background.x - cancelButton.contentWidth
+			cancelButton.y = background.y + background.contentHeight * 0.5 - cancelButton.contentHeight
+
+			confirmButton =
+				buttonLib.new(
+				{
+					iconName = "check-circle Yes",
+					fontSize = maxHeight * 0.03,
+					parent = self,
+					onClick = function(event)
+						if (type(onConfirm) == "function") then
+							self:hide()
+							onConfirm()
+						end
+					end
+				}
+			)
+			confirmButton.x = background.x + confirmButton.contentWidth
+			confirmButton.y = background.y + background.contentHeight * 0.5 - confirmButton.contentHeight
+		end
+	end
+
+	function group:onlyUseOkButton()
+		onlyUseOkButton = true
 	end
 
 	function group:setButtonCallbacks(options)
@@ -171,6 +204,11 @@ function M.create()
 		onConfirm = nil
 		onCancel = options and options.onCancel
 		onConfirm = options and options.onConfirm
+		onOK = options and options.onOK
+
+		if (onCancel or onConfirm) then
+			onlyUseOkButton = false
+		end
 	end
 
 	function group:show()
@@ -197,6 +235,11 @@ function M.create()
 		if (messageText) then
 			display.remove(messageText)
 			messageText = nil
+		end
+
+		if (okButton) then
+			display.remove(okButton)
+			okButton = nil
 		end
 
 		if (cancelButton) then
