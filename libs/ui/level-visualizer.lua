@@ -10,9 +10,10 @@ local maxLevel = 32768
 local chunk = maxLevel / numBars
 local leftLevel, rightLevel = 0, 0
 local numberOfBarsPerSide = 10
+local getProperty = native.getProperty
 
 local function updateVisualization()
-	if (isEnabled and audioLib.isChannelPlaying()) then
+	if (getProperty("windowMode") ~= "minimized" and isEnabled and audioLib.isChannelPlaying()) then
 		leftLevel, rightLevel = audioLib.getLevel()
 
 		for i = 1, #leftChannel do
