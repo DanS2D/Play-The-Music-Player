@@ -282,6 +282,10 @@ function M.new(options)
 			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
+				if (sqlLib:totalMusicCount() <= 0) then
+					return
+				end
+
 				playlistDropdown:close()
 				sqlLib.currentMusicTable = "music"
 				musicList:closeRightClickMenus()
