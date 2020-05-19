@@ -822,13 +822,7 @@ function M.new()
 							end
 
 							sqlLib:removeMusic(song.id)
-
-							if (M.musicSearch == nil) then
-								M:reloadData(true)
-								M:reloadData()
-							else
-								M:reloadData(true)
-							end
+							M:reloadData()
 						end
 
 						local removeFrom = sqlLib.currentMusicTable == "music" and "Library" or "Playlist"
@@ -862,13 +856,7 @@ function M.new()
 
 							sqlLib:removeMusic(song.id)
 							fileUtils:removeFile(song.fileName, song.filePath)
-
-							if (M.musicSearch == nil) then
-								M:reloadData(true)
-								M:reloadData()
-							else
-								M:reloadData(true)
-							end
+							M:reloadData()
 						end
 
 						alertPopup:setTitle("Really remove from Library and Disk?")
@@ -963,12 +951,12 @@ function M:cleanDataReload()
 	end
 end
 
-function M:reloadData(hardReload)
+function M:reloadData()
 	currentRowCount = 0
+	musicData = {}
 
-	-- if this isn't a search view reload, reset the music data
-	if (not hardReload) then
-		musicData = {}
+	if (self.musicSearch) then
+		self:getSearchData()
 	end
 
 	-- if we've resized the view, we need to wipe the music data when clearing a search
@@ -980,7 +968,7 @@ function M:reloadData(hardReload)
 	for i = 1, #tableViewList do
 		tableViewList[i]:setRowSelected(selectedRowIndex)
 
-		if (hardReload) then
+		if (self.musicSearch) then
 			if (prevIndex == 0) then
 				prevIndex = tableViewList[i]:getRealIndex()
 			end
@@ -996,7 +984,7 @@ function M:reloadData(hardReload)
 		end
 	end
 
-	if (not hardReload) then
+	if (self.musicSearch == nil) then
 		prevIndex = 0
 	end
 end

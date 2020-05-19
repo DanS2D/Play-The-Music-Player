@@ -322,7 +322,7 @@ function M.new(options)
 				musicList.musicSearch = currentText:stripAccents()
 				musicList:getSearchData()
 				musicList:setMusicCount(sqlLib:searchCount())
-				musicList:reloadData(true)
+				musicList:reloadData()
 			end
 		end
 
@@ -349,7 +349,6 @@ function M.new(options)
 					searchBar.text = ""
 					musicList.musicSearch = nil
 					musicList:setMusicCount(sqlLib:currentMusicCount())
-					musicList:reloadData(true)
 					musicList:reloadData()
 				end
 			end
