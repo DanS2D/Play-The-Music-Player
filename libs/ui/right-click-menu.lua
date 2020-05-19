@@ -127,7 +127,6 @@ function M.new(options)
 			if (type(items[i].subItems) == "function") then
 				local subItemData = items[i].subItems()
 				local maxRows = mRound((display.contentHeight - (self.y + (rowHeight * (i - 1)))) / rowHeight) - 1
-				local totalRowHeight = rowHeight * #subItemData
 
 				--print("num of subitems: ", #subItemData)
 
@@ -305,6 +304,10 @@ function M.new(options)
 
 	menu:addEventListener("mouse", onMouseEvent)
 
+	function menu:changeItemTitle(index, newTitle)
+		items[index].title = newTitle
+	end
+
 	function menu:open(x, y)
 		subMenuXPosition = x + menu.contentWidth
 
@@ -319,6 +322,7 @@ function M.new(options)
 
 		self.x = x
 		self.y = y
+		self:reloadData()
 		self:toFront()
 		self:destroySubmenus()
 		self:createSubmenus()

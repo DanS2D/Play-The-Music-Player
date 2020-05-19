@@ -1,5 +1,6 @@
 local M = {
-	lastSearchQuery = nil
+	lastSearchQuery = nil,
+	currentMusicTable = "music"
 }
 local sqlite3 = require("sqlite3")
 local json = require("json")
@@ -307,7 +308,7 @@ function M:insertMusic(musicData)
 end
 
 function M:removeMusic(id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `music` WHERE id=%d; ]], id))
+	local stmt = database:prepare(sFormat([[ DELETE FROM `%s` WHERE id=%d; ]], self.currentMusicTable, id))
 	stmt:step()
 	stmt:finalize()
 	stmt = nil
@@ -324,40 +325,6 @@ function M:updateMusic(musicData)
 	stmt = nil
 end
 
-function M:getMusicRow(index)
-	local stmt = database:prepare(sFormat([[ SELECT * FROM `music` WHERE id=%d; ]], index))
-	local music = nil
-
-	for row in stmt:nrows() do
-		music = {
-			id = row.id,
-			fileName = row.fileName,
-			filePath = row.filePath,
-			md5 = row.md5,
-			title = row.title,
-			artist = row.artist,
-			album = row.album,
-			genre = row.genre,
-			comment = row.comment,
-			year = row.year,
-			trackNumber = row.trackNumber,
-			rating = row.rating,
-			duration = row.duration,
-			bitrate = row.bitrate,
-			sampleRate = row.sampleRate,
-			sortTitle = row.title,
-			albumSearch = row.album,
-			artistSearch = row.artist,
-			titleSearch = row.title
-		}
-	end
-
-	stmt:finalize()
-	stmt = nil
-
-	return music
-end
-
 local function getMusicRowBy(index, ascending, filter)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
@@ -366,10 +333,17 @@ local function getMusicRowBy(index, ascending, filter)
 	if (index > 1) then
 		stmt =
 			database:prepare(
-			sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1 OFFSET %d; ]], filter, orderType, index - 1)
+			sFormat(
+				[[ SELECT * FROM `%s` ORDER BY %s %s LIMIT 1 OFFSET %d; ]],
+				M.currentMusicTable,
+				filter,
+				orderType,
+				index - 1
+			)
 		)
 	else
-		stmt = database:prepare(sFormat([[ SELECT * FROM `music` ORDER BY %s %s LIMIT 1;]], filter, orderType))
+		stmt =
+			database:prepare(sFormat([[ SELECT * FROM `%s` ORDER BY %s %s LIMIT 1;]], M.currentMusicTable, filter, orderType))
 	end
 
 	for row in stmt:nrows() do
@@ -442,7 +416,8 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE albumSearch %s %s %s ORDER BY sortTitle %s LIMIT 1 OFFSET %d; ]],
+				[[ SELECT * FROM `%s` WHERE albumSearch %s %s %s ORDER BY sortTitle %s LIMIT 1 OFFSET %d; ]],
+				self.currentMusicTable,
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -454,7 +429,8 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE albumSearch %s %s %s ORDER BY sortTitle %s LIMIT 1; ]],
+				[[ SELECT * FROM `%s` WHERE albumSearch %s %s %s ORDER BY sortTitle %s LIMIT 1; ]],
+				self.currentMusicTable,
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -509,7 +485,8 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE albumSearch %s %s %s ORDER BY %s %s LIMIT %d OFFSET %d; ]],
+				[[ SELECT * FROM `%s` WHERE albumSearch %s %s %s ORDER BY %s %s LIMIT %d OFFSET %d; ]],
+				self.currentMusicTable,
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -523,7 +500,8 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 		stmt =
 			database:prepare(
 			sFormat(
-				[[ SELECT * FROM `music` WHERE albumSearch %s %s %s ORDER BY %s %s LIMIT %d; ]],
+				[[ SELECT * FROM `%s` WHERE albumSearch %s %s %s ORDER BY %s %s LIMIT %d; ]],
+				self.currentMusicTable,
 				likeQuery,
 				artistQuery,
 				titleQuery,
@@ -565,7 +543,7 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 end
 
 function M:musicCount()
-	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `music`; ]])
+	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `%s`; ]], self.currentMusicTable))
 	local count = 0
 
 	for row in stmt:nrows() do
@@ -584,7 +562,8 @@ function M:searchCount()
 		return 0
 	end
 
-	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `music` %s ]], self.lastSearchQuery))
+	local stmt =
+		database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `%s` %s ]], self.currentMusicTable, self.lastSearchQuery))
 	local count = 0
 
 	for row in stmt:nrows() do

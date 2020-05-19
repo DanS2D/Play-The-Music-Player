@@ -304,7 +304,7 @@ function M.new(options)
 			return
 		end
 
-		if (sqlLib.musicCount() <= 0 or isDisabled) then
+		if (sqlLib:musicCount() <= 0 or isDisabled) then
 			target.text = ""
 			return
 		end

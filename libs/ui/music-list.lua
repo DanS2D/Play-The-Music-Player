@@ -124,6 +124,7 @@ function M:getSearchData()
 end
 
 function M:getRowData(rowIndex)
+	--print("getting row data")
 	musicData[rowIndex] = self:getRow(rowIndex)
 end
 
@@ -803,10 +804,6 @@ function M.new()
 					hasSubmenu = true,
 					closeOnClick = false,
 					onClick = function(event)
-						local song = M:getRow(rightClickRowIndex)
-						--sqlLib:addToPlaylist("dance", song)
-						--song.title = "Everybody Wants To Rule The World"
-						--sqlLib:updateMusic(song)
 					end,
 					subItems = refreshPlaylistData
 				},
@@ -835,9 +832,15 @@ function M.new()
 							end
 						end
 
-						alertPopup:setTitle("Really remove from Library?")
+						local removeFrom = sqlLib.currentMusicTable == "music" and "Library" or "Playlist"
+						local messageEnd = sqlLib.currentMusicTable == "music" and "import it again" or "add it again"
+						alertPopup:setTitle(sFormat("Really remove from %s?", removeFrom))
 						alertPopup:setMessage(
-							"This action cannot be reversed.\nThe song will be deleted from your library, and you'll have to import it again to get it back.\n\nAre you sure you wish to proceed?"
+							sFormat(
+								"This action cannot be reversed.\nThe song will be deleted from your %s, and you'll have to %s to get it back.\n\nAre you sure you wish to proceed?",
+								removeFrom,
+								messageEnd
+							)
 						)
 						alertPopup:setButtonCallbacks({onConfirm = onRemoved})
 						alertPopup:show()
@@ -909,6 +912,11 @@ function M:setMusicCount(count)
 	musicCount = count
 end
 
+function M:closeRightClickMenus()
+	categoryListRightClickMenu:close()
+	musicListRightClickMenu:close()
+end
+
 function M:removeAllRows()
 	-- reset the music search function
 	self.musicSearch = nil
@@ -933,6 +941,25 @@ end
 function M:scrollToBottom(rowIndex)
 	for i = 1, #tableViewList do
 		tableViewList[i]:scrollToBottom()
+	end
+end
+
+function M:cleanDataReload()
+	previousIndex = nil
+	prevIndex = 0
+	currentRowCount = 0
+	musicData = nil
+	musicData = {}
+
+	if (sqlLib.currentMusicTable == "music") then
+		musicListRightClickMenu:changeItemTitle(3, "Remove From Library")
+	else
+		musicListRightClickMenu:changeItemTitle(3, "Remove From Playlist")
+	end
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:setRowSelected(0)
+		tableViewList[i]:scrollToTop()
 	end
 end
 
@@ -1004,7 +1031,7 @@ end
 function M:onResize()
 	categoryBar.width = display.contentWidth
 
-	if (sqlLib.musicCount() > 0) then
+	if (sqlLib:musicCount() > 0) then
 		for i = 1, #tableViewList do
 			tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
 		end

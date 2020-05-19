@@ -1,5 +1,6 @@
 local M = {}
 local audioLib = require("libs.audio-lib")
+local sqlLib = require("libs.sql-lib")
 local buttonLib = require("libs.ui.button")
 local multiButtonLib = require("libs.ui.multi-button")
 local switchLib = require("libs.ui.switch")
@@ -281,6 +282,9 @@ function M.new(options)
 			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
+				sqlLib.currentMusicTable = "music"
+				musicList:closeRightClickMenus()
+				musicList:cleanDataReload()
 			end
 		}
 	)
@@ -290,7 +294,17 @@ function M.new(options)
 
 	playlistDropdown =
 		playlistDropdownLib.new(
-		{x = songContainerBox.x + songContainerBox.contentWidth, y = previousButton.y, parent = group}
+		{
+			x = songContainerBox.x + songContainerBox.contentWidth,
+			y = previousButton.y,
+			parent = group,
+			onClick = function()
+				musicList:closeRightClickMenus()
+			end,
+			onPlaylistClick = function()
+				musicList:cleanDataReload()
+			end
+		}
 	)
 
 	--local rect = display.newRect(0, 0, songContainer.contentWidth, songContainer.contentHeight)
