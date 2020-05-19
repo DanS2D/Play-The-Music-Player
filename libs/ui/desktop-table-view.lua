@@ -313,9 +313,11 @@ function M.new(options)
 	function tableView:getRowAtClickPosition(event)
 		local eventX, eventY = self:contentToLocal(event.x, event.y)
 
-		for i = 1, maxRows do
-			if (eventY >= rows[i].y and eventY <= rows[i].y + rowHeight) then
-				return rows[i]
+		if (#rows > 0) then
+			for i = 1, maxRows do
+				if (eventY >= rows[i].y and eventY <= rows[i].y + rowHeight) then
+					return rows[i]
+				end
 			end
 		end
 	end
