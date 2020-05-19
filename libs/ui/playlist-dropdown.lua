@@ -158,6 +158,7 @@ function M.new(options)
 						onPlaylistClick(event)
 						row.parent.isVisible = false
 						isOpen = false
+						self:destroyDropdownMenu()
 					end
 
 					return true
