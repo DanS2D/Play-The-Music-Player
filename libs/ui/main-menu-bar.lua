@@ -310,6 +310,7 @@ function M.new(options)
 		end
 
 		if (phase == "began") then
+			musicList:closeRightClickMenus()
 		elseif (phase == "editing") then
 			local currentText = event.text
 
