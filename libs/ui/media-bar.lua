@@ -74,6 +74,7 @@ function M.new(options)
 			onClick = function(event)
 				local canPlay = true
 				local currentSongIndex = audioLib.currentSongIndex
+				audioLib.previousSongIndex = currentSongIndex
 
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return
@@ -161,6 +162,7 @@ function M.new(options)
 			onClick = function(event)
 				local canPlay = true
 				local currentSongIndex = audioLib.currentSongIndex
+				audioLib.previousSongIndex = currentSongIndex
 
 				if (not musicList:hasValidMusicData() or not audioLib.isChannelHandleValid()) then
 					return

@@ -16,6 +16,7 @@ local M = {
 	loopAll = false,
 	shuffle = false,
 	currentSongIndex = 0,
+	previousSongIndex = 0,
 	currentSong = nil
 }
 local bass = require("plugin.bass")

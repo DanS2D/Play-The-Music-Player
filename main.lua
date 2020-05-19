@@ -54,6 +54,7 @@ local function onAudioEvent(event)
 		musicVisualizer:start()
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
+		audioLib.previousSongIndex = currentSongIndex
 		audioLib.currentSongIndex = audioLib.currentSongIndex + 1
 
 		-- handle shuffle

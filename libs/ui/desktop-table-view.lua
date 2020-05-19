@@ -181,6 +181,28 @@ function M.new(options)
 		return rows[index]
 	end
 
+	function tableView:getRowRealIndex(index)
+		for i = 1, maxRows do
+			if (rows[i].index == index) then
+				return rows[i].realIndex
+			end
+		end
+
+		return 0
+	end
+
+	function tableView:getRowAtClickPosition(event)
+		local eventX, eventY = self:contentToLocal(event.x, event.y)
+
+		if (#rows > 0) then
+			for i = 1, maxRows do
+				if (eventY >= rows[i].y and eventY <= rows[i].y + rowHeight) then
+					return rows[i]
+				end
+			end
+		end
+	end
+
 	function tableView:getScrollDirection()
 		return lastMouseScrollWasUp and "up" or "down"
 	end
@@ -310,18 +332,6 @@ function M.new(options)
 							rows[i]._background:setFillColor(unpack(defaultRowColor))
 						end
 					end
-				end
-			end
-		end
-	end
-
-	function tableView:getRowAtClickPosition(event)
-		local eventX, eventY = self:contentToLocal(event.x, event.y)
-
-		if (#rows > 0) then
-			for i = 1, maxRows do
-				if (eventY >= rows[i].y and eventY <= rows[i].y + rowHeight) then
-					return rows[i]
 				end
 			end
 		end
