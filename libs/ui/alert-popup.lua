@@ -202,6 +202,7 @@ function M.create()
 	function group:setButtonCallbacks(options)
 		onCancel = nil
 		onConfirm = nil
+		onOK = nil
 		onCancel = options and options.onCancel
 		onConfirm = options and options.onConfirm
 		onOK = options and options.onOK

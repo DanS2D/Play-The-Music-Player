@@ -698,6 +698,7 @@ function M.clearPlayingSong()
 	playButton:setIsOn(false)
 	songTitleText:setText("")
 	songAlbumText:setText("")
+	M.resetSongProgress()
 end
 
 function M.updateSongText(song)
