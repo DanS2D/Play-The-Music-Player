@@ -304,7 +304,7 @@ function M.new(options)
 			return
 		end
 
-		if (sqlLib:musicCount() <= 0 or isDisabled) then
+		if (sqlLib:currentMusicCount() <= 0 or isDisabled) then
 			target.text = ""
 			return
 		end
@@ -315,10 +315,10 @@ function M.new(options)
 
 			if (currentText:len() <= 0) then
 				musicList.musicSearch = nil
-				musicList:setMusicCount(sqlLib:musicCount())
+				musicList:setMusicCount(sqlLib:currentMusicCount())
 				musicList:reloadData()
 			else
-				musicList.musicResultsLimit = sqlLib:musicCount()
+				musicList.musicResultsLimit = sqlLib:currentMusicCount()
 				musicList.musicSearch = currentText:stripAccents()
 				musicList:getSearchData()
 				musicList:setMusicCount(sqlLib:searchCount())
@@ -348,7 +348,7 @@ function M.new(options)
 				if (searchBar.text:len() > 0) then
 					searchBar.text = ""
 					musicList.musicSearch = nil
-					musicList:setMusicCount(sqlLib:musicCount())
+					musicList:setMusicCount(sqlLib:currentMusicCount())
 					musicList:reloadData(true)
 					musicList:reloadData()
 				end

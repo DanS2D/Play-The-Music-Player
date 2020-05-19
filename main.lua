@@ -118,7 +118,7 @@ end
 Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
 
 local function populateTableViews()
-	if (sqlLib:musicCount() > 0) then
+	if (sqlLib:currentMusicCount() > 0) then
 		mainMenuBar.setEnabled(true)
 
 		if (lastChosenPath ~= nil) then
@@ -548,7 +548,7 @@ local function onResize(event)
 	musicImporter:onResize()
 	musicList:onResize()
 
-	if (sqlLib:musicCount() > 0) then
+	if (sqlLib:currentMusicCount() > 0) then
 		if (resizeTimer) then
 			timer.cancel(resizeTimer)
 			resizeTimer = nil

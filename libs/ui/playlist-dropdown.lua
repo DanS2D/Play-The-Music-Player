@@ -26,6 +26,7 @@ function M.new(options)
 	local tableView = nil
 	local parent = options.parent or display.getCurrentStage()
 	local isOpen = false
+	local playListCaret = nil
 
 	function group:destroyDropdownMenu()
 		if (tableView) then
@@ -235,19 +236,15 @@ function M.new(options)
 			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
-				local currentMusicTable = sqlLib.currentMusicTable
 				local playlists = sqlLib:getPlaylists()
 
-				sqlLib.currentMusicTable = "music"
-
-				if (sqlLib:musicCount() <= 0) then
+				if (sqlLib:totalMusicCount() <= 0) then
 					alertPopup:onlyUseOkButton()
 					alertPopup:setTitle("No Music Added!")
 					alertPopup:setMessage(
 						"You haven't added any music yet!\nYou can't add a playlist until you've added some music to your library."
 					)
 					alertPopup:show()
-					sqlLib.currentMusicTable = currentMusicTable
 					return
 				end
 
@@ -258,11 +255,9 @@ function M.new(options)
 						"You haven't created any playlists yet!\nYou can add a playlist by clicking the + button above the playlist button."
 					)
 					alertPopup:show()
-					sqlLib.currentMusicTable = currentMusicTable
 					return
 				end
 
-				sqlLib.currentMusicTable = currentMusicTable
 				isOpen = not isOpen
 
 				if (type(onClick) == "function") then
@@ -280,18 +275,18 @@ function M.new(options)
 	playListButton.x = playListButton.contentWidth + 10
 	playListButton.y = 0
 
-	local playListCaretButton =
-		buttonLib.new(
+	playListCaret =
+		display.newText(
 		{
-			iconName = "caret-down",
-			fontSize = smallButtonFontSize,
-			parent = group,
-			onClick = function(event)
-			end
+			text = "caret-up",
+			font = fontAwesomeSolidFont,
+			fontSize = smallButtonFontSize
 		}
 	)
-	playListCaretButton.x = playListButton.x + playListButton.contentWidth * 0.5 + playListCaretButton.contentWidth * 0.5
-	playListCaretButton.y = playListButton.y + playListCaretButton.contentHeight * 0.5
+	playListCaret.x = playListButton.x + playListButton.contentWidth * 0.5 + playListCaret.contentWidth * 0.5
+	playListCaret.y = playListButton.y + playListCaret.contentHeight * 0.5
+	playListCaret:setFillColor(0.7, 0.7, 0.7)
+	group:insert(playListCaret)
 
 	local addNewPlaylistButton =
 		buttonLib.new(

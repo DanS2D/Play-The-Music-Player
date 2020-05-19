@@ -147,12 +147,12 @@ function M:createTableView(options, index)
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
-				local rowLimit = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:musicCount()
+				local rowLimit = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
 
 				if (self.musicSearch) then
 					-- clear the selected row
 					parent:setRowSelected(0)
-					self.musicResultsLimit = sqlLib:musicCount()
+					self.musicResultsLimit = sqlLib:currentMusicCount()
 					parent:setRowLimit(rowLimit)
 				else
 					self.musicResultsLimit = 1
@@ -291,7 +291,7 @@ function M:createTableView(options, index)
 
 	function tView:populate()
 		--print("Creating initial rows")
-		musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:musicCount()
+		musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
 
 		tView:deleteAllRows()
 		tView:createRows()
@@ -487,7 +487,7 @@ local function createCategories()
 		function seperatorText:mouse(event)
 			local phase = event.type
 
-			if (categoryList[i].index == 1 or sqlLib:musicCount() <= 0) then
+			if (categoryList[i].index == 1 or sqlLib:currentMusicCount() <= 0) then
 				return
 			end
 
@@ -949,6 +949,7 @@ function M:cleanDataReload()
 	currentRowCount = 0
 	musicData = nil
 	musicData = {}
+	musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
 
 	if (sqlLib.currentMusicTable == "music") then
 		musicListRightClickMenu:changeItemTitle(3, "Remove From Library")
@@ -1030,7 +1031,7 @@ end
 function M:onResize()
 	categoryBar.width = display.contentWidth
 
-	if (sqlLib:musicCount() > 0) then
+	if (sqlLib:currentMusicCount() > 0) then
 		for i = 1, #tableViewList do
 			tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
 		end

@@ -542,8 +542,23 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 	return music
 end
 
-function M:musicCount()
+function M:currentMusicCount()
 	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `%s`; ]], self.currentMusicTable))
+	local count = 0
+
+	for row in stmt:nrows() do
+		count = row.count
+		break
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return count
+end
+
+function M:totalMusicCount()
+	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `music`; ]])
 	local count = 0
 
 	for row in stmt:nrows() do
