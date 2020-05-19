@@ -1,5 +1,6 @@
 local M = {}
 local desktopTableView = require("libs.ui.desktop-table-view")
+local mRound = math.round
 
 function M.new(options)
 	local x = options.left or display.contentWidth
@@ -86,8 +87,8 @@ function M.new(options)
 				local onClick = items[row.index].onClick
 
 				if (not items[row.index].disabled) then
-					if (type(items[row.index].onClick) == "function") then
-						items[row.index].onClick(event)
+					if (type(onClick) == "function") then
+						onClick(event)
 
 						if (items[row.index].closeOnClick) then
 							row.parent:close()
@@ -100,7 +101,6 @@ function M.new(options)
 		}
 	)
 	menu.isVisible = false
-	menu.subItems = {}
 	menu:setMaxRows(#items)
 	menu:createRows()
 	menu:addEventListener(
@@ -111,29 +111,41 @@ function M.new(options)
 	)
 
 	function menu:destroySubmenus()
-		if (#menu.subItems > 0) then
-			for i = 1, #menu.subItems do
-				menu.subItems[i]:destroy()
-				menu.subItems[i] = nil
+		if (#subItems > 0) then
+			for i = 1, #subItems do
+				subItems[i]:destroy()
+				subItems[i] = nil
 			end
+
+			subItems = nil
+			subItems = {}
 		end
 	end
 
 	function menu:createSubmenus()
-		self:destroySubmenus()
-
 		for i = 1, #items do
-			if (type(items[i].subItems) == "table" and #items[i].subItems > 0) then
-				subItems[i] =
+			if (type(items[i].subItems) == "function") then
+				local subItemData = items[i].subItems()
+				local maxRows = mRound((display.contentHeight - (self.y + (rowHeight * (i - 1)))) / rowHeight) - 1
+				local totalRowHeight = rowHeight * #subItemData
+
+				--print("num of subitems: ", #subItemData)
+
+				if (maxRows > #subItemData) then
+					maxRows = #subItemData
+				end
+
+				subItems[#subItems + 1] =
 					desktopTableView.new(
 					{
 						left = subMenuXPosition,
 						top = self.y + (rowHeight * (i - 1)),
 						width = width,
-						height = rowHeight * #items[i].subItems,
+						height = rowHeight * #subItemData,
 						rowHeight = rowHeight,
-						rowLimit = #items[i].subItems,
-						useSelectedRowHighlighting = true,
+						maxRows = maxRows,
+						rowLimit = #subItemData,
+						useSelectedRowHighlighting = false,
 						backgroundColor = {0.18, 0.18, 0.18},
 						rowColorDefault = rowColor,
 						onRowRender = function(event)
@@ -141,9 +153,9 @@ function M.new(options)
 							local row = event.row
 							local rowContentWidth = row.contentWidth
 							local rowContentHeight = row.contentHeight
-							local subItemData = items[i].subItems[row.index]
+							local itemData = subItemData[row.index]
 
-							if (row.index > #items[i].subItems) then
+							if (row.index > #subItemData) then
 								return
 							end
 
@@ -152,8 +164,8 @@ function M.new(options)
 								{
 									x = 0,
 									y = (rowContentHeight * 0.5),
-									text = subItemData.icon,
-									font = subItemData.iconFont,
+									text = itemData.icon,
+									font = itemData.iconFont,
 									fontSize = fontSize,
 									align = "left"
 								}
@@ -166,8 +178,8 @@ function M.new(options)
 								{
 									x = 0,
 									y = (rowContentHeight * 0.5),
-									text = subItemData.title,
-									font = subItemData.font,
+									text = itemData.title,
+									font = itemData.font,
 									fontSize = fontSize + 2,
 									align = "left"
 								}
@@ -176,7 +188,7 @@ function M.new(options)
 							subItemText.x = 35
 							row:insert(subItemText)
 
-							if (subItemData.disabled) then
+							if (itemData.disabled) then
 								icon.alpha = 0.5
 								subItemText.alpha = 0.5
 							end
@@ -184,19 +196,20 @@ function M.new(options)
 						onRowClick = function(event)
 							local phase = event.phase
 							local row = event.row
-							local subItemData = items[i].subItems[row.index]
-							local onClick = subItemData.onClick
+							local itemData = subItemData[row.index]
+							local onClick = itemData.onClick
 
-							if (row.index > #items[i].subItems) then
+							if (row.index > #subItemData) then
 								return
 							end
 
-							if (not subItemData.disabled) then
+							if (not itemData.disabled) then
 								if (type(onClick) == "function") then
+									event.playlistName = itemData.title
 									onClick(event)
 
-									if (subItemData.closeOnClick) then
-										row.parent:close()
+									if (itemData.closeOnClick) then
+										menu:close()
 									end
 								end
 							end
@@ -205,10 +218,13 @@ function M.new(options)
 						end
 					}
 				)
-				subItems[i].isVisible = false
-				subItems[i]:setMaxRows(#items[i].subItems)
-				subItems[i]:createRows()
-				subItems[i]:addEventListener(
+				subItems[#subItems].index = i
+				subItems[#subItems].id = #subItems
+				subItems[#subItems].isVisible = false
+				subItems[#subItems]:setMaxRows(maxRows)
+				subItems[#subItems]:createRows()
+				subItems[#subItems]:lockScroll(true)
+				subItems[#subItems]:addEventListener(
 					"tap",
 					function()
 						return true
@@ -220,12 +236,13 @@ function M.new(options)
 
 					if (eventType == "move") then
 						local x, y = event.target:contentToLocal(event.x, event.y)
+						local subItemIndex = event.target.id
 
 						-- handle subItems (the tableview contents)
-						for j = 1, subItems[i]:getMaxRows() do
-							local row = subItems[i]:getRowAtIndex(j)
-							local rowYStart = rowHeight * (j - 1)
-							local rowYEnd = rowHeight * j
+						for j = 1, maxRows do
+							local row = subItems[subItemIndex]:getRowAtIndex(j)
+							local rowYStart = row.y
+							local rowYEnd = row.y + row.contentHeight
 
 							if (y >= rowYStart and y <= rowYEnd) then
 								row._background:setFillColor(unpack(rowColor.over))
@@ -238,8 +255,9 @@ function M.new(options)
 					return (event.isSecondaryButtonDown) -- let right clicks seep through to below objects
 				end
 
-				subItems[i]:addEventListener("mouse", onMouseEvent)
-				menu.subItems[#menu.subItems + 1] = subItems[i]
+				subItems[#subItems].isValid = #subItemData > 0
+				subItems[#subItems]:reloadData()
+				subItems[#subItems]:addEventListener("mouse", onMouseEvent)
 			end
 		end
 	end
@@ -257,14 +275,26 @@ function M.new(options)
 				local rowYEnd = rowHeight * i
 
 				if (y >= rowYStart and y <= rowYEnd) then
-					if (type(items[i].subItems) == "table" and #items[i].subItems > 0 and subItems[i].isVisible == false) then
-						subItems[i].isVisible = true
+					if (#subItems > 0) then
+						for j = 1, #subItems do
+							if (subItems[j].index == i and subItems[j].isVisible == false) then
+								subItems[j]:lockScroll(false)
+								subItems[j].isVisible = true
+							end
+						end
 					end
+
 					row._background:setFillColor(unpack(rowColor.over))
 				else
-					if (type(items[i].subItems) == "table" and #items[i].subItems > 0 and subItems[i].isVisible == true) then
-						subItems[i].isVisible = false
+					if (#subItems > 0) then
+						for j = 1, #subItems do
+							if (subItems[j].index == i and subItems[j].isVisible == true) then
+								subItems[j]:lockScroll(true)
+								subItems[j].isVisible = false
+							end
+						end
 					end
+
 					row._background:setFillColor(unpack(rowColor.default))
 				end
 			end
@@ -290,10 +320,11 @@ function M.new(options)
 		self.x = x
 		self.y = y
 		self:toFront()
+		self:destroySubmenus()
 		self:createSubmenus()
 
-		for i = 1, #self.subItems do
-			self.subItems[i]:toFront()
+		for i = 1, #subItems do
+			subItems[i]:toFront()
 		end
 
 		self.isVisible = true
@@ -302,8 +333,8 @@ function M.new(options)
 	function menu:close()
 		self.x = display.contentWidth
 		self.y = display.contentCenterY
-		self:destroySubmenus()
 		self.isVisible = false
+		self:destroySubmenus()
 	end
 
 	function menu:isOpen()

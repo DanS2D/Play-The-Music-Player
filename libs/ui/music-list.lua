@@ -13,6 +13,7 @@ local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
 local rightClickMenu = require("libs.ui.right-click-menu")
 local alertPopupLib = require("libs.ui.alert-popup")
+local playlistCreatePopupLib = require("libs.ui.playlist-create-popup")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -43,6 +44,7 @@ local selectedCategoryTableView = nil
 local musicListRightClickMenu = nil
 local categoryListRightClickMenu = nil
 local alertPopup = alertPopupLib.create()
+local playlistCreatePopup = playlistCreatePopupLib.create()
 local currentRowCount = 0
 local allowCategoryDragLeft = true
 local allowCategoryDragRight = true
@@ -51,6 +53,39 @@ local topPosition = 121
 local previousIndex = nil
 local previousMaxRows = nil
 local newMaxRows = nil
+
+local function refreshPlaylistData()
+	local playLists = sqlLib:getPlaylists()
+	local playlistData = {
+		{
+			title = "Create New Playlist",
+			icon = "list-music",
+			iconFont = fontAwesomeSolidFont,
+			font = titleFont,
+			closeOnClick = true,
+			onClick = function(event)
+				playlistCreatePopup:show()
+			end
+		}
+	}
+
+	for i = 1, #playLists do
+		playlistData[#playlistData + 1] = {
+			title = playLists[i].name,
+			icon = "list-music",
+			iconFont = fontAwesomeSolidFont,
+			font = titleFont,
+			closeOnClick = true,
+			onClick = function(event)
+				local song = M:getRow(rightClickRowIndex)
+
+				sqlLib:addToPlaylist(event.playlistName, song)
+			end
+		}
+	end
+
+	return playlistData
+end
 
 function M:getRow(rowIndex)
 	local row = nil
@@ -200,6 +235,11 @@ function M:createTableView(options, index)
 				if (numClicks == 1) then
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:close()
+
+					for i = 1, #tableViewList do
+						tableViewList[i]:lockScroll(false)
+					end
+
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				elseif (numClicks >= 2) then
 					local song = self:getRow(row.index)
@@ -227,6 +267,11 @@ function M:createTableView(options, index)
 
 				if (event.isSecondaryButton) then
 					rightClickRowIndex = row.index
+
+					for i = 1, #tableViewList do
+						tableViewList[i]:lockScroll(true)
+					end
+
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:open(event.x, event.y)
 				end
@@ -751,6 +796,21 @@ function M.new()
 					end
 				},
 				{
+					title = "Add To Playlist",
+					icon = "list-music",
+					iconFont = fontAwesomeSolidFont,
+					font = titleFont,
+					hasSubmenu = true,
+					closeOnClick = false,
+					onClick = function(event)
+						local song = M:getRow(rightClickRowIndex)
+						--sqlLib:addToPlaylist("dance", song)
+						--song.title = "Everybody Wants To Rule The World"
+						--sqlLib:updateMusic(song)
+					end,
+					subItems = refreshPlaylistData
+				},
+				{
 					title = "Remove From Library",
 					icon = "database",
 					iconFont = fontAwesomeSolidFont,
@@ -884,6 +944,12 @@ function M:reloadData(hardReload)
 		musicData = {}
 	end
 
+	-- if we've resized the view, we need to wipe the music data when clearing a search
+	if (previousIndex ~= nil) then
+		musicData = {}
+		previousIndex = nil
+	end
+
 	for i = 1, #tableViewList do
 		tableViewList[i]:setRowSelected(selectedRowIndex)
 
@@ -897,21 +963,6 @@ function M:reloadData(hardReload)
 			tableViewList[i]:scrollToTop()
 		else
 			--print("previous index was: ", prevIndex)
-			if (previousIndex ~= nil) then
-				if (previousMaxRows == newMaxRows) then
-					prevIndex = previousIndex
-				elseif (previousMaxRows < newMaxRows) then
-					prevIndex = previousIndex + (newMaxRows - previousMaxRows)
-				elseif (previousMaxRows > newMaxRows) then
-					prevIndex = previousIndex - (previousMaxRows - newMaxRows)
-				end
-
-				musicData = {}
-				local p = prevIndex
-				prevIndex = previousIndex + p
-				previousIndex = nil
-			end
-
 			print("search: scrolling to index ", prevIndex)
 
 			tableViewList[i]:scrollToIndex(prevIndex)
@@ -983,6 +1034,7 @@ function M:recreateMusicList()
 		previousIndex = tableViewList[1]:getRealIndex()
 		previousMaxRows = tableViewList[1]:getMaxRows()
 		currentRowCount = 0
+		local newScrollIndex = 0
 
 		print("previous index prior to reload: ", previousIndex)
 
@@ -1008,19 +1060,18 @@ function M:recreateMusicList()
 
 		-- scroll to the correct index, factoring in the difference in row count
 
-		if (self.musicSearch == nil) then
-			if (previousMaxRows == newMaxRows) then
-				self:scrollToIndex(previousIndex)
-			elseif (previousMaxRows < newMaxRows) then
-				self:scrollToIndex(previousIndex + (newMaxRows - previousMaxRows))
-			elseif (previousMaxRows > newMaxRows) then
-				self:scrollToIndex(previousIndex - (previousMaxRows - newMaxRows))
-			end
+		if (previousMaxRows == newMaxRows) then
+			newScrollIndex = 0
+		elseif (previousMaxRows < newMaxRows) then
+			newScrollIndex = previousIndex + (newMaxRows - previousMaxRows)
+		elseif (previousMaxRows > newMaxRows) then
+			newScrollIndex = previousIndex - (previousMaxRows - newMaxRows)
+		end
+
+		if (self.musicSearch) then
+			prevIndex = newScrollIndex
 		else
-			--	self.musicResultsLimit = sqlLib:musicCount()
-			--	self:getSearchData()
-			--	self:setMusicCount(sqlLib:searchCount())
-			--	self:reloadData(true)
+			self:scrollToIndex(newScrollIndex)
 		end
 	end
 end

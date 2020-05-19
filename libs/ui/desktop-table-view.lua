@@ -41,6 +41,11 @@ function M.new(options)
 	tableView.x = x
 	tableView.y = y
 
+	if (options.maxRows) then
+		maxRows = options.maxRows
+		visibleRows = maxRows - 1
+	end
+
 	--print("is row count even ", isRowCountEven)
 	--print("we should be able to fit " .. realRowVisibleCount .. " rows on screen")
 

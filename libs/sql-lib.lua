@@ -237,10 +237,7 @@ end
 
 function M:addToPlaylist(playlistName, musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
-	local stmt =
-		database:prepare(
-		sFormat([[ INSERT OR IGNORE INTO `%sPlaylist` VALUES '%s'; ]], escapeString(playlistName), musicBinds)
-	)
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `%sPlaylist` VALUES %s; ]], playlistName, musicBinds))
 
 	stmt:bind_names(
 		{
@@ -336,16 +333,22 @@ function M:getMusicRow(index)
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
-			rating = row.rating,
 			md5 = row.md5,
-			album = row.album,
-			artist = row.artist,
-			genre = row.genre,
-			publisher = row.publisher,
 			title = row.title,
-			track = row.track,
+			artist = row.artist,
+			album = row.album,
+			genre = row.genre,
+			comment = row.comment,
+			year = row.year,
+			trackNumber = row.trackNumber,
+			rating = row.rating,
 			duration = row.duration,
-			sortTitle = row.sortTitle
+			bitrate = row.bitrate,
+			sampleRate = row.sampleRate,
+			sortTitle = row.title,
+			albumSearch = row.album,
+			artistSearch = row.artist,
+			titleSearch = row.title
 		}
 	end
 
@@ -374,16 +377,22 @@ local function getMusicRowBy(index, ascending, filter)
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
-			rating = row.rating,
 			md5 = row.md5,
-			album = row.album,
-			artist = row.artist,
-			genre = row.genre,
-			publisher = row.publisher,
 			title = row.title,
-			track = row.track,
+			artist = row.artist,
+			album = row.album,
+			genre = row.genre,
+			comment = row.comment,
+			year = row.year,
+			trackNumber = row.trackNumber,
+			rating = row.rating,
 			duration = row.duration,
-			sortTitle = row.sortTitle
+			bitrate = row.bitrate,
+			sampleRate = row.sampleRate,
+			sortTitle = row.title,
+			albumSearch = row.album,
+			artistSearch = row.artist,
+			titleSearch = row.title
 		}
 	end
 
@@ -459,16 +468,22 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
-			rating = row.rating,
 			md5 = row.md5,
-			album = row.album,
-			artist = row.artist,
-			genre = row.genre,
-			publisher = row.publisher,
 			title = row.title,
-			track = row.track,
+			artist = row.artist,
+			album = row.album,
+			genre = row.genre,
+			comment = row.comment,
+			year = row.year,
+			trackNumber = row.trackNumber,
+			rating = row.rating,
 			duration = row.duration,
-			sortTitle = row.sortTitle
+			bitrate = row.bitrate,
+			sampleRate = row.sampleRate,
+			sortTitle = row.title,
+			albumSearch = row.album,
+			artistSearch = row.artist,
+			titleSearch = row.title
 		}
 	end
 
@@ -524,16 +539,22 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 			id = row.id,
 			fileName = row.fileName,
 			filePath = row.filePath,
-			rating = row.rating,
 			md5 = row.md5,
-			album = row.album,
-			artist = row.artist,
-			genre = row.genre,
-			publisher = row.publisher,
 			title = row.title,
-			track = row.track,
+			artist = row.artist,
+			album = row.album,
+			genre = row.genre,
+			comment = row.comment,
+			year = row.year,
+			trackNumber = row.trackNumber,
+			rating = row.rating,
 			duration = row.duration,
-			sortTitle = row.sortTitle
+			bitrate = row.bitrate,
+			sampleRate = row.sampleRate,
+			sortTitle = row.title,
+			albumSearch = row.album,
+			artistSearch = row.artist,
+			titleSearch = row.title
 		}
 	end
 
