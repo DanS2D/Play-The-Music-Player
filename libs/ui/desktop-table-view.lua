@@ -138,7 +138,7 @@ function M.new(options)
 	end
 
 	function tableView:deleteRowContents(index)
-		for i = 1, rows[index].numChildren do
+		for i = rows[index].numChildren, 1, -1 do
 			if (rows[index][i] and not rows[index][i]._isBackground) then
 				display.remove(rows[index][i])
 				rows[index][i] = nil
@@ -237,6 +237,11 @@ function M.new(options)
 			self:deleteRowContents(i)
 			self:dispatchRowEvent(i)
 		end
+	end
+
+	function tableView:reloadRow(index)
+		self:deleteRowContents(index)
+		self:dispatchRowEvent(index)
 	end
 
 	function tableView:resizeAllRowBackgrounds(newWidth)
