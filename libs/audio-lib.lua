@@ -410,8 +410,10 @@ end
 
 function M.reset()
 	for i = 1, #audioChannels do
-		bassStop(audioChannels[i])
-		bassDispose(audioChannels[i])
+		if (type(audioChannels[i]) == "number") then
+			bassStop(audioChannels[i])
+			bassDispose(audioChannels[i])
+		end
 	end
 
 	channelHandle = nil
