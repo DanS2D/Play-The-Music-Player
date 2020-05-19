@@ -78,7 +78,6 @@ local function refreshPlaylistData()
 			closeOnClick = true,
 			onClick = function(event)
 				local song = M:getRow(rightClickRowIndex)
-
 				sqlLib:addToPlaylist(event.playlistName, song)
 			end
 		}

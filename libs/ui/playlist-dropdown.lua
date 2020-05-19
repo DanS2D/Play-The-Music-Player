@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local desktopTableView = require("libs.ui.desktop-table-view")
+local alertPopupLib = require("libs.ui.alert-popup")
 local buttonLib = require("libs.ui.button")
 local mRound = math.round
 local sFormat = string.format
@@ -10,6 +11,7 @@ local mainButtonFontSize = 28
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local alertPopup = alertPopupLib.create()
 
 function M.new(options)
 	local group = display.newGroup()
@@ -112,11 +114,22 @@ function M.new(options)
 							fontSize = fontSize,
 							parent = group,
 							onClick = function(event)
+								local function onRemoved()
+									sqlLib:removePlaylist(itemData.name)
+									sqlLib.currentMusicTable = "music"
+									-- TODO: issue a clean reload of the music list here when deleting a playlist
+								end
+
 								ingoreTouch = true
-								sqlLib:removePlaylist(itemData.name)
-								sqlLib.currentMusicTable = "music"
 								row.parent.isVisible = false
 								isOpen = false
+
+								alertPopup:setTitle(sFormat("Really remove the '%s' playlist?", itemData.name))
+								alertPopup:setMessage(
+									"This action cannot be reversed.\nThe playlist will be deleted from your library, and you'll have to create it again to get it back.\n\nAre you sure you wish to proceed?"
+								)
+								alertPopup:setButtonCallbacks({onConfirm = onRemoved})
+								alertPopup:show()
 							end
 						}
 					)
