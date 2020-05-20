@@ -58,7 +58,7 @@ local function createTextField(options)
 	textField.y = title.y
 	textField.placeholder = options.placeholder
 	textField.isEditable = options.isEditable
-	textField.text = options.text and tostring(options.text):len() > 0 and tostring(options.text) or nil
+	textField.text = options.text and tostring(options.text):len() > 0 and tostring(options.text) or ""
 	textField.origText = textField.text
 	textField.align = "left"
 	textField:addEventListener("userInput", onTextFieldInput)
