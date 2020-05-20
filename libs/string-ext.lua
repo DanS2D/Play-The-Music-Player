@@ -95,6 +95,13 @@ function string:stripAccents(str)
 	return strippedStr
 end
 
+function string:stripLeadingSpaces(str)
+	local wString = str or self
+	local strippedStr = wString:gsub("^%s*(.-)%s*$", "%1")
+
+	return strippedStr
+end
+
 function string:getFileName(str)
 	local wString = str or self
 	local start, finish = wString:find("[%w%s!-={-|]+[_%.].+")

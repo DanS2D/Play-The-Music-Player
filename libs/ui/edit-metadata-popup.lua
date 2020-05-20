@@ -38,6 +38,8 @@ local function onTextFieldInput(event)
 			target.text = target.text:sub(1, target.maxLength)
 			return
 		end
+	elseif (phase == "ended" or phase == "cancelled") then
+		event.target.text = event.target.text:stripLeadingSpaces()
 	end
 
 	return true
@@ -186,6 +188,12 @@ function M.create()
 		background.strokeWidth = 1
 		background:setFillColor(0.15, 0.15, 0.15)
 		background:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+		background:addEventListener(
+			"tap",
+			function()
+				native.setKeyboardFocus(nil)
+			end
+		)
 		self:insert(background)
 
 		titleText =
@@ -696,17 +704,17 @@ function M.create()
 						)
 					end
 
-					song.album = songAlbumTextField.field.text
-					song.artist = songArtistTextField.field.text
-					song.genre = songGenreTextField.field.text
+					song.album = songAlbumTextField.field.text:stripLeadingSpaces()
+					song.artist = songArtistTextField.field.text:stripLeadingSpaces()
+					song.genre = songGenreTextField.field.text:stripLeadingSpaces()
 					song.year = tonumber(songYearTextField.field.text)
 					song.trackNumber = tonumber(songTrackNumberTextField.field.text)
-					song.comment = songCommentTextField.field.text
+					song.comment = songCommentTextField.field.text:stripLeadingSpaces()
 					song.duration =
 						sFormat("%2s:%2s", songDurationMinutesTextField.field.text, songDurationSecondsTextField.field.text)
 					song.rating = songRating
-					song.title = songTitleTextField.field.text
-					song.sortTitle = songSortTitleTextField.field.text
+					song.title = songTitleTextField.field.text:stripLeadingSpaces()
+					song.sortTitle = songSortTitleTextField.field.text:stripLeadingSpaces()
 
 					tag.set(
 						{

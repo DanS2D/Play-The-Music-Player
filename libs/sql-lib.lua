@@ -309,22 +309,22 @@ end
 
 function M:removeMusicFromAll(musicData)
 	local playlists = self:getPlaylists()
+	local md5 = musicData.md5
 	local removeCommands = {
-		sFormat([[ DELETE FROM `music` WHERE md5='%s'; ]], musicData.md5)
+		sFormat([[ DELETE FROM `music` WHERE md5='%s'; ]], md5)
 	}
 
 	if (#playlists > 0) then
 		for i = 1, #playlists do
-			removeCommands[#removeCommands + 1] =
-				sFormat(" DELETE FROM `%sPlaylist` WHERE md5='%s'; ", playlists[i].name, musicData.md5)
+			removeCommands[#removeCommands + 1] = sFormat(" DELETE FROM `%sPlaylist` WHERE md5='%s'; ", playlists[i].name, md5)
 		end
+	end
 
-		for i = 1, #removeCommands do
-			local stmt = database:prepare(removeCommands[i])
-			stmt:step()
-			stmt:finalize()
-			stmt = nil
-		end
+	for i = 1, #removeCommands do
+		local stmt = database:prepare(removeCommands[i])
+		stmt:step()
+		stmt:finalize()
+		stmt = nil
 	end
 end
 

@@ -891,7 +891,7 @@ function M.new()
 								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
 							end
 
-							sqlLib:removeMusic(song.id)
+							sqlLib:removeMusicFromAll(song)
 							fileUtils:removeFile(song.fileName, song.filePath)
 							M:reloadData()
 						end
