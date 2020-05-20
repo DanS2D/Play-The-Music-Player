@@ -1,4 +1,6 @@
-local M = {}
+local M = {
+	customEventName = nil
+}
 local json = require("json")
 local lfs = require("lfs")
 local tag = require("plugin.taglib")
@@ -21,7 +23,7 @@ local documentsPath = system.pathForFile("", system.DocumentsDirectory)
 
 local function dispatchCoverEvent()
 	local event = {
-		name = "musicBrainz",
+		name = M.customEventName or "musicBrainz",
 		fileName = currentCoverFileName,
 		phase = "downloaded"
 	}

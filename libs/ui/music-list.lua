@@ -13,6 +13,7 @@ local ratings = require("libs.ui.ratings")
 local rightClickMenu = require("libs.ui.right-click-menu")
 local alertPopupLib = require("libs.ui.alert-popup")
 local playlistCreatePopupLib = require("libs.ui.playlist-create-popup")
+local editMetadataPopupLib = require("libs.ui.edit-metadata-popup")
 local dWidth = display.contentWidth
 local dHeight = display.contentHeight
 local mFloor = math.floor
@@ -45,6 +46,7 @@ local musicListRightClickMenu = nil
 local categoryListRightClickMenu = nil
 local alertPopup = alertPopupLib.create()
 local playlistCreatePopup = playlistCreatePopupLib.create()
+local editMetadataPopup = editMetadataPopupLib.create()
 local currentRowCount = 0
 local allowCategoryDragLeft = true
 local allowCategoryDragRight = true
@@ -820,6 +822,9 @@ function M.new()
 					font = titleFont,
 					closeOnClick = true,
 					onClick = function(event)
+						local song = M:getRow(rightClickRowIndex)
+
+						editMetadataPopup:show(song)
 					end
 				},
 				{
@@ -998,13 +1003,13 @@ function M:reloadData()
 		--tableViewList[i]:setRowSelected(selectedRowIndex)
 
 		if (self.musicSearch) then
+			--print("ReloadData() search: scrolling to top ", prevIndex)
 			-- clear the selected row
 			--tableViewList[i]:setRowSelected(0)
 			tableViewList[i]:scrollToTop()
-			print("ReloadData() search: scrolling to top ", prevIndex)
 		else
 			--print("previous index was: ", prevIndex)
-			print("ReloadData() scrolling back to index ", prevIndex)
+			--print("ReloadData() scrolling back to index ", prevIndex)
 			tableViewList[i]:scrollToIndex(prevIndex)
 		end
 	end
