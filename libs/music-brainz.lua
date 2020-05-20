@@ -21,11 +21,11 @@ local musicBrainzParams = {
 }
 local documentsPath = system.pathForFile("", system.DocumentsDirectory)
 
-local function dispatchCoverEvent()
+local function dispatchCoverEvent(notFound)
 	local event = {
 		name = M.customEventName or "musicBrainz",
 		fileName = currentCoverFileName,
-		phase = "downloaded"
+		phase = notFound and "notFound" or "downloaded"
 	}
 
 	Runtime:dispatchEvent(event)
@@ -87,6 +87,7 @@ end
 urlRequestListener = function(event)
 	if (event.isError) then
 		--print("MusicBrainz urlRequestListener: Network error ", event.response)
+		dispatchCoverEvent(true)
 	else
 		--print("RESPONSE: " .. event.response)
 		local response = json.decode(event.response)
@@ -103,12 +104,13 @@ urlRequestListener = function(event)
 			network.download(imageUrl, "GET", downloadListener, {}, currentCoverFileName, system.DocumentsDirectory)
 		else
 			--print("FAILED to get song info for " .. requestedSong.title .. " at musicbrainz")
+			dispatchCoverEvent(true)
 		end
 	end
 end
 
 downloadListener = function(event)
-	print("download callback")
+	--print("download callback")
 
 	if (event.status ~= 200) then
 		if (tryAgain) then
@@ -120,14 +122,18 @@ downloadListener = function(event)
 			local fullMusicBrainzUrl =
 				sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, songTitle:urlEncode(), artistTitle:urlEncode())
 			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
-			tryAgain = false
+		else
+			dispatchCoverEvent(true)
 		end
+
+		tryAgain = false
 
 		return
 	end
 
 	if (event.isError) then
 		--print("Network error - download failed: ", event.response)
+		dispatchCoverEvent(true)
 	elseif (event.phase == "began") then
 		--print("Progress Phase: began")
 	elseif (event.phase == "ended") then
@@ -163,6 +169,8 @@ downloadListener = function(event)
 			setCoverFromDownload(requestedSong, newFileName)
 			--print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
+		else
+			dispatchCoverEvent(true)
 		end
 	end
 end

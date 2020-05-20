@@ -5,7 +5,8 @@ function M.new(options)
 	local x = options.x or 0
 	local y = options.y or 0
 	local buttonOptions =
-		options.buttonOptions or error("multiButton.new() buttonOptions (string) expected, got", type(options.buttonOptions))
+		options.buttonOptions or
+		error("multiButton.new() buttonOptions (string) expected, got %s", type(options.buttonOptions))
 	local fontSize = options.fontSize or 14
 	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
 	local parent = options.parent or display.getCurrentStage()

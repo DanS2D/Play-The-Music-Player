@@ -44,13 +44,13 @@ local function buildUpdateString(data)
 		if (k ~= "key" and k ~= "id") then
 			if (index == 1) then
 				if (type(v) == "string") then
-					builtString = sFormat("%s = '%s'", k, v)
+					builtString = sFormat("%s = '%s'", k, escapeString(v))
 				elseif (type(v) == "number") then
 					builtString = sFormat("%s = '%d'", k, v)
 				end
 			else
 				if (type(v) == "string") then
-					builtString = sFormat("%s, %s = '%s'", builtString, k, v)
+					builtString = sFormat("%s, %s = '%s'", builtString, k, escapeString(v))
 				elseif (type(v) == "number") then
 					builtString = sFormat("%s, %s = '%d'", builtString, k, v)
 				end
@@ -268,13 +268,6 @@ function M:addToPlaylist(playlistName, musicData)
 	stmt = nil
 end
 
-function M:removeFromPlaylist(playlistName, id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `%sPlaylist` WHERE id=%d; ]], playlistName, id))
-	stmt:step()
-	stmt:finalize()
-	stmt = nil
-end
-
 function M:insertMusic(musicData)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
 	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `music` VALUES %s; ]], musicBinds))
@@ -307,22 +300,56 @@ function M:insertMusic(musicData)
 	stmt = nil
 end
 
-function M:removeMusic(id)
-	local stmt = database:prepare(sFormat([[ DELETE FROM `%s` WHERE id=%d; ]], self.currentMusicTable, id))
+function M:removeMusic(musicData)
+	local stmt = database:prepare(sFormat([[ DELETE FROM `%s` WHERE md5='%s'; ]], self.currentMusicTable, musicData.md5))
 	stmt:step()
 	stmt:finalize()
 	stmt = nil
 end
 
-function M:updateMusic(musicData)
-	--print(musicData.id)
-	--print(buildUpdateString(musicData))
+function M:removeMusicFromAll(musicData)
+	local playlists = self:getPlaylists()
+	local removeCommands = {
+		sFormat([[ DELETE FROM `music` WHERE md5='%s'; ]], musicData.md5)
+	}
 
+	if (#playlists > 0) then
+		for i = 1, #playlists do
+			removeCommands[#removeCommands + 1] =
+				sFormat(" DELETE FROM `%sPlaylist` WHERE md5='%s'; ", playlists[i].name, musicData.md5)
+		end
+
+		for i = 1, #removeCommands do
+			local stmt = database:prepare(removeCommands[i])
+			stmt:step()
+			stmt:finalize()
+			stmt = nil
+		end
+	end
+end
+
+function M:updateMusic(musicData)
+	--print(buildUpdateString(musicData))
+	local playlists = self:getPlaylists()
 	local values = buildUpdateString(musicData)
-	local stmt = database:prepare(sFormat([[ UPDATE `music` SET %s WHERE id=%d; ]], values, musicData.id))
-	stmt:step()
-	stmt:finalize()
-	stmt = nil
+	local md5 = musicData.md5
+	local updateCommands = {
+		sFormat(" UPDATE `music` SET %s WHERE md5='%s'; ", values, md5)
+	}
+
+	if (#playlists > 0) then
+		for i = 1, #playlists do
+			updateCommands[#updateCommands + 1] =
+				sFormat(" UPDATE `%sPlaylist` SET %s WHERE md5='%s'; ", playlists[i].name, values, md5)
+		end
+	end
+
+	for i = 1, #updateCommands do
+		local stmt = database:prepare(updateCommands[i])
+		stmt:step()
+		stmt:finalize()
+		stmt = nil
+	end
 end
 
 local function getMusicRowBy(index, ascending, filter)
@@ -543,7 +570,7 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 end
 
 function M:currentMusicCount()
-	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `%s`; ]], self.currentMusicTable))
+	local stmt = database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM '%s'; ]], self.currentMusicTable))
 	local count = 0
 
 	for row in stmt:nrows() do

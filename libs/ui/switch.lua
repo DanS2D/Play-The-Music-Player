@@ -5,9 +5,9 @@ function M.new(options)
 	local x = options.x or 0
 	local y = options.y or 0
 	local offIconName =
-		options.offIconName or error("switch.new() offIconName (string) expected, got", type(options.offIconName))
+		options.offIconName or error("switch.new() offIconName (string) expected, got %s", type(options.offIconName))
 	local onIconName =
-		options.onIconName or error("switch.new() onIconName (string) expected, got", type(options.onIconName))
+		options.onIconName or error("switch.new() onIconName (string) expected, got %s", type(options.onIconName))
 	local offFont = options.offFont or fontAwesomeSolidFont
 	local onFont = options.onFont or fontAwesomeSolidFont
 	local offAlpha = options.offAlpha or 1

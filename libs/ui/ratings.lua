@@ -121,6 +121,7 @@ function M.new(options)
 	group.anchorY = 0.5
 	group.anchorChildren = true
 	group.isVisible = isVisible
+	group.rating = 0
 
 	local function ratingClick(event)
 		local phase = event.phase

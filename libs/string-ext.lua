@@ -95,6 +95,22 @@ function string:stripAccents(str)
 	return strippedStr
 end
 
+function string:getFileName(str)
+	local wString = str or self
+	local start, finish = wString:find("[%w%s!-={-|]+[_%.].+")
+	local fileName = wString:sub(start, #wString)
+
+	return fileName
+end
+
+function string:getFilePath(str)
+	local wString = str or self
+	local start, finish = wString:find("[%w%s!-={-|]+[_%.].+")
+	local path = wString:sub(1, start - 1)
+
+	return path
+end
+
 function string:fileExtension(str)
 	local wString = str or self
 	wString = wString:match("^.+(%..+)$"):lower()

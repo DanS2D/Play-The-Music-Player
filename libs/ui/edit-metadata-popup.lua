@@ -1,9 +1,13 @@
 local M = {}
 local tfd = require("plugin.tinyFileDialogs")
 local sqlLib = require("libs.sql-lib")
+local audioLib = require("libs.audio-lib")
+local fileUtils = require("libs.file-utils")
+local tag = require("plugin.taglib")
 local musicBrainz = require("libs.music-brainz")
-local buttonLib = require("libs.ui.button")
+local filledButtonLib = require("libs.ui.filled-button")
 local alertPopupLib = require("libs.ui.alert-popup")
+local ratings = require("libs.ui.ratings")
 local mMin = math.min
 local mMax = math.max
 local sFormat = string.format
@@ -14,6 +18,9 @@ local maxDisplayWidth = 1024
 local maxDisplayHeight = 768
 local group = display.newGroup()
 local alertPopup = alertPopupLib.create()
+local isWindows = system.getInfo("platform") == "win32"
+local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
+local documentsPath = system.pathForFile("", system.DocumentsDirectory)
 local created = false
 
 local function onTextFieldInput(event)
@@ -22,8 +29,13 @@ local function onTextFieldInput(event)
 
 	if (phase == "began") then
 	elseif (phase == "editing") then
-		if (not target.isEditable) then
+		if (not target.canEdit) then
 			target.text = target.origText
+			return
+		end
+
+		if (target.text:len() >= target.maxLength) then
+			target.text = target.text:sub(1, target.maxLength)
 			return
 		end
 	end
@@ -56,8 +68,10 @@ local function createTextField(options)
 	textField.anchorY = title.anchorY
 	textField.x = title.x + title.contentWidth + 2
 	textField.y = title.y
+	textField.inputType = options.inputType or "default"
 	textField.placeholder = options.placeholder
-	textField.isEditable = options.isEditable
+	textField.canEdit = options.canEdit
+	textField.maxLength = options.maxLength or 2048
 	textField.text = options.text and tostring(options.text):len() > 0 and tostring(options.text) or ""
 	textField.origText = textField.text
 	textField.align = "left"
@@ -78,9 +92,17 @@ function M.create()
 	local separatorLine = nil
 	local messageText = nil
 	local albumArtworkContainer = nil
+	local albumArtworkNotFoundText = nil
 	local albumArtwork = nil
+	local albumArtworkPathButton = nil
+	local tempArtworkFullPath = nil
+	local realArtworkFilename = nil
+	local realArtworkPath = nil
+	local realArtworkFullPath = nil
 	local songFilePathTextField = nil
+	local songFilePathButton = nil
 	local songTitleTextField = nil
+	local songSortTitleTextField = nil
 	local songAlbumTextField = nil
 	local songArtistTextField = nil
 	local songGenreTextField = nil
@@ -89,10 +111,27 @@ function M.create()
 	local songDurationMinutesTextField = nil
 	local songDurationSecondsTextField = nil
 	local songCommentTextField = nil
+	local ratingText = nil
+	local ratingStars = nil
 	local onMusicBrainzDownloadComplete = nil
 	-- song rating (via the rating lib)
+	local buttonGroup = nil
 	local cancelButton = nil
 	local confirmButton = nil
+
+	function group:hideChildren()
+		for i = self.numChildren, 1, -1 do
+			self[i].isVisible = false
+		end
+	end
+
+	function group:showChildren()
+		for i = self.numChildren, 1, -1 do
+			if (not self[i].ignoreVisibilityChange) then
+				self[i].isVisible = true
+			end
+		end
+	end
 
 	function group:cleanup()
 		for i = self.numChildren, 1, -1 do
@@ -112,10 +151,13 @@ function M.create()
 		local maxWidth = mMin(maxDisplayWidth, display.contentWidth)
 		local maxHeight = mMin(maxDisplayHeight, display.contentHeight)
 		musicBrainz.customEventName = "metadataMusicBrainz"
+		local songRating = song.rating
+		local songMp3Rating = 0
 
 		interactionDisableRect = display.newRect(0, 0, display.contentWidth, display.contentHeight)
 		interactionDisableRect.x = display.contentCenterX
 		interactionDisableRect.y = display.contentCenterY
+		interactionDisableRect.ignoreVisibilityChange = true
 		interactionDisableRect.isVisible = false
 		interactionDisableRect.isHitTestable = true
 		interactionDisableRect:addEventListener(
@@ -180,6 +222,73 @@ function M.create()
 		albumArtworkContainer:setStrokeColor(0.7, 0.7, 0.7)
 		self:insert(albumArtworkContainer)
 
+		albumArtworkNotFoundText =
+			display.newText(
+			{
+				text = "Searching for cover...",
+				font = subTitleFont,
+				fontSize = maxHeight * 0.03,
+				align = "center"
+			}
+		)
+		albumArtworkNotFoundText.x = albumArtworkContainer.x + albumArtworkContainer.contentWidth * 0.5
+		albumArtworkNotFoundText.y = albumArtworkContainer.y + albumArtworkContainer.contentHeight * 0.5
+		self:insert(albumArtworkNotFoundText)
+
+		albumArtworkPathButton =
+			filledButtonLib.new(
+			{
+				iconName = "image-polaroid",
+				labelText = "Select",
+				fontSize = maxHeight * 0.03,
+				parent = self,
+				onClick = function(event)
+					local foundFile =
+						tfd.openFileDialog(
+						{
+							title = "Select New Image",
+							initialPath = sFormat("%s%s%s", userHomeDirectoryPath, "Pictures", string.pathSeparator),
+							filters = {"*.jpg", "*.jpeg", "*.png"},
+							singleFilterDescription = "Image Files| *.jpg;*.jpeg;*.png;",
+							multiSelect = false
+						}
+					)
+
+					if (foundFile ~= nil) then
+						local fileExtension = foundFile:fileExtension()
+						realArtworkFullPath = sFormat("%s%s%s.%s", documentsPath, string.pathSeparator, song.md5, fileExtension)
+						tempArtworkFullPath = sFormat("%s%s%s.%s", documentsPath, string.pathSeparator, "tempArtwork", fileExtension)
+
+						fileUtils:copyFile(foundFile, tempArtworkFullPath)
+
+						if (albumArtwork) then
+							display.remove(albumArtwork)
+							albumArtwork = nil
+						end
+
+						albumArtwork =
+							display.newImageRect(
+							sFormat("%s.%s", "tempArtwork", fileExtension),
+							system.DocumentsDirectory,
+							albumArtworkContainer.contentWidth - 2,
+							albumArtworkContainer.contentHeight - 2
+						)
+						albumArtwork.anchorX = 0
+						albumArtwork.anchorY = 0
+						albumArtwork.x = albumArtworkContainer.x + 1
+						albumArtwork.y = albumArtworkContainer.y + 1
+						self:insert(albumArtwork)
+						albumArtworkNotFoundText.isVisible = false
+					end
+				end
+			}
+		)
+		albumArtworkPathButton.x =
+			albumArtworkContainer.x + albumArtworkContainer.contentWidth - albumArtworkPathButton.contentWidth * 0.75
+		albumArtworkPathButton.y =
+			albumArtworkContainer.y + albumArtworkContainer.contentHeight + albumArtworkPathButton.contentHeight * 0.5 + 8
+		albumArtworkPathButton.isVisible = false
+
 		onMusicBrainzDownloadComplete = function(event)
 			local phase = event.phase
 			local coverFileName = event.fileName
@@ -189,15 +298,20 @@ function M.create()
 					display.newImageRect(
 					coverFileName,
 					system.DocumentsDirectory,
-					albumArtworkContainer.contentWidth - 1,
-					albumArtworkContainer.contentHeight - 1
+					albumArtworkContainer.contentWidth - 2,
+					albumArtworkContainer.contentHeight - 2
 				)
 				albumArtwork.anchorX = 0
 				albumArtwork.anchorY = 0
 				albumArtwork.x = albumArtworkContainer.x + 1
 				albumArtwork.y = albumArtworkContainer.y + 1
 				self:insert(albumArtwork)
+				albumArtworkNotFoundText.isVisible = false
+			elseif (phase == "notFound") then
+				albumArtworkNotFoundText.text = "No Cover Found"
 			end
+
+			albumArtworkPathButton.isVisible = true
 
 			return true
 		end
@@ -235,12 +349,39 @@ function M.create()
 				height = textFieldHeight,
 				placeholder = "File Path...",
 				text = sFormat("%s%s%s", song.filePath, string.pathSeparator, song.fileName),
-				isEditable = false,
+				canEdit = false,
 				align = "left",
 				title = "File Path:",
 				titleBounds = background.width - 40
 			}
 		)
+
+		songFilePathButton =
+			filledButtonLib.new(
+			{
+				iconName = "ellipsis-h",
+				fontSize = maxHeight * 0.0395,
+				parent = self,
+				onClick = function(event)
+					local foundFile =
+						tfd.openFileDialog(
+						{
+							title = "Select Music File",
+							initialPath = sFormat("%s%s%s", userHomeDirectoryPath, "Music", string.pathSeparator),
+							filters = audioLib.fileSelectFilter,
+							singleFilterDescription = "Audio Files| *.mp3;*.flac;*.ogg;*.wav;*.ape;*.vgm;*.mod etc"
+						}
+					)
+
+					if (foundFile ~= nil) then
+						songFilePathTextField.field.text = foundFile
+					end
+				end
+			}
+		)
+		songFilePathButton.x =
+			songFilePathTextField.field.x + songFilePathTextField.field.contentWidth + songFilePathButton.contentWidth * 0.5 + 6
+		songFilePathButton.y = songFilePathTextField.field.y + songFilePathTextField.field.contentHeight * 0.5
 
 		songTitleTextField =
 			createTextField(
@@ -251,8 +392,25 @@ function M.create()
 				height = textFieldHeight,
 				placeholder = "Title...",
 				text = song.title,
+				canEdit = true,
 				align = "left",
 				title = "Title:",
+				titleBounds = background.width - 40
+			}
+		)
+
+		songSortTitleTextField =
+			createTextField(
+			{
+				x = textFieldLeftEdge,
+				y = songTitleTextField.field.y + textFieldHeight + textFieldYPadding,
+				width = background.width * 0.45,
+				height = textFieldHeight,
+				placeholder = "Sort Title...",
+				text = song.sortTitle,
+				canEdit = true,
+				align = "left",
+				title = "Sort Title:",
 				titleBounds = background.width - 40
 			}
 		)
@@ -261,11 +419,12 @@ function M.create()
 			createTextField(
 			{
 				x = textFieldLeftEdge,
-				y = songTitleTextField.field.y + textFieldHeight + textFieldYPadding,
+				y = songSortTitleTextField.field.y + textFieldHeight + textFieldYPadding,
 				width = background.width * 0.45,
 				height = textFieldHeight,
 				placeholder = "Album...",
 				text = song.album,
+				canEdit = true,
 				align = "left",
 				title = "Album:",
 				titleBounds = background.width - 40
@@ -281,6 +440,7 @@ function M.create()
 				height = textFieldHeight,
 				placeholder = "Artist...",
 				text = song.artist,
+				canEdit = true,
 				align = "left",
 				title = "Artist:",
 				titleBounds = background.width - 40
@@ -296,6 +456,7 @@ function M.create()
 				height = textFieldHeight,
 				placeholder = "Genre...",
 				text = song.genre,
+				canEdit = true,
 				align = "left",
 				title = "Genre:",
 				titleBounds = background.width - 40
@@ -309,8 +470,11 @@ function M.create()
 				y = songGenreTextField.field.y + textFieldHeight + textFieldYPadding,
 				width = background.width * 0.45,
 				height = textFieldHeight,
+				inputType = "number",
 				placeholder = "Year...",
+				maxLength = 4,
 				text = song.year,
+				canEdit = true,
 				align = "left",
 				title = "Year:",
 				titleBounds = background.width - 40
@@ -324,8 +488,11 @@ function M.create()
 				y = songYearTextField.field.y + textFieldHeight + textFieldYPadding,
 				width = background.width * 0.45,
 				height = textFieldHeight,
+				inputType = "number",
 				placeholder = "Track Number...",
+				maxLength = 3,
 				text = song.trackNumber,
+				canEdit = true,
 				align = "left",
 				title = "Track No:",
 				titleBounds = background.width - 40
@@ -341,6 +508,7 @@ function M.create()
 				height = textFieldHeight,
 				placeholder = "Comment...",
 				text = song.comment,
+				canEdit = true,
 				align = "left",
 				title = "Comment:",
 				titleBounds = background.width - 40
@@ -354,8 +522,11 @@ function M.create()
 				y = songCommentTextField.field.y + textFieldHeight + textFieldYPadding,
 				width = background.width * 0.21,
 				height = textFieldHeight,
+				inputType = "number",
 				placeholder = "Mins...",
+				maxLength = 2,
 				text = durationMinutes,
+				canEdit = true,
 				align = "left",
 				title = "Duration:",
 				titleBounds = background.width - 40
@@ -369,41 +540,206 @@ function M.create()
 				y = songCommentTextField.field.y + textFieldHeight + textFieldYPadding,
 				width = background.width * 0.072,
 				height = textFieldHeight,
+				inputType = "number",
 				placeholder = "Secs...",
+				maxLength = 2,
 				text = durationSeconds,
+				canEdit = true,
 				align = "left",
 				title = ":",
 				titleBounds = 80
 			}
 		)
 
-		cancelButton =
-			buttonLib.new(
+		ratingText =
+			display.newText(
 			{
-				iconName = "window-close No",
-				fontSize = maxHeight * 0.04,
-				parent = self,
+				text = "Rating:",
+				font = subTitleFont,
+				fontSize = maxHeight * 0.025,
+				width = (background.width - 40) * 0.15,
+				align = "left"
+			}
+		)
+		ratingText.anchorX = 0
+		ratingText.anchorY = 0
+		ratingText.x = textFieldLeftEdge
+		ratingText.y = songDurationMinutesTextField.field.y + textFieldHeight + textFieldYPadding
+		group:insert(ratingText)
+
+		ratingStars =
+			ratings.new(
+			{
+				x = ratingText.x + ratingText.contentWidth + 42,
+				y = ratingText.y + ratingText.contentHeight * 0.5,
+				fontSize = 12,
+				rating = song.rating or 0,
+				isVisible = true,
+				parent = group,
 				onClick = function(event)
+					--print(event.rating)
+					--print(event.mp3Rating)
+					songRating = event.rating
+					songMp3Rating = event.mp3Rating
+					event.parent:update(event.rating)
+				end
+			}
+		)
+
+		buttonGroup = display.newGroup()
+
+		cancelButton =
+			filledButtonLib.new(
+			{
+				iconName = "window-close",
+				labelText = "Cancel",
+				fontSize = maxHeight * 0.04,
+				parent = buttonGroup,
+				onClick = function(event)
+					if (tempArtworkFullPath) then
+						os.remove(tempArtworkFullPath)
+					end
+
 					self:hide()
 				end
 			}
 		)
-		cancelButton.x = background.x - cancelButton.contentWidth
-		cancelButton.y = background.y + background.contentHeight * 0.5 - cancelButton.contentHeight
+		cancelButton.x = -cancelButton.contentWidth * 0.5 - 10
 
 		confirmButton =
-			buttonLib.new(
+			filledButtonLib.new(
 			{
-				iconName = "check-circle Yes",
+				iconName = "save",
+				labelText = "Confirm",
 				fontSize = maxHeight * 0.04,
-				parent = self,
+				parent = buttonGroup,
 				onClick = function(event)
-					onConfirm()
+					local checksFailed = false
+					local failedTitle = "is too short"
+					local failedMessage = "you entered is too short.\n\nPlease enter at least"
+
+					-- sanity checks
+					if (tonumber(songYearTextField.field.text) == nil) then
+						failedTitle = sFormat("%s %s", "Song Year", failedTitle)
+						failedMessage = sFormat("%s %s %d characters", "The song year", failedMessage, songYearTextField.field.maxLength)
+						checksFailed = true
+					end
+
+					if (tonumber(songTrackNumberTextField.field.text) == nil) then
+						failedTitle = sFormat("%s %s", "Song Track Number", failedTitle)
+						failedMessage =
+							sFormat(
+							"%s %s 1 to %d characters",
+							"The song track number",
+							failedMessage,
+							songTrackNumberTextField.field.maxLength
+						)
+						checksFailed = true
+					end
+
+					if (songDurationMinutesTextField.field.text:len() < 1) then
+						failedTitle = sFormat("%s %s", "Song Duration Minutes", failedTitle)
+						failedMessage =
+							sFormat(
+							"%s %s 1 to %d characters",
+							"The song duration minutes",
+							failedMessage,
+							songDurationMinutesTextField.field.maxLength
+						)
+						checksFailed = true
+					end
+
+					if (songDurationSecondsTextField.field.text:len() < 1) then
+						failedTitle = sFormat("%s %s", "Song Duration Seconds", failedTitle)
+						failedMessage =
+							sFormat(
+							"%s %s 1 to %d characters",
+							"The song duration seconds",
+							failedMessage,
+							songDurationSecondsTextField.field.maxLength
+						)
+						checksFailed = true
+					end
+
+					if (checksFailed) then
+						self:hideChildren()
+						alertPopup:onlyUseOkButton()
+						alertPopup:setTitle(failedTitle)
+						alertPopup:setMessage(failedMessage)
+						alertPopup:setButtonCallbacks(
+							{
+								onOK = function()
+									self:showChildren()
+								end
+							}
+						)
+						alertPopup:show()
+						return
+					end
+
+					if (realArtworkFullPath) then
+						os.remove(realArtworkFullPath)
+					end
+
+					if (tempArtworkFullPath) then
+						os.rename(tempArtworkFullPath, realArtworkFullPath)
+					end
+
+					if (realArtworkFullPath) then
+						tag.setArtwork(
+							{
+								fileName = song.fileName,
+								filePath = song.filePath,
+								imageFileName = realArtworkFullPath:getFileName(),
+								imageFilePath = realArtworkFullPath:getFilePath()
+							}
+						)
+					end
+
+					song.album = songAlbumTextField.field.text
+					song.artist = songArtistTextField.field.text
+					song.genre = songGenreTextField.field.text
+					song.year = tonumber(songYearTextField.field.text)
+					song.trackNumber = tonumber(songTrackNumberTextField.field.text)
+					song.comment = songCommentTextField.field.text
+					song.duration =
+						sFormat("%2s:%2s", songDurationMinutesTextField.field.text, songDurationSecondsTextField.field.text)
+					song.rating = songRating
+					song.title = songTitleTextField.field.text
+					song.sortTitle = songSortTitleTextField.field.text
+
+					tag.set(
+						{
+							fileName = song.fileName,
+							filePath = song.filePath,
+							tags = {
+								album = song.album,
+								artist = song.artist,
+								genre = song.genre,
+								year = song.year,
+								trackNumber = song.trackNumber,
+								comment = song.comment,
+								duration = song.duration,
+								rating = songMp3Rating,
+								title = song.title
+							}
+						}
+					)
+
+					sqlLib:updateMusic(song)
+					Runtime:dispatchEvent({name = "musicListEvent", phase = "reloadData"})
+
+					self:hide()
 				end
 			}
 		)
-		confirmButton.x = background.x + confirmButton.contentWidth
-		confirmButton.y = background.y + background.contentHeight * 0.5 - confirmButton.contentHeight
+		confirmButton.x = confirmButton.contentWidth * 0.5 + 10
+		self:insert(buttonGroup)
+
+		buttonGroup.anchorChildren = true
+		buttonGroup.anchorX = 0.5
+		buttonGroup.x = background.x
+		buttonGroup.y = background.y + background.contentHeight * 0.5 - buttonGroup.contentHeight
 
 		self.isVisible = true
 		self:toFront()

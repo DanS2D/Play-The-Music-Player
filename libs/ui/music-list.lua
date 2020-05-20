@@ -845,6 +845,8 @@ function M.new()
 					font = titleFont,
 					closeOnClick = true,
 					onClick = function(event)
+						local removeFrom = sqlLib.currentMusicTable == "music" and "Library" or "Playlist"
+						local messageEnd = sqlLib.currentMusicTable == "music" and "import it again" or "add it again"
 						local song = M:getRow(rightClickRowIndex)
 
 						local function onRemoved()
@@ -853,12 +855,15 @@ function M.new()
 								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
 							end
 
-							sqlLib:removeMusic(song.id)
+							if (removeFrom == "Playlist") then
+								sqlLib:removeMusic(song)
+							else
+								sqlLib:removeMusicFromAll(song)
+							end
+
 							M:reloadData()
 						end
 
-						local removeFrom = sqlLib.currentMusicTable == "music" and "Library" or "Playlist"
-						local messageEnd = sqlLib.currentMusicTable == "music" and "import it again" or "add it again"
 						alertPopup:setTitle(sFormat("Really remove from %s?", removeFrom))
 						alertPopup:setMessage(
 							sFormat(
@@ -1018,6 +1023,18 @@ function M:reloadData()
 		prevIndex = 0
 	end
 end
+
+function M:musicListEvent(event)
+	local phase = event.phase
+
+	if (phase == "reloadData") then
+		self:reloadData()
+	end
+
+	return true
+end
+
+Runtime:addEventListener("musicListEvent", M)
 
 function M:setSelectedRow(rowIndex)
 	selectedRowRealIndex = tableViewList[1]:getRowRealIndex(audioLib.previousSongIndex)

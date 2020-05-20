@@ -1,7 +1,6 @@
 local json = require("json")
-
+local ltn12 = require("ltn12")
 local M = {}
-
 local defaultLocation = system.DocumentsDirectory
 local sFormat = string.format
 
@@ -61,6 +60,18 @@ function M:fileExists(filePath, baseDir)
 	return exists
 end
 
+function M:fileExistsAtRawPath(filePath)
+	local file = io.open(filePath, "r")
+	local exists = false
+
+	if (file) then
+		exists = true
+		io.close(file)
+	end
+
+	return exists
+end
+
 function M:fileSize(filePath)
 	local file = io.open(filePath, "rb")
 
@@ -75,6 +86,15 @@ function M:fileSize(filePath)
 	end
 
 	return 0
+end
+
+function M:copyFile(sourcePath, newPath)
+	if (not self:fileExistsAtRawPath(sourcePath)) then
+		print(sFormat("fileUtils:copyFile() couldn't copy file from %s as it doesn't exist", sourcePath))
+		return
+	end
+
+	ltn12.pump.all(ltn12.source.file(assert(io.open(sourcePath, "rb"))), ltn12.sink.file(assert(io.open(newPath, "wb"))))
 end
 
 function M:removeFile(fileName, filePath)

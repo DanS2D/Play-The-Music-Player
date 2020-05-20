@@ -157,7 +157,6 @@ M.fileSelectFilter = {}
 
 for k, v in pairs(chipTunesFormats) do
 	M.supportedFormats[k] = v
-	--Office Files|*.doc;*.xls;*.ppt
 end
 
 for k, v in pairs(M.supportedFormats) do
