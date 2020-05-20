@@ -984,29 +984,27 @@ function M:reloadData()
 
 	if (self.musicSearch) then
 		self:getSearchData()
-	end
 
-	-- if we've resized the view, we need to wipe the music data when clearing a search
-	if (previousIndex ~= nil) then
-		musicData = {}
-		previousIndex = nil
+		if (prevIndex == 0) then
+			prevIndex = tableViewList[1]:getRealIndex()
+		end
+	else
+		if (prevIndex == 0) then
+			prevIndex = tableViewList[1]:getRealIndex()
+		end
 	end
 
 	for i = 1, #tableViewList do
 		--tableViewList[i]:setRowSelected(selectedRowIndex)
 
 		if (self.musicSearch) then
-			if (prevIndex == 0) then
-				prevIndex = tableViewList[i]:getRealIndex()
-			end
-
 			-- clear the selected row
 			--tableViewList[i]:setRowSelected(0)
 			tableViewList[i]:scrollToTop()
+			print("ReloadData() search: scrolling to top ", prevIndex)
 		else
 			--print("previous index was: ", prevIndex)
-			print("search: scrolling to index ", prevIndex)
-
+			print("ReloadData() scrolling back to index ", prevIndex)
 			tableViewList[i]:scrollToIndex(prevIndex)
 		end
 	end
@@ -1108,17 +1106,21 @@ function M:recreateMusicList()
 		--print("old max rows: ", previousMaxRows, " new max rows: ", newMaxRows)
 
 		-- scroll to the correct index, factoring in the difference in row count
+		local offset = 0
 
 		if (previousMaxRows == newMaxRows) then
 			newScrollIndex = 0
+			offset = 0
 		elseif (previousMaxRows < newMaxRows) then
+			offset = (newMaxRows - previousMaxRows)
 			newScrollIndex = previousIndex + (newMaxRows - previousMaxRows)
 		elseif (previousMaxRows > newMaxRows) then
+			offset = (previousMaxRows - newMaxRows)
 			newScrollIndex = previousIndex - (previousMaxRows - newMaxRows)
 		end
 
 		if (self.musicSearch) then
-			prevIndex = newScrollIndex
+			prevIndex = prevIndex + offset
 		else
 			self:scrollToIndex(newScrollIndex)
 		end
