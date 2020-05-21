@@ -16,7 +16,9 @@ local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local alertPopupLib = require("libs.ui.alert-popup")
+local aboutPopupLib = require("libs.ui.about-popup")
 local alertPopup = alertPopupLib.create()
+local aboutPopup = aboutPopupLib.create()
 local sFormat = string.format
 local mMin = math.min
 local mRandom = math.random
@@ -252,18 +254,6 @@ local applicationMainMenuBar =
 				title = "Edit",
 				subItems = {
 					{
-						title = "Edit Metadata",
-						iconName = "tags",
-						onClick = function(event)
-						end
-					},
-					{
-						title = "Edit Playlist",
-						iconName = "list-music",
-						onClick = function(event)
-						end
-					},
-					{
 						title = "Preferences",
 						iconName = "tools",
 						onClick = function(event)
@@ -463,6 +453,7 @@ local applicationMainMenuBar =
 						title = "About",
 						iconName = "info-circle",
 						onClick = function(event)
+							aboutPopup:show()
 						end
 					}
 				}
