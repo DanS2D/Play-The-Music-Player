@@ -2,16 +2,21 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
+local theme = require("libs.theme")
+local settings = require("libs.settings")
+settings:load()
+theme:set(settings.theme)
+theme:setDefaultBackgroundColor()
+math.randomseed(os.time())
+
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
 local luaExt = require("libs.lua-ext")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
-local settings = require("libs.settings")
 local musicImporter = require("libs.music-importer")
 local fileUtils = require("libs.file-utils")
-local theme = require("libs.theme")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
@@ -22,8 +27,6 @@ local aboutPopup = aboutPopupLib.create()
 local sFormat = string.format
 local mMin = math.min
 local mRandom = math.random
-local mRandomSeed = math.randomseed
-local osTime = os.time
 local wasSongPlaying = false
 local interruptedSongPosition = {}
 local lastChosenPath = nil
@@ -37,9 +40,6 @@ local oldHeight = display.contentHeight
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
-mRandomSeed(osTime())
-theme:setDefaultBackgroundColor()
-settings:load()
 
 local function onAudioEvent(event)
 	local phase = event.phase
@@ -136,6 +136,22 @@ local function populateTableViews()
 		musicList:populate() --################################################ << CPU HOG ########################################################################
 	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
+end
+
+local function changeTheme(newTheme)
+	local function onConfirm()
+		theme:set(newTheme)
+		settings.theme = theme:getName()
+		settings:save()
+		native.requestExit()
+	end
+
+	alertPopup:setTitle("Changing theme requires restart.")
+	alertPopup:setMessage(
+		"Changing the theme requires the program to close.\n\nClicking confirm will exit the program. You will then need to launch it again, and your selected theme will be applied.\n\nClose now?"
+	)
+	alertPopup:setButtonCallbacks({onConfirm = onConfirm})
+	alertPopup:show()
 end
 
 local applicationMainMenuBar =
@@ -332,14 +348,21 @@ local applicationMainMenuBar =
 						title = "Light Theme",
 						iconName = "palette",
 						onClick = function(event)
-							--settings:save()
+							changeTheme("light")
 						end
 					},
 					{
 						title = "Dark Theme",
 						iconName = "palette",
 						onClick = function(event)
-							--settings:save()
+							changeTheme("dark")
+						end
+					},
+					{
+						title = "Hacker Theme",
+						iconName = "palette",
+						onClick = function(event)
+							changeTheme("hacker")
 						end
 					}
 				}

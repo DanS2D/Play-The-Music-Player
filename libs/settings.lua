@@ -21,6 +21,7 @@ local M = {
 	lastUsedColumn = "",
 	lastUsedColumnSortAToZ = true,
 	showVisualizer = true,
+	theme = "dark",
 	selectedVisualizers = {},
 	lastView = "musicList"
 }

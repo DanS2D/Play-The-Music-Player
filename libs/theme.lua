@@ -1,6 +1,7 @@
 local M = {}
 local defaultThemes = {
 	dark = {
+		name = "dark",
 		backgroundColor = {
 			primary = {0.10, 0.10, 0.10, 1},
 			secondary = {0.15, 0.15, 0.15, 1},
@@ -20,6 +21,7 @@ local defaultThemes = {
 		}
 	},
 	light = {
+		name = "light",
 		backgroundColor = {
 			primary = {1, 1, 1, 1},
 			secondary = {0.94, 0.94, 0.94, 1},
@@ -39,6 +41,7 @@ local defaultThemes = {
 		}
 	},
 	hacker = {
+		name = "hacker",
 		backgroundColor = {
 			primary = {0, 0, 0, 1},
 			secondary = {0.10, 0.10, 0.10, 1},
@@ -62,6 +65,10 @@ local currentTheme = defaultThemes.dark
 
 function M:get()
 	return currentTheme
+end
+
+function M:getName()
+	return currentTheme.name
 end
 
 function M:set(themeName)
