@@ -54,6 +54,8 @@ function M.new(options)
 		"touch",
 		function()
 			group:close()
+			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
+			Runtime:dispatchEvent({name = "musicListEvent", phase = "closeRightClickMenus"})
 			native.setKeyboardFocus(nil)
 			return true
 		end
@@ -116,6 +118,8 @@ function M.new(options)
 		function mainButton:openSubmenu()
 			self.mainTableView.isVisible = true
 			self.mainTableView:toFront()
+			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
+			Runtime:dispatchEvent({name = "musicListEvent", phase = "closeRightClickMenus"})
 			display.getCurrentStage():insert(self.mainTableView)
 		end
 

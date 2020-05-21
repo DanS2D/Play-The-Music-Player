@@ -264,6 +264,7 @@ function M:createTableView(options, index)
 						tableViewList[i]:lockScroll(false)
 					end
 
+					Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
 					Runtime:dispatchEvent({name = "menuEvent", close = true})
 				elseif (numClicks >= 2) then
 					local song = self:getRow(row.index)
@@ -1029,6 +1030,9 @@ function M:musicListEvent(event)
 
 	if (phase == "reloadData") then
 		self:reloadData()
+	elseif (phase == "closeRightClickMenus") then
+		musicListRightClickMenu:close()
+		categoryListRightClickMenu:close()
 	end
 
 	return true
