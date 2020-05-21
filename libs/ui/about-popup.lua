@@ -33,8 +33,9 @@ function M.create()
 				system.openURL("https://www.flaticon.com/authors/freepik")
 			end
 		},
+		{title = "UI Elements", attribution = "Jost Font, FontAwesome"},
 		{title = "Testing", attribution = "Steve Johnson, Simon Barber"},
-		{title = "Special Thanks", attribution = "Steve Johnson, Ric, My Wife & Kids"}
+		{title = "Special Thanks", attribution = "Steve Johnson, Rick Grant, My Wife & Kids"}
 	}
 	local creditTitles = {}
 	local creditAtributions = {}
@@ -199,7 +200,7 @@ function M.create()
 			}
 		)
 		closeButton.x = background.x - closeButton.contentWidth * 0.25
-		closeButton.y = background.y + background.contentHeight * 0.5 - closeButton.contentHeight
+		closeButton.y = background.y + background.contentHeight * 0.5 - closeButton.contentHeight * 0.5 - 5
 
 		self.isVisible = true
 		self:toFront()
