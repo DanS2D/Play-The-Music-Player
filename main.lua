@@ -258,6 +258,18 @@ local applicationMainMenuBar =
 						iconName = "tools",
 						onClick = function(event)
 						end
+					},
+					{
+						title = "Scan For New Media",
+						iconName = "sync",
+						onClick = function(event)
+						end
+					},
+					{
+						title = "Scan For Removed Media",
+						iconName = "sync",
+						onClick = function(event)
+						end
 					}
 				}
 			},

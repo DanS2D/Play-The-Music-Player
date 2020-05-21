@@ -37,7 +37,7 @@ function M.new(options)
 	local font = options.font or native.systemFont
 	local fontSize = options.fontSize or (menuBarHeight / 2)
 	local itemWidth = options.itemWidth or 60
-	local itemListWidth = options.itemListWidth or 200
+	local itemListWidth = options.itemListWidth or 250
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
 	local rowColor = {default = {0.1, 0.1, 0.1}, over = {0.2, 0.2, 0.2}}
 	local parentGroup = options.parentGroup or display.currentStage
