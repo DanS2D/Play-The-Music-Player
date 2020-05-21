@@ -2,6 +2,13 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
+local lfs = require("lfs")
+local stringExt = require("libs.string-ext")
+local luaExt = require("libs.lua-ext")
+local sFormat = string.format
+lfs.mkdir(system.pathForFile("data", system.DocumentsDirectory))
+lfs.mkdir(system.pathForFile(sFormat("data%sthemes", string.pathSeparator), system.DocumentsDirectory))
+lfs.mkdir(system.pathForFile(sFormat("data%salbumArt", string.pathSeparator), system.DocumentsDirectory))
 local theme = require("libs.theme")
 local settings = require("libs.settings")
 settings:load()
@@ -9,10 +16,7 @@ theme:set(settings.theme)
 theme:setDefaultBackgroundColor()
 math.randomseed(os.time())
 
-local lfs = require("lfs")
 local strict = require("strict")
-local stringExt = require("libs.string-ext")
-local luaExt = require("libs.lua-ext")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local musicBrainz = require("libs.music-brainz")
@@ -25,7 +29,6 @@ local alertPopupLib = require("libs.ui.alert-popup")
 local aboutPopupLib = require("libs.ui.about-popup")
 local alertPopup = alertPopupLib.create()
 local aboutPopup = aboutPopupLib.create()
-local sFormat = string.format
 local mMin = math.min
 local mRandom = math.random
 local wasSongPlaying = false
@@ -108,7 +111,7 @@ end
 
 local function onMusicBrainzDownloadComplete(event)
 	local phase = event.phase
-	local coverFileName = event.fileName
+	local coverFileName = sFormat("data%salbumArt%s%s", string.pathSeparator, string.pathSeparator, event.fileName)
 
 	if (phase == "downloaded") then
 		mediaBarLib.setAlbumArtwork(coverFileName)
@@ -570,6 +573,9 @@ local function onSystemEvent(event)
 		transition.cancel()
 		Runtime:removeEventListener("key", keyEventListener)
 		Runtime:removeEventListener("resize", onResize)
+
+		os.remove(sFormat("%s%s%s.png", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, "tempArtwork"))
+		os.remove(sFormat("%s%s%s.jpg", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, "tempArtwork"))
 
 		for id, value in pairs(timer._runlist) do
 			timer.cancel(value)

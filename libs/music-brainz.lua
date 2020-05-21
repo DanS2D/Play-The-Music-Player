@@ -19,7 +19,7 @@ local musicBrainzParams = {
 		["User-Agent"] = "Play The Music Player/1.0"
 	}
 }
-local documentsPath = system.pathForFile("", system.DocumentsDirectory)
+local documentsPath = system.pathForFile(sFormat("%s", fileUtils.albumArtworkFolder), system.DocumentsDirectory)
 
 local function dispatchCoverEvent(notFound)
 	local event = {
@@ -68,10 +68,6 @@ local function setCoverFromDownload(song, fileName)
 	if (isMp3File(song) or isFlacFile(song) or isMp4File(song)) then
 		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
 			print("setting artwork")
-			print(song.fileName)
-			print(song.filePath)
-			print(fileName)
-			print(documentsPath)
 			tag.setArtwork(
 				{
 					fileName = song.fileName,
@@ -156,10 +152,10 @@ downloadListener = function(event)
 			local result, reason =
 				os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
 		elseif (mimetype == "image/jpeg") then
+			--print(result)
 			newFileName = currentCoverFileName:sub(1, currentCoverFileName:len() - 4) .. ".jpg"
 			local result, reason =
 				os.rename(system.pathForFile(currentCoverFileName, baseDir), system.pathForFile(newFileName, baseDir))
-			print(result)
 		else
 			newFileName = currentCoverFileName
 		end
@@ -167,7 +163,7 @@ downloadListener = function(event)
 		if (fileUtils:fileExists(newFileName, system.DocumentsDirectory)) then
 			currentCoverFileName = newFileName
 			setCoverFromDownload(requestedSong, newFileName)
-			--print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
+			print("GOT artwork for " .. requestedSong.title .. " from opencoverart.org")
 			dispatchCoverEvent()
 		else
 			dispatchCoverEvent(true)
@@ -177,8 +173,8 @@ end
 
 local function coverExists(song)
 	local baseDir = system.DocumentsDirectory
-	local pngPath = system.pathForFile(song.md5 .. ".png", baseDir)
-	local jpgPath = system.pathForFile(song.md5 .. ".jpg", baseDir)
+	local pngPath = system.pathForFile(sFormat("%s%s.png", fileUtils.albumArtworkFolder, song.md5), baseDir)
+	local jpgPath = system.pathForFile(sFormat("%s%s.jpg", fileUtils.albumArtworkFolder, song.md5), baseDir)
 	local pngFile, _ = io.open(pngPath, "rb")
 	local jpgFile, _ = io.open(jpgPath, "rb")
 	local exists = false
@@ -209,7 +205,7 @@ function M.getCover(song)
 	local fullMusicBrainzUrl =
 		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
 	requestedSong = song
-	currentCoverFileName = sFormat("%s.png", hash)
+	currentCoverFileName = sFormat("%s%s.png", fileUtils.albumArtworkFolder, hash)
 	local coverOnDisk, fileName = coverExists(song)
 
 	local function setOrGetData()
@@ -230,7 +226,7 @@ function M.getCover(song)
 
 	-- check if the file exists
 	if (coverOnDisk) then
-		local cPath = documentsPath .. string.pathSeparator .. fileName
+		local cPath = sFormat("%s%s", documentsPath, fileName)
 		local mimetype = pureMagic.via_path(cPath)
 
 		if (mimetype == "image/jpeg" or mimetype == "image/png") then
@@ -249,7 +245,7 @@ function M.getCover(song)
 				local coverOnDiskExists, coverFileName = coverExists(song)
 
 				if (coverOnDiskExists) then
-					local cPath = documentsPath .. string.pathSeparator .. coverFileName
+					local cPath = sFormat("%s%s", documentsPath, coverFileName)
 					local mimetype = pureMagic.via_path(cPath)
 					--print("found cover " .. coverFileName .. " cancelling timer now")
 

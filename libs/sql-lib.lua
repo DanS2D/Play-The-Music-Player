@@ -65,7 +65,8 @@ end
 
 function M:open()
 	if (database == nil) then
-		local databasePath = system.pathForFile("music.db", system.DocumentsDirectory)
+		local dbFilePath = sFormat("data%smusic.db", string.pathSeparator)
+		local databasePath = system.pathForFile(dbFilePath, system.DocumentsDirectory)
 		database = sqlite3.open(databasePath)
 
 		if (database) then

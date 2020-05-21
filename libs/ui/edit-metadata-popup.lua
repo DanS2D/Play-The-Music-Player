@@ -265,8 +265,11 @@ function M.create()
 
 					if (foundFile ~= nil) then
 						local fileExtension = foundFile:fileExtension()
-						realArtworkFullPath = sFormat("%s%s%s.%s", documentsPath, string.pathSeparator, song.md5, fileExtension)
-						tempArtworkFullPath = sFormat("%s%s%s.%s", documentsPath, string.pathSeparator, "tempArtwork", fileExtension)
+
+						realArtworkFullPath =
+							sFormat("%s%s%s.%s", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, song.md5, fileExtension)
+						tempArtworkFullPath =
+							sFormat("%s%s%s.%s", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, "tempArtwork", fileExtension)
 
 						fileUtils:copyFile(foundFile, tempArtworkFullPath)
 
@@ -277,7 +280,7 @@ function M.create()
 
 						albumArtwork =
 							display.newImageRect(
-							sFormat("%s.%s", "tempArtwork", fileExtension),
+							sFormat("%s%s.%s", fileUtils.albumArtworkFolder, "tempArtwork", fileExtension),
 							system.DocumentsDirectory,
 							albumArtworkContainer.contentWidth - 2,
 							albumArtworkContainer.contentHeight - 2
@@ -300,7 +303,7 @@ function M.create()
 
 		onMusicBrainzDownloadComplete = function(event)
 			local phase = event.phase
-			local coverFileName = event.fileName
+			local coverFileName = sFormat("%s%s", fileUtils.albumArtworkFolder, event.fileName)
 
 			if (phase == "downloaded") then
 				albumArtwork =
