@@ -23,12 +23,12 @@ local defaultThemes = {
 	light = {
 		name = "light",
 		backgroundColor = {
-			primary = {1, 1, 1, 1},
+			primary = {0.997, 0.997, 0.997, 1},
 			secondary = {0.94, 0.94, 0.94, 1},
 			outline = {0.6, 0.6, 0.6, 0.5}
 		},
 		rowColor = {
-			primary = {1, 1, 1, 1},
+			primary = {0.997, 0.997, 0.997, 1},
 			over = {0.80, 0.80, 0.80, 1}
 		},
 		iconColor = {
