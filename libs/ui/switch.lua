@@ -1,4 +1,6 @@
 local M = {}
+local theme = require("libs.theme")
+local uPack = unpack
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
@@ -12,7 +14,7 @@ function M.new(options)
 	local onFont = options.onFont or fontAwesomeSolidFont
 	local offAlpha = options.offAlpha or 1
 	local fontSize = options.fontSize or 14
-	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
+	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 	local group = display.newGroup()
@@ -61,11 +63,11 @@ function M.new(options)
 			display.getCurrentStage():setFocus(target)
 
 			if (not target.ignoreAlpha) then
-				target.alpha = 0.6
+				target:setFillColor(uPack(theme:get().iconColor.highlighted))
 			end
 		elseif (phase == "ended" or phase == "cancelled") then
 			if (not target.ignoreAlpha) then
-				target.alpha = 1
+				target:setFillColor(uPack(theme:get().iconColor.primary))
 			end
 
 			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then

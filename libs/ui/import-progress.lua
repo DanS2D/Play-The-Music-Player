@@ -1,5 +1,7 @@
 local M = {}
+local theme = require("libs.theme")
 local progressView = require("libs.ui.progress-view")
+local uPack = unpack
 local dCenterX = display.contentCenterX
 local dCenterY = display.contentCenterY
 local dWidth = display.contentWidth
@@ -26,7 +28,7 @@ function M.new()
 	)
 	headingText.x = display.contentCenterX
 	headingText.y = 240
-	headingText:setFillColor(0.9, 0.9, 0.9)
+	headingText:setFillColor(uPack(theme:get().textColor.primary))
 	group:insert(headingText)
 
 	subHeadingText =
@@ -41,7 +43,7 @@ function M.new()
 	)
 	subHeadingText.x = display.contentCenterX
 	subHeadingText.y = headingText.y + headingText.contentHeight + 5
-	subHeadingText:setFillColor(0.9, 0.9, 0.9)
+	subHeadingText:setFillColor(uPack(theme:get().textColor.secondary))
 	group:insert(subHeadingText)
 
 	importProgressView =

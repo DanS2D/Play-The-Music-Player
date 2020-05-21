@@ -1,4 +1,6 @@
 local M = {}
+local theme = require("libs.theme")
+local uPack = unpack
 local mMax = math.max
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local ratings = {
@@ -168,9 +170,14 @@ function M.new(options)
 		currentStars[i].anchorX = 0
 		currentStars[i].x = i == 1 and 0 or currentStars[i - 1].x + currentStars[i - 1].contentWidth
 		currentStars[i].y = 0
-		currentStars[i].alpha = starRating[i].isEmpty and 0.5 or 0.8
 		currentStars[i].index = i
 		currentStars[i].rating = 0
+
+		if (starRating[i].isEmpty) then
+			currentStars[i]:setFillColor(uPack(theme:get().iconColor.highlighted))
+		else
+			currentStars[i]:setFillColor(uPack(theme:get().iconColor.primary))
+		end
 		currentStars[i]:addEventListener("touch", ratingClick)
 		group:insert(currentStars[i])
 	end
@@ -185,7 +192,11 @@ function M.new(options)
 
 			for i = 1, #currentStars do
 				currentStars[i].text = currentRating[i].name
-				currentStars[i].alpha = currentRating[i].isEmpty and 0.5 or 0.8
+				if (currentRating[i].isEmpty) then
+					currentStars[i]:setFillColor(uPack(theme:get().iconColor.highlighted))
+				else
+					currentStars[i]:setFillColor(uPack(theme:get().iconColor.primary))
+				end
 			end
 		end
 	end

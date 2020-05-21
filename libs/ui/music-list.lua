@@ -7,6 +7,7 @@ local M = {
 --local mousecursor = require("plugin.mousecursor")
 local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
+local theme = require("libs.theme")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
@@ -21,6 +22,7 @@ local mMin = math.min
 local mMax = math.max
 local tInsert = table.insert
 local sFormat = string.format
+local uPack = unpack
 local tableViewList = {}
 local tableViewTarget = nil
 local categoryBar = nil
@@ -32,7 +34,6 @@ local musicSort = "title" -- todo: get saved sort from database
 local prevIndex = 0
 local rowFontSize = 18
 local rowHeight = 40
-local defaultRowColor = {default = {0.10, 0.10, 0.10, 1}, over = {0.18, 0.18, 0.18, 1}}
 local selectedRowIndex = 0
 local selectedRowRealIndex = 0
 local rightClickRowIndex = 0
@@ -131,6 +132,7 @@ end
 
 function M:createTableView(options, index)
 	local tView = nil
+	local defaultRowColor = {default = theme:get().rowColor.primary, over = theme:get().rowColor.over}
 
 	tView =
 		desktopTableView.new(
@@ -225,11 +227,6 @@ function M:createTableView(options, index)
 
 					if (nowPlayingIcon) then
 						rowTitleText.x = 35
-					end
-
-					-- TODO: remove this when the scrollToIndex works reliably for song searches after resizing
-					if (rowTitleText.text:lower() == "lady (hear me tonight)") then
-						rowTitleText:setFillColor(1, 0, 0)
 					end
 
 					row:insert(rowTitleText)
@@ -343,7 +340,7 @@ local function createCategories()
 	categoryBar.anchorY = 0
 	categoryBar.x = 0
 	categoryBar.y = topPosition
-	categoryBar:setFillColor(0.15, 0.15, 0.15)
+	categoryBar:setFillColor(uPack(theme:get().backgroundColor.secondary))
 
 	local listOptions = {
 		{
@@ -409,7 +406,7 @@ local function createCategories()
 		categoryTouchRect.x = 0
 		categoryTouchRect.y = 0
 		categoryTouchRect.sortAToZ = i == 1 or false -- TODO: read from database
-		categoryTouchRect:setFillColor(0.15, 0.15, 0.15)
+		categoryTouchRect:setFillColor(uPack(theme:get().backgroundColor.secondary))
 		categoryTouchRect:addEventListener(
 			"tap",
 			function()
@@ -509,7 +506,7 @@ local function createCategories()
 			}
 		)
 		seperatorText.rotation = 90
-		seperatorText:setFillColor(0.8, 0.8, 0.8)
+		seperatorText:setFillColor(uPack(theme:get().textColor.secondary))
 		categoryList[i]:insert(seperatorText)
 
 		function seperatorText:mouse(event)
@@ -560,7 +557,7 @@ local function createCategories()
 		titleText.sortAToZ = i == 1 or false -- TODO: read from database
 		categoryTouchRect.text = titleText.text
 		categoryList[i].title = titleText
-		titleText:setFillColor(1, 1, 1)
+		titleText:setFillColor(uPack(theme:get().textColor.primary))
 		categoryList[i]:insert(titleText)
 
 		local sortIndicator =

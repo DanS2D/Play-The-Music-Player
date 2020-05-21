@@ -11,6 +11,7 @@ local musicBrainz = require("libs.music-brainz")
 local settings = require("libs.settings")
 local musicImporter = require("libs.music-importer")
 local fileUtils = require("libs.file-utils")
+local theme = require("libs.theme")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
@@ -37,7 +38,7 @@ local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 mRandomSeed(osTime())
-display.setDefault("background", 0.1, 0.1, 0.1, 0.8)
+theme:setDefaultBackgroundColor()
 settings:load()
 
 local function onAudioEvent(event)
@@ -436,7 +437,7 @@ background.anchorX = 0
 background.anchorY = 0
 background.x = 0
 background.y = 161
-background:setFillColor(0.10, 0.10, 0.10, 1)
+background:setFillColor(unpack(theme:get().backgroundColor.primary))
 
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()

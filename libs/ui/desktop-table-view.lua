@@ -18,7 +18,6 @@ function M.new(options)
 	local maxRows = options.maxRows or 22
 	local visibleRows = maxRows - 1
 	local rowLimit = options.rowLimit or maxRows
-	local backgroundColor = options.backgroundColor or {0, 0, 0}
 	local rowColorDefault = options.rowColorDefault or {default = {0, 0, 0}, over = {0.2, 0.2, 0.2}}
 	local rowHeight = options.rowHeight or 20
 	local useSelectedRowHighlighting = options.useSelectedRowHighlighting

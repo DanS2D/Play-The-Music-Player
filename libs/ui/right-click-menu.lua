@@ -1,6 +1,8 @@
 local M = {}
+local theme = require("libs.theme")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local mRound = math.round
+local uPack = unpack
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
@@ -10,7 +12,7 @@ function M.new(options)
 	local rowHeight = options.rowHeight or 35
 	local fontSize = options.fontSize or (rowHeight / 2.5)
 	local items = options.items or error("rightClickMenu() options.items (table) expected got, %s", type(options.items))
-	local rowColor = {default = {0.15, 0.15, 0.15}, over = {0.20, 0.20, 0.20}}
+	local rowColor = {default = theme:get().rowColor.primary, over = theme:get().rowColor.over}
 	local subItems = {}
 	local subMenuXPosition = 0
 	local height = rowHeight * #items
@@ -114,8 +116,8 @@ function M.new(options)
 
 	menu.outlineRect = display.newRoundedRect(0, 0, width + 2, height + 2, 2)
 	menu.outlineRect.strokeWidth = 1
-	menu.outlineRect:setFillColor(0.15, 0.15, 0.15)
-	menu.outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+	menu.outlineRect:setFillColor(uPack(theme:get().backgroundColor.primary))
+	menu.outlineRect:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 	menu.outlineRect.x = menu.x + menu.contentWidth * 0.5 - 1
 	menu.outlineRect.y = menu.y + menu.contentHeight * 0.5 - 1
 	menu.outlineRect.isVisible = false
@@ -274,8 +276,8 @@ function M.new(options)
 
 				subItems[#subItems].outlineRect = display.newRoundedRect(0, 0, width + 2, subMenuHeight + 2, 2)
 				subItems[#subItems].outlineRect.strokeWidth = 1
-				subItems[#subItems].outlineRect:setFillColor(0.15, 0.15, 0.15)
-				subItems[#subItems].outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+				subItems[#subItems].outlineRect:setFillColor(uPack(theme:get().backgroundColor.primary))
+				subItems[#subItems].outlineRect:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 				subItems[#subItems].outlineRect.x = subItems[#subItems].x + subItems[#subItems].contentWidth * 0.5 - 1
 				subItems[#subItems].outlineRect.y = subItems[#subItems].y + subItems[#subItems].contentHeight * 0.5 - 1
 				subItems[#subItems].outlineRect.isVisible = false

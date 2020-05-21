@@ -1,9 +1,11 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
+local theme = require("libs.theme")
 local buttonLib = require("libs.ui.button")
 local alertPopupLib = require("libs.ui.alert-popup")
 local mMin = math.min
 local mMax = math.max
+local uPack = unpack
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local maxDisplayWidth = 825
@@ -128,8 +130,8 @@ function M.create()
 		background.x = display.contentCenterX
 		background.y = display.contentCenterY
 		background.strokeWidth = 1
-		background:setFillColor(0.15, 0.15, 0.15)
-		background:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+		background:setFillColor(uPack(theme:get().backgroundColor.primary))
+		background:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 		self:insert(background)
 
 		titleText =
@@ -146,7 +148,7 @@ function M.create()
 		)
 		titleText.x = background.x
 		titleText.y = background.y - background.contentHeight * 0.5 + titleText.contentHeight * 0.5 + 10
-		titleText:setFillColor(1, 1, 1)
+		titleText:setFillColor(uPack(theme:get().textColor.primary))
 		self:insert(titleText)
 
 		messageText =
@@ -163,7 +165,7 @@ function M.create()
 		)
 		messageText.x = titleText.x
 		messageText.y = titleText.y + titleText.contentHeight * 0.5 + messageText.contentHeight * 0.5
-		messageText:setFillColor(1, 1, 1)
+		messageText:setFillColor(uPack(theme:get().textColor.secondary))
 		self:insert(messageText)
 
 		playlistTextField = native.newTextField(display.contentWidth, -200, background.width - 60, 30)
@@ -178,7 +180,7 @@ function M.create()
 		cancelButton =
 			buttonLib.new(
 			{
-				iconName = "window-close No",
+				iconName = "window-close Cancel",
 				fontSize = maxHeight * 0.04,
 				parent = self,
 				onClick = function(event)
@@ -192,7 +194,7 @@ function M.create()
 		confirmButton =
 			buttonLib.new(
 			{
-				iconName = "check-circle Yes",
+				iconName = "check-circle Confirm",
 				fontSize = maxHeight * 0.04,
 				parent = self,
 				onClick = function(event)

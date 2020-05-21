@@ -1,8 +1,10 @@
 local M = {}
+local theme = require("libs.theme")
+local filledButtonLib = require("libs.ui.filled-button")
 local mMin = math.min
 local mMax = math.max
 local sFormat = string.format
-local filledButtonLib = require("libs.ui.filled-button")
+local uPack = unpack
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
@@ -98,8 +100,8 @@ function M.create()
 		background.x = display.contentCenterX
 		background.y = display.contentCenterY
 		background.strokeWidth = 1
-		background:setFillColor(0.15, 0.15, 0.15)
-		background:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+		background:setFillColor(uPack(theme:get().backgroundColor.primary))
+		background:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 		background:addEventListener(
 			"tap",
 			function()
@@ -121,7 +123,7 @@ function M.create()
 		)
 		titleText.x = background.x
 		titleText.y = background.y - background.contentHeight * 0.5 + titleText.contentHeight * 0.5 + 10
-		titleText:setFillColor(1, 1, 1)
+		titleText:setFillColor(uPack(theme:get().textColor.primary))
 		self:insert(titleText)
 
 		logo = display.newImageRect("img/icons/play.png", 30, 30)
@@ -132,7 +134,7 @@ function M.create()
 		separatorLine = display.newRoundedRect(0, 0, background.contentWidth - 40, 1, 1)
 		separatorLine.x = background.x
 		separatorLine.y = titleText.y + titleText.contentHeight * 0.5
-		separatorLine:setFillColor(0.7, 0.7, 0.7)
+		separatorLine:setFillColor(uPack(theme:get().textColor.secondary))
 		self:insert(separatorLine)
 
 		for i = 1, #credits do
@@ -156,7 +158,7 @@ function M.create()
 				creditTitles[i].y = creditTitles[i - 1].y + creditTitles[i - 1].contentHeight + 30
 			end
 
-			creditTitles[i]:setFillColor(1, 1, 1)
+			creditTitles[i]:setFillColor(uPack(theme:get().textColor.primary))
 			self:insert(creditTitles[i])
 
 			creditAtributions[i] =
@@ -174,7 +176,7 @@ function M.create()
 			creditAtributions[i].x = titleText.x
 			creditAtributions[i].y =
 				creditTitles[i].y + creditTitles[i].contentHeight * 0.5 + creditAtributions[i].contentHeight * 0.5
-			creditAtributions[i]:setFillColor(1, 1, 1)
+			creditAtributions[i]:setFillColor(uPack(theme:get().textColor.secondary))
 			self:insert(creditAtributions[i])
 
 			if (type(credits[i].onClick) == "function") then

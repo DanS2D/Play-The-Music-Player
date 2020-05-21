@@ -1,5 +1,6 @@
 local bass = require("plugin.bass")
 local audioLib = require("libs.audio-lib")
+local theme = require("libs.theme")
 local M = {}
 local mMin = math.min
 
@@ -8,8 +9,8 @@ function M.new(options)
 	local origWidth = options.width
 	local height = options.height or 7
 	local allowTouch = options.allowTouch or nil
-	local outerColor = options.outerColor or {0.28, 0.28, 0.28, 1}
-	local innerColor = options.innerColor or {0.6, 0.6, 0.6, 1}
+	local outerColor = options.outerColor or theme:get().iconColor.highlighted
+	local innerColor = options.innerColor or theme:get().iconColor.primary
 	local seekPosition = 0
 	local group = display.newGroup()
 	local outerBox = nil

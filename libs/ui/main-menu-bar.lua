@@ -1,5 +1,6 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
+local theme = require("libs.theme")
 local musicList = require("libs.ui.music-list")
 local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
@@ -14,6 +15,7 @@ local sFormat = string.format
 local tConcat = table.concat
 local tSort = table.sort
 local tInsert = table.insert
+local uPack = unpack
 local dScreenOriginX = display.screenOriginX
 local dScreenOriginY = display.dScreenOriginY
 local dCenterX = display.contentCenterX
@@ -32,14 +34,14 @@ local menuBarHeight = 28
 local rowHeight = menuBarHeight + 6
 
 function M.new(options)
-	local menuBarColor = options.menuBarColor or {0.18, 0.18, 0.18, 1}
-	local menuBarOverColor = options.menuBarOverColor or {0.12, 0.12, 0.12, 1}
+	local menuBarColor = options.menuBarColor or theme:get().backgroundColor.secondary
+	local menuBarOverColor = options.menuBarOverColor or theme:get().backgroundColor.primary
 	local font = options.font or native.systemFont
 	local fontSize = options.fontSize or (menuBarHeight / 2)
 	local itemWidth = options.itemWidth or 60
 	local itemListWidth = options.itemListWidth or 250
 	local items = options.items or error("options.items (table) expected, got %s", type(options.items))
-	local rowColor = {default = {0.1, 0.1, 0.1}, over = {0.2, 0.2, 0.2}}
+	local rowColor = {default = theme:get().rowColor.primary, over = theme:get().rowColor.over}
 	local parentGroup = options.parentGroup or display.currentStage
 	local group = display.newGroup()
 	local isItemOpen = false
@@ -67,7 +69,7 @@ function M.new(options)
 
 		for j = 1, #menuButtons do
 			if (j ~= target.index) then
-				menuButtons[j].alpha = 1
+				menuButtons[j]:setFillColor(uPack(theme:get().textColor.primary))
 				menuButtons[j]:closeSubmenu()
 			end
 		end
@@ -89,7 +91,7 @@ function M.new(options)
 				iconName = items[i].title,
 				font = font,
 				fontSize = fontSize + 4,
-				fillColor = {1, 1, 1},
+				fillColor = theme:get().textColor.primary,
 				onClick = function(event)
 					local target = event.target
 
@@ -102,7 +104,7 @@ function M.new(options)
 					if (not isItemOpen) then
 						closeSubmenus()
 					else
-						target.alpha = 0.8
+						target:setFillColor(uPack(theme:get().textColor.secondary))
 						target:openSubmenu()
 						closeSubmenus(target)
 					end
@@ -113,7 +115,6 @@ function M.new(options)
 		mainButton.x = i == 1 and 10 or menuButtons[i - 1].x + menuButtons[i - 1].contentWidth + 10
 		mainButton.y = menuBarHeight * 0.5
 		mainButton.index = i
-		mainButton.alpha = 1
 
 		function mainButton:openSubmenu()
 			self.mainTableView.isVisible = true
@@ -387,17 +388,17 @@ function M.new(options)
 						if (isItemOpen) then
 							closeSubmenus(button)
 							button:openSubmenu()
-							button.alpha = 0.8
+							button:setFillColor(uPack(theme:get().textColor.secondary))
 						else
 							closeSubmenus()
-							button.alpha = 0.8
+							button:setFillColor(uPack(theme:get().textColor.secondary))
 						end
 					else
-						button.alpha = 1
+						button:setFillColor(uPack(theme:get().textColor.primary))
 					end
 				else
 					if (not isItemOpen) then
-						button.alpha = 1
+						button:setFillColor(uPack(theme:get().textColor.primary))
 					end
 				end
 			end

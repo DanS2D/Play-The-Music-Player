@@ -1,4 +1,6 @@
 local M = {}
+local theme = require("libs.theme")
+local uPack = unpack
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
@@ -11,7 +13,7 @@ function M.new(options)
 	local buttonLabel = options.labelText
 	local fontSize = options.fontSize or 14
 	local font = options.font or subTitleFont
-	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
+	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 	local group = display.newGroup()
@@ -40,13 +42,13 @@ function M.new(options)
 			}
 		)
 		label.x = icon.x + icon.contentWidth + label.contentWidth * 0.5
-		label:setFillColor(unpack(fillColor))
+		label:setFillColor(uPack(theme:get().textColor.primary))
 		group:insert(label)
 	end
 
 	local background = display.newRoundedRect(0, 0, group.contentWidth * 1.5, group.contentHeight, 2)
 	background.x = (buttonLabel) and icon.x + icon.contentWidth + label.contentWidth * 0.25 or icon.x
-	background:setFillColor(0.12, 0.12, 0.12)
+	background:setFillColor(uPack(theme:get().backgroundColor.primary))
 	group:insert(1, background)
 
 	function group:touch(event)
@@ -60,7 +62,7 @@ function M.new(options)
 			display.getCurrentStage():setFocus(target)
 			target.alpha = 0.6
 		elseif (phase == "ended" or phase == "cancelled") then
-			target.alpha = 1
+			target.alpha = 1.0
 
 			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then
 				if (eventY + targetHalfHeight >= 0 and eventY + targetHalfHeight <= target.contentHeight) then

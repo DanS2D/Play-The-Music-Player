@@ -1,6 +1,7 @@
 local M = {}
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
+local theme = require("libs.theme")
 local buttonLib = require("libs.ui.button")
 local multiButtonLib = require("libs.ui.multi-button")
 local switchLib = require("libs.ui.switch")
@@ -24,6 +25,7 @@ local mMin = math.min
 local mMax = math.max
 local mRandom = math.random
 local mSqrt = math.sqrt
+local uPack = unpack
 local smallButtonFontSize = 20
 local mainButtonFontSize = 28
 local controlButtonsXOffset = 10
@@ -251,8 +253,8 @@ function M.new(options)
 	songContainerBox.x = display.contentCenterX - songContainerBox.contentWidth * 0.5 - 38
 	songContainerBox.y = (barHeight - 5)
 	songContainerBox.strokeWidth = 1
-	songContainerBox:setFillColor(0.1, 0.1, 0.1, 0.8)
-	songContainerBox:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+	songContainerBox:setFillColor(uPack(theme:get().backgroundColor.primary))
+	songContainerBox:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 	songContainerBox:addEventListener(
 		"tap",
 		function(event)
@@ -380,7 +382,7 @@ function M.new(options)
 	songTitleText.x = -(songTitleText.contentWidth * 0.5)
 	songTitleText.y = -(songTitleText.contentHeight * 0.5) - 7
 	songTitleText.scrollTimer = nil
-	songTitleText:setFillColor(0.9, 0.9, 0.9)
+	songTitleText:setFillColor(uPack(theme:get().textColor.primary))
 	songContainer:insert(songTitleText)
 
 	songTitleText.copy =
@@ -395,7 +397,7 @@ function M.new(options)
 	songTitleText.copy.anchorX = 0
 	songTitleText.copy.x = songTitleText.x
 	songTitleText.copy.y = songTitleText.y
-	songTitleText.copy:setFillColor(0.9, 0.9, 0.9)
+	songTitleText.copy:setFillColor(uPack(theme:get().textColor.primary))
 	songContainer:insert(songTitleText.copy)
 
 	function songTitleText:restartListener()
@@ -473,7 +475,7 @@ function M.new(options)
 	songAlbumText.x = -(songAlbumText.contentWidth * 0.5)
 	songAlbumText.y = songTitleText.y + (songTitleText.contentHeight * 0.5) + 8
 	songAlbumText.scrollTimer = nil
-	songAlbumText:setFillColor(0.7, 0.7, 0.7)
+	songAlbumText:setFillColor(uPack(theme:get().textColor.secondary))
 	songContainer:insert(songAlbumText)
 
 	songAlbumText.copy =
@@ -488,7 +490,7 @@ function M.new(options)
 	songAlbumText.copy.anchorX = 0
 	songAlbumText.copy.x = -(songAlbumText.contentWidth * 0.5)
 	songAlbumText.copy.y = songTitleText.y + (songTitleText.contentHeight * 0.5) + 8
-	songAlbumText.copy:setFillColor(0.7, 0.7, 0.7)
+	songAlbumText.copy:setFillColor(uPack(theme:get().textColor.secondary))
 	songContainer:insert(songAlbumText.copy)
 
 	function songAlbumText:restartListener()

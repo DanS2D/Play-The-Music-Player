@@ -1,5 +1,6 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
+local theme = require("libs.theme")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local alertPopupLib = require("libs.ui.alert-popup")
 local buttonLib = require("libs.ui.button")
@@ -8,6 +9,7 @@ local playlistCreatePopupLib = require("libs.ui.playlist-create-popup")
 local mRound = math.round
 local sFormat = string.format
 local tInsert = table.insert
+local uPack = unpack
 local smallButtonFontSize = 16
 local mainButtonFontSize = 28
 local titleFont = "fonts/Jost-500-Medium.otf"
@@ -54,7 +56,7 @@ function M.new(options)
 		local totalRowHeight = rowHeight * #playlists
 		local width = 500
 		local height = rowHeight * #playlists
-		local rowColor = {default = {0.15, 0.15, 0.15}, over = {0.20, 0.20, 0.20}}
+		local rowColor = {default = theme:get().rowColor.primary, over = theme:get().rowColor.over}
 		local fontSize = (rowHeight / 2.5)
 
 		--print("num of subitems: ", #subItemData)
@@ -208,8 +210,8 @@ function M.new(options)
 
 		tableView.outlineRect = display.newRoundedRect(0, 0, width + 2, height + 2, 2)
 		tableView.outlineRect.strokeWidth = 1
-		tableView.outlineRect:setFillColor(0.15, 0.15, 0.15)
-		tableView.outlineRect:setStrokeColor(0.7, 0.7, 0.7)
+		tableView.outlineRect:setFillColor(uPack(theme:get().backgroundColor.primary))
+		tableView.outlineRect:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 		tableView.outlineRect.x = tableView.x + tableView.contentWidth * 0.5 - 1
 		tableView.outlineRect.y = tableView.y + tableView.contentHeight * 0.5 - 1
 
@@ -224,7 +226,7 @@ function M.new(options)
 		)
 		tableView.outLineCaret.x = tableView.outlineRect.x
 		tableView.outLineCaret.y = tableView.outlineRect.y - tableView.outlineRect.contentHeight * 0.5 - 1
-		tableView.outLineCaret:setFillColor(0.7, 0.7, 0.7)
+		tableView.outLineCaret:setFillColor(uPack(theme:get().iconColor.primary))
 
 		tableView:toFront()
 	end
@@ -291,7 +293,7 @@ function M.new(options)
 	)
 	playListCaret.x = playListButton.x + playListButton.contentWidth * 0.5 + playListCaret.contentWidth * 0.5
 	playListCaret.y = playListButton.y + playListCaret.contentHeight * 0.5
-	playListCaret:setFillColor(0.7, 0.7, 0.7)
+	playListCaret:setFillColor(uPack(theme:get().iconColor.primary))
 	group:insert(playListCaret)
 
 	local addNewPlaylistButton =

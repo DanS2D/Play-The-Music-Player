@@ -3,6 +3,7 @@ local tfd = require("plugin.tinyFileDialogs")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
+local theme = require("libs.theme")
 local tag = require("plugin.taglib")
 local musicBrainz = require("libs.music-brainz")
 local filledButtonLib = require("libs.ui.filled-button")
@@ -12,6 +13,7 @@ local mMin = math.min
 local mMax = math.max
 local sFormat = string.format
 local sSub = string.sub
+local uPack = unpack
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local maxDisplayWidth = 1024
@@ -92,7 +94,6 @@ function M.create()
 	local background = nil
 	local titleText = nil
 	local separatorLine = nil
-	local messageText = nil
 	local albumArtworkContainer = nil
 	local albumArtworkNotFoundText = nil
 	local albumArtwork = nil
@@ -116,7 +117,6 @@ function M.create()
 	local ratingText = nil
 	local ratingStars = nil
 	local onMusicBrainzDownloadComplete = nil
-	-- song rating (via the rating lib)
 	local buttonGroup = nil
 	local cancelButton = nil
 	local confirmButton = nil
@@ -186,8 +186,8 @@ function M.create()
 		background.x = display.contentCenterX
 		background.y = display.contentCenterY
 		background.strokeWidth = 1
-		background:setFillColor(0.15, 0.15, 0.15)
-		background:setStrokeColor(0.6, 0.6, 0.6, 0.5)
+		background:setFillColor(uPack(theme:get().backgroundColor.primary))
+		background:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 		background:addEventListener(
 			"tap",
 			function()
@@ -210,13 +210,13 @@ function M.create()
 		)
 		titleText.x = background.x
 		titleText.y = background.y - background.contentHeight * 0.5 + titleText.contentHeight * 0.5 + 10
-		titleText:setFillColor(1, 1, 1)
+		titleText:setFillColor(uPack(theme:get().textColor.primary))
 		self:insert(titleText)
 
 		separatorLine = display.newRoundedRect(0, 0, background.contentWidth - 40, 1, 1)
 		separatorLine.x = background.x
 		separatorLine.y = titleText.y + titleText.contentHeight * 0.5
-		separatorLine:setFillColor(0.7, 0.7, 0.7)
+		separatorLine:setFillColor(uPack(theme:get().textColor.secondary))
 		self:insert(separatorLine)
 
 		albumArtworkContainer =
@@ -226,8 +226,8 @@ function M.create()
 		albumArtworkContainer.x = background.x + 55
 		albumArtworkContainer.y = titleText.y + titleText.contentHeight * 0.5 + 20
 		albumArtworkContainer.strokeWidth = 1
-		albumArtworkContainer:setFillColor(0.15, 0.15, 0.15)
-		albumArtworkContainer:setStrokeColor(0.7, 0.7, 0.7)
+		albumArtworkContainer:setFillColor(uPack(theme:get().backgroundColor.primary))
+		albumArtworkContainer:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 		self:insert(albumArtworkContainer)
 
 		albumArtworkNotFoundText =
@@ -327,23 +327,6 @@ function M.create()
 		Runtime:addEventListener(musicBrainz.customEventName, onMusicBrainzDownloadComplete)
 		musicBrainz.getCover(song)
 
-		--[[
-		messageText =
-			display.newText(
-			{
-				text = "Please enter the name for your new playlist.",
-				font = titleFont,
-				x = 0,
-				y = 0,
-				fontSize = maxHeight * 0.04,
-				width = background.width - 20,
-				align = "center"
-			}
-		)
-		messageText.x = titleText.x
-		messageText.y = titleText.y + titleText.contentHeight * 0.5 + messageText.contentHeight * 0.5
-		messageText:setFillColor(1, 1, 1)
-		self:insert(messageText)--]]
 		local textFieldLeftEdge = background.x - background.contentWidth * 0.5 + textFieldEdgePadding
 		local durationMinutes = song.duration:sub(1, 2)
 		local durationSeconds = song.duration:sub(4, 5)

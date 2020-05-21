@@ -1,4 +1,6 @@
 local M = {}
+local theme = require("libs.theme")
+local uPack = unpack
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 
 function M.new(options)
@@ -7,7 +9,7 @@ function M.new(options)
 	local iconName = options.iconName or error("button.new() iconName (string) expected, got %s", type(options.iconName))
 	local fontSize = options.fontSize or 14
 	local font = options.font or fontAwesomeSolidFont
-	local fillColor = options.fillColor or {0.7, 0.7, 0.7}
+	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 
@@ -34,9 +36,9 @@ function M.new(options)
 
 		if (phase == "began") then
 			display.getCurrentStage():setFocus(target)
-			target.alpha = 0.6
+			target:setFillColor(uPack(theme:get().iconColor.highlighted))
 		elseif (phase == "ended" or phase == "cancelled") then
-			target.alpha = 1
+			target:setFillColor(uPack(theme:get().iconColor.primary))
 
 			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then
 				if (eventY + targetHalfHeight >= 0 and eventY + targetHalfHeight <= target.contentHeight) then
