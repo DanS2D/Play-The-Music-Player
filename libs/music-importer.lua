@@ -146,6 +146,7 @@ function M.scanFolders()
 								year = tags.year,
 								trackNumber = tags.trackNumber,
 								rating = ratings:convert(tags.rating),
+								playCount = 0, -- TODO: read from taglib when it supports it
 								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
 								bitrate = tags.bitrate,
 								sampleRate = tags.sampleRate
