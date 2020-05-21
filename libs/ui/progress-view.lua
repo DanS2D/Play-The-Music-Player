@@ -33,7 +33,7 @@ function M.new(options)
 		local phase = event.phase
 
 		if (phase == "began") then
-			if (audioLib.isChannelPlaying()) then
+			if (audioLib.isChannelHandleValid()) then
 				local valueX, valueY = self:contentToLocal(event.x, event.y)
 				local onePercent = width / 100
 				local currentPercent = valueX / onePercent
