@@ -41,6 +41,7 @@ local oldHeight = display.contentHeight
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
+local isWindows = system.getInfo("platform") == "win32"
 
 local function onAudioEvent(event)
 	local phase = event.phase
@@ -146,7 +147,12 @@ local function changeTheme(newTheme)
 		settings:save()
 		native.requestExit()
 
-		os.execute('start /MIN "%s" Play.exe', lfs.currentdir())
+		if (isWindows) then
+			os.execute('start /MIN "%s" Play.exe', lfs.currentdir())
+		else
+			-- untested (for macOS)
+			os.execute('open -a "%s/Play.app"', lfs.currentdir())
+		end
 	end
 
 	alertPopup:setTitle("Changing theme requires restart.")
