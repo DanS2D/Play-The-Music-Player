@@ -9,6 +9,7 @@ theme:set(settings.theme)
 theme:setDefaultBackgroundColor()
 math.randomseed(os.time())
 
+local lfs = require("lfs")
 local strict = require("strict")
 local stringExt = require("libs.string-ext")
 local luaExt = require("libs.lua-ext")
@@ -144,11 +145,13 @@ local function changeTheme(newTheme)
 		settings.theme = theme:getName()
 		settings:save()
 		native.requestExit()
+
+		os.execute('start /MIN "%s" Play.exe', lfs.currentdir())
 	end
 
 	alertPopup:setTitle("Changing theme requires restart.")
 	alertPopup:setMessage(
-		"Changing the theme requires the program to close.\n\nClicking confirm will exit the program. You will then need to launch it again, and your selected theme will be applied.\n\nClose now?"
+		"Changing the theme requires the program to restart.\nClicking confirm will restart the program.\n\nClose now?"
 	)
 	alertPopup:setButtonCallbacks({onConfirm = onConfirm})
 	alertPopup:show()
