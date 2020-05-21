@@ -143,7 +143,6 @@ function M:createTableView(options, index)
 			height = display.contentHeight - 100,
 			rowHeight = rowHeight,
 			useSelectedRowHighlighting = true,
-			backgroundColor = {0.10, 0.10, 0.10, 1},
 			rowColorDefault = defaultRowColor,
 			onRowRender = function(event)
 				local phase = event.phase
@@ -205,6 +204,7 @@ function M:createTableView(options, index)
 								align = "left"
 							}
 						)
+						nowPlayingIcon:setFillColor(uPack(theme:get().iconColor.primary))
 						nowPlayingIcon.anchorX = 0
 						nowPlayingIcon.x = 8
 						row:insert(nowPlayingIcon)
@@ -229,6 +229,7 @@ function M:createTableView(options, index)
 						rowTitleText.x = 35
 					end
 
+					rowTitleText:setFillColor(uPack(theme:get().textColor.primary))
 					row:insert(rowTitleText)
 				end
 
@@ -573,6 +574,7 @@ local function createCategories()
 		sortIndicator.anchorX = 0
 		sortIndicator.x = titleText.x + titleText.contentWidth + 4
 		sortIndicator.isVisible = i == 1 -- TODO: read from database
+		sortIndicator:setFillColor(uPack(theme:get().iconColor.primary))
 		titleText.sortIndicator = sortIndicator
 		categoryTouchRect.sortIndicator = sortIndicator
 		categoryList[i].sortIndicator = sortIndicator

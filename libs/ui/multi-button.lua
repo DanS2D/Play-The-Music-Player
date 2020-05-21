@@ -10,7 +10,6 @@ function M.new(options)
 		options.buttonOptions or
 		error("multiButton.new() buttonOptions (string) expected, got %s", type(options.buttonOptions))
 	local fontSize = options.fontSize or 14
-	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local parent = options.parent or display.getCurrentStage()
 	local buttons = {}
 	local group = display.newGroup()
@@ -74,7 +73,7 @@ function M.new(options)
 		buttons[i].isOn = i == 1 and true or false
 		buttons[i].isVisible = i == 1
 		buttons[i].onClick = buttonOptions[i].onClick
-		buttons[i]:setFillColor(unpack(fillColor))
+		buttons[i]:setFillColor(uPack(theme:get().iconColor.primary))
 		buttons[i]:addEventListener("touch", touch)
 		group:insert(buttons[i])
 	end

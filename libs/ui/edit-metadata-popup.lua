@@ -65,6 +65,7 @@ local function createTextField(options)
 	title.anchorY = options.anchorY or 0
 	title.x = options.x
 	title.y = options.y
+	title:setFillColor(uPack(theme:get().textColor.primary))
 	group:insert(title)
 
 	local textField = native.newTextField(display.contentWidth, -200, options.width - title.contentWidth, options.height)

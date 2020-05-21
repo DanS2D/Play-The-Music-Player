@@ -46,6 +46,7 @@ function M.new(options)
 					}
 				)
 				icon.x = 8 + (icon.contentWidth * 0.5)
+				icon:setFillColor(uPack(theme:get().iconColor.primary))
 				row:insert(icon)
 
 				local subItemText =
@@ -61,6 +62,7 @@ function M.new(options)
 				)
 				subItemText.anchorX = 0
 				subItemText.x = 35
+				subItemText:setFillColor(uPack(theme:get().textColor.primary))
 				row:insert(subItemText)
 
 				if (items[row.index].hasSubmenu) then
@@ -77,6 +79,7 @@ function M.new(options)
 					)
 					subMenuIcon.anchorX = 1
 					subMenuIcon.x = rowContentWidth - subMenuIcon.contentWidth
+					subMenuIcon:setFillColor(uPack(theme:get().iconColor.primary))
 					row:insert(subMenuIcon)
 				end
 
@@ -186,6 +189,7 @@ function M.new(options)
 								}
 							)
 							icon.x = 8 + (icon.contentWidth * 0.5)
+							icon:setFillColor(uPack(theme:get().iconColor.primary))
 							row:insert(icon)
 
 							local subItemText =
@@ -201,6 +205,7 @@ function M.new(options)
 							)
 							subItemText.anchorX = 0
 							subItemText.x = 35
+							subItemText:setFillColor(uPack(theme:get().textColor.primary))
 							row:insert(subItemText)
 
 							if (itemData.disabled) then

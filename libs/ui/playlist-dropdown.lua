@@ -101,6 +101,7 @@ function M.new(options)
 						}
 					)
 					icon.x = 8 + (icon.contentWidth * 0.5)
+					icon:setFillColor(uPack(theme:get().iconColor.primary))
 					row:insert(icon)
 
 					local subItemText =
@@ -116,6 +117,7 @@ function M.new(options)
 					)
 					subItemText.anchorX = 0
 					subItemText.x = 35
+					subItemText:setFillColor(uPack(theme:get().textColor.primary))
 					row:insert(subItemText)
 
 					local trashIcon =
@@ -147,6 +149,7 @@ function M.new(options)
 					trashIcon.anchorX = 1
 					trashIcon.x = rowContentWidth - trashIcon.contentWidth
 					trashIcon.y = rowContentHeight * 0.5
+					trashIcon:setFillColor(uPack(theme:get().iconColor.primary))
 					row:insert(trashIcon)
 				end,
 				onRowClick = function(event)

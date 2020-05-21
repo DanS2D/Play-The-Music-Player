@@ -9,7 +9,6 @@ function M.new(options)
 	local iconName = options.iconName or error("button.new() iconName (string) expected, got %s", type(options.iconName))
 	local fontSize = options.fontSize or 14
 	local font = options.font or fontAwesomeSolidFont
-	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 
@@ -24,7 +23,7 @@ function M.new(options)
 	)
 	button.x = x
 	button.y = y
-	button:setFillColor(unpack(fillColor))
+	button:setFillColor(uPack(theme:get().iconColor.primary))
 	parent:insert(button)
 
 	function button:touch(event)

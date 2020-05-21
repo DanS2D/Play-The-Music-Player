@@ -140,8 +140,8 @@ function M.new(options)
 				height = height,
 				rowHeight = rowHeight,
 				rowLimit = 0,
+				rowColorDefault = rowColor,
 				useSelectedRowHighlighting = false,
-				backgroundColor = {0.18, 0.18, 0.18},
 				onRowRender = function(event)
 					local phase = event.phase
 					local row = event.row
@@ -160,6 +160,7 @@ function M.new(options)
 						}
 					)
 					icon.x = 8 + (icon.contentWidth * 0.5)
+					icon:setFillColor(uPack(theme:get().iconColor.primary))
 					row:insert(icon)
 
 					local subItemText =
@@ -175,6 +176,7 @@ function M.new(options)
 					)
 					subItemText.anchorX = 0
 					subItemText.x = 30
+					subItemText:setFillColor(uPack(theme:get().textColor.primary))
 					row:insert(subItemText)
 
 					if (params.useCheckmark) then
