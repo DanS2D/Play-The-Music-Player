@@ -21,7 +21,7 @@ local M = {
 	lastUsedColumn = "",
 	lastUsedColumnSortAToZ = true,
 	showVisualizer = true,
-	selectedVisualizers = {pixies = {name = "pixies", enabled = true}, firebar = {name = "firebar", enabled = true}},
+	selectedVisualizers = {},
 	lastView = "musicList"
 }
 local sqlLib = require("libs.sql-lib")
