@@ -575,6 +575,7 @@ function M.new(options)
 	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
 	playBackTimeText.y = songContainerBox.y + (songContainerBox.contentHeight * 0.5) - 16
 	playBackTimeText.text = ""
+	playBackTimeText:setFillColor(uPack(theme:get().textColor.primary))
 	group:insert(playBackTimeText)
 
 	function playBackTimeText:update()

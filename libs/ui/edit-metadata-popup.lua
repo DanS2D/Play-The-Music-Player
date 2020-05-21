@@ -557,6 +557,7 @@ function M.create()
 		ratingText.anchorY = 0
 		ratingText.x = textFieldLeftEdge
 		ratingText.y = songDurationMinutesTextField.field.y + textFieldHeight + textFieldYPadding
+		ratingText:setFillColor(uPack(theme:get().textColor.primary))
 		group:insert(ratingText)
 
 		ratingStars =
