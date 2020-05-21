@@ -279,12 +279,12 @@ function M:createTableView(options, index)
 					selectedRowRealIndex = tableViewList[1]:getRowRealIndex(audioLib.previousSongIndex)
 
 					if (selectedRowRealIndex > 0) then
-						parent:reloadRow(selectedRowRealIndex)
+						tableViewList[1]:reloadRow(selectedRowRealIndex)
 					end
 
 					--print("row " .. row.index .. " clicked - playing song " .. song.title)
 
-					parent:reloadRow(row.realIndex)
+					tableViewList[1]:reloadRow(row.realIndex)
 
 					audioLib.currentSongIndex = row.index
 					audioLib.load(song)
