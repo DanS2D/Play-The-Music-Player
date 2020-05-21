@@ -7,7 +7,6 @@ local switchLib = require("libs.ui.switch")
 local musicList = require("libs.ui.music-list")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local levelVisualization = require("libs.ui.level-visualizer")
-local musicVisualizer = require("libs.ui.music-visualizer")
 local progressView = require("libs.ui.progress-view")
 local ratings = require("libs.ui.ratings")
 local volumeSliderLib = require("libs.ui.volume-slider")
@@ -47,7 +46,6 @@ local albumArtwork = nil
 local songContainerBox = nil
 local songContainer = nil
 local playlistDropdown = nil
-local musicVisualizerBar = nil
 local loopButton = nil
 local levelVisualizer = nil
 local musicDuration = 0
@@ -95,7 +93,6 @@ function M.new(options)
 				if (canPlay) then
 					local previousSong = musicList:getRow(audioLib.currentSongIndex)
 
-					musicVisualizer:restart()
 					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(previousSong)
@@ -130,7 +127,6 @@ function M.new(options)
 
 						if (audioLib.isChannelPaused()) then
 							audioLib.resume()
-							musicVisualizer.start()
 							return
 						end
 					end
@@ -142,7 +138,6 @@ function M.new(options)
 					if (audioLib.isChannelHandleValid()) then
 						if (audioLib.isChannelPlaying()) then
 							audioLib.pause()
-							musicVisualizer.pause()
 						end
 					end
 				end
@@ -182,7 +177,6 @@ function M.new(options)
 
 				if (canPlay) then
 					local nextSong = musicList:getRow(audioLib.currentSongIndex)
-					musicVisualizer:restart()
 					playButton:setIsOn(true)
 					musicList:setSelectedRow(audioLib.currentSongIndex)
 					audioLib.load(nextSong)
@@ -251,8 +245,6 @@ function M.new(options)
 	volumeButton.y = previousButton.y
 	volumeButton:setIsOn(settings.volume ~= 0)
 	group:insert(volumeButton)
-
-	--musicVisualizerBar = musicVisualizer.new({yPos = 26, group = group}) --################################################ << CPU HOG ########################################################################
 
 	songContainerBox = display.newRoundedRect(0, 0, mMax(489, display.contentWidth / 2), barHeight, 2)
 	songContainerBox.anchorX = 0

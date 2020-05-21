@@ -11,7 +11,6 @@ local musicBrainz = require("libs.music-brainz")
 local settings = require("libs.settings")
 local musicImporter = require("libs.music-importer")
 local fileUtils = require("libs.file-utils")
-local musicVisualizer = require("libs.ui.music-visualizer")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
@@ -53,7 +52,6 @@ local function onAudioEvent(event)
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updateSongText(song)
 		musicBrainz.getCover(song)
-		musicVisualizer:start()
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
 		audioLib.previousSongIndex = currentSongIndex
@@ -72,7 +70,6 @@ local function onAudioEvent(event)
 				else
 					mediaBarLib.resetSongProgress()
 					mediaBarLib.clearPlayingSong()
-					musicVisualizer:remove()
 					audioLib.reset()
 					musicList:setSelectedRow(0)
 					return
@@ -84,7 +81,6 @@ local function onAudioEvent(event)
 		musicList:setSelectedRow(audioLib.currentSongIndex)
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
-		musicVisualizer:restart()
 		audioLib.load(nextSong)
 		audioLib.play(nextSong)
 	end
@@ -157,7 +153,6 @@ local applicationMainMenuBar =
 							wasSongPlaying = audioLib.isChannelPlaying()
 							interruptedSongPosition = mediaBarLib.getSongProgress()
 							audioLib.reset()
-							musicVisualizer.pause()
 							mainMenuBar.setEnabled(false)
 							local selectedPath = musicImporter.showFolderSelectDialog()
 							local previousPaths = settings.musicFolderPaths
@@ -366,7 +361,6 @@ local applicationMainMenuBar =
 								end
 							end
 
-							musicVisualizer:restart()
 							settings:save()
 						end
 					},
@@ -374,57 +368,20 @@ local applicationMainMenuBar =
 						title = "Start",
 						iconName = "play",
 						onClick = function(event)
-							musicVisualizer:start()
 						end
 					},
 					{
 						title = "Pause",
 						iconName = "pause",
 						onClick = function(event)
-							musicVisualizer:pause()
 						end
 					},
 					{
 						title = "Stop",
 						iconName = "stop",
 						onClick = function(event)
-							musicVisualizer:remove()
 						end
 					},
-					{
-						title = "Pixes",
-						iconName = "dot-circle",
-						useCheckmark = true,
-						checkMarkIsOn = settings.selectedVisualizers.pixies.enabled,
-						onClick = function(event)
-							if (event.isSwitch) then
-								if (event.isOn) then
-									settings.selectedVisualizers.pixies.enabled = true
-								else
-									settings.selectedVisualizers.pixies.enabled = false
-								end
-
-								settings:save()
-							end
-						end
-					},
-					{
-						title = "Fire Bar",
-						iconName = "fire",
-						useCheckmark = true,
-						checkMarkIsOn = settings.selectedVisualizers.firebar.enabled,
-						onClick = function(event)
-							if (event.isSwitch) then
-								if (event.isOn) then
-									settings.selectedVisualizers.firebar.enabled = true
-								else
-									settings.selectedVisualizers.firebar.enabled = false
-								end
-
-								settings:save()
-							end
-						end
-					}
 				}
 			},--]]
 			{
