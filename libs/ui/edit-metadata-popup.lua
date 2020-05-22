@@ -5,7 +5,7 @@ local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
 local theme = require("libs.theme")
 local tag = require("plugin.taglib")
-local musicBrainz = require("libs.music-brainz")
+local albumArt = require("libs.album-art")
 local buttonLib = require("libs.ui.button")
 local filledButtonLib = require("libs.ui.filled-button")
 local alertPopupLib = require("libs.ui.alert-popup")
@@ -121,7 +121,7 @@ function M.create()
 	local songCommentTextField = nil
 	local ratingText = nil
 	local ratingStars = nil
-	local onMusicBrainzDownloadComplete = nil
+	local onAlbumArtDownloadComplete = nil
 	local buttonGroup = nil
 	local cancelButton = nil
 	local confirmButton = nil
@@ -146,7 +146,7 @@ function M.create()
 			self[i] = nil
 		end
 
-		Runtime:removeEventListener("musicBrainz", onMusicBrainzDownloadComplete)
+		Runtime:removeEventListener("AlbumArtDownloadEdit", onAlbumArtDownloadComplete)
 	end
 
 	function group:show(song)
@@ -157,7 +157,7 @@ function M.create()
 		local textFieldHeight = 30
 		local maxWidth = mMin(maxDisplayWidth, display.contentWidth)
 		local maxHeight = mMin(maxDisplayHeight, display.contentHeight)
-		musicBrainz.customEventName = "metadataMusicBrainz"
+		albumArt.customEventName = "AlbumArtDownloadEdit"
 		local songRating = song.rating
 		local songMp3Rating = 0
 
@@ -317,18 +317,8 @@ function M.create()
 				font = fontAwesomeBrandsFont,
 				fontSize = maxHeight * 0.03,
 				parent = self,
-				onClick = function(event)
-					albumCoverSearchWebView =
-						native.newWebView(background.x, background.y, background.width - 20, background.height - 20)
-					local url =
-						sFormat(
-						"https://www.google.com/search?q=%s+%s+cover&tbm=isch&hl=en&chips=q:%s+%s+cover,g_1:album",
-						song.artist:urlEncode(),
-						song.album:urlEncode(),
-						song.artist:urlEncode(),
-						song.album:urlEncode()
-					)
-					albumCoverSearchWebView:request(url)
+				onClick = function(clickEvent)
+					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.google)
 				end
 			}
 		)
@@ -336,7 +326,14 @@ function M.create()
 		albumArtworkGoogleButton.y = albumArtworkPathButton.y
 		albumArtworkPathButton.isVisible = false
 
-		onMusicBrainzDownloadComplete = function(event)
+		-- google icon name: google (brands font file)
+		-- musicbrains icon name: head-side-brain
+		-- discogs icon name: compact-disc
+
+		-- to get album artwork from google via network.request in json format:
+		-- https://www.googleapis.com/customsearch/v1?key=AIzaSyBiCyund4Cslo-1o9CPDySZuaz6kw3E1j0&cx=005942035190247331436:pgjtxkxupvn&num=5&searchType=image&exactTerms=meteora&q=linkin park meteora album cover
+
+		onAlbumArtDownloadComplete = function(event)
 			local phase = event.phase
 			local coverFileName = event.fileName
 
@@ -364,8 +361,8 @@ function M.create()
 			return true
 		end
 
-		Runtime:addEventListener(musicBrainz.customEventName, onMusicBrainzDownloadComplete)
-		musicBrainz:getAlbumCover(song)
+		Runtime:addEventListener(albumArt.customEventName, onAlbumArtDownloadComplete)
+		albumArt:getFileAlbumCover(song)
 
 		local textFieldLeftEdge = background.x - background.contentWidth * 0.5 + textFieldEdgePadding
 		local durationMinutes = song.duration:sub(1, 2)
@@ -780,7 +777,7 @@ function M.create()
 	function group:hide()
 		self:cleanup()
 
-		musicBrainz.customEventName = nil
+		albumArt.customEventName = nil
 		self.isVisible = false
 	end
 

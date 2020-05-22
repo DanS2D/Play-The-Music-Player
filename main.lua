@@ -19,7 +19,7 @@ math.randomseed(os.time())
 local strict = require("strict")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
-local musicBrainz = require("libs.music-brainz")
+local albumArt = require("libs.album-art")
 local musicImporter = require("libs.music-importer")
 local fileUtils = require("libs.file-utils")
 local mainMenuBar = require("libs.ui.main-menu-bar")
@@ -57,7 +57,7 @@ local function onAudioEvent(event)
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updateSongText(song)
-		musicBrainz:getAlbumCover(song)
+		albumArt:getFileAlbumCover(song)
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
 		audioLib.previousSongIndex = currentSongIndex
@@ -109,7 +109,7 @@ local function playInterruptedSong()
 	end
 end
 
-local function onMusicBrainzDownloadComplete(event)
+local function onAlbumArtDownloadComplete(event)
 	local phase = event.phase
 
 	if (phase == "downloaded") then
@@ -119,7 +119,7 @@ local function onMusicBrainzDownloadComplete(event)
 	return true
 end
 
-Runtime:addEventListener("musicBrainz", onMusicBrainzDownloadComplete)
+Runtime:addEventListener("AlbumArtDownload", onAlbumArtDownloadComplete)
 
 local function populateTableViews()
 	if (sqlLib:currentMusicCount() > 0) then
