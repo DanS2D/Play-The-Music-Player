@@ -6,6 +6,7 @@ local fileUtils = require("libs.file-utils")
 local theme = require("libs.theme")
 local tag = require("plugin.taglib")
 local musicBrainz = require("libs.music-brainz")
+local buttonLib = require("libs.ui.button")
 local filledButtonLib = require("libs.ui.filled-button")
 local alertPopupLib = require("libs.ui.alert-popup")
 local ratings = require("libs.ui.ratings")
@@ -20,6 +21,7 @@ local maxDisplayWidth = 1024
 local maxDisplayHeight = 768
 local group = display.newGroup()
 local alertPopup = alertPopupLib.create()
+local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 local documentsPath = system.pathForFile("", system.DocumentsDirectory)
@@ -99,6 +101,8 @@ function M.create()
 	local albumArtworkNotFoundText = nil
 	local albumArtwork = nil
 	local albumArtworkPathButton = nil
+	local albumArtworkGoogleButton = nil
+	local albumCoverSearchWebView = nil
 	local tempArtworkFullPath = nil
 	local realArtworkFilename = nil
 	local realArtworkPath = nil
@@ -166,6 +170,10 @@ function M.create()
 		interactionDisableRect:addEventListener(
 			"tap",
 			function()
+				if (albumCoverSearchWebView and albumCoverSearchWebView.removeSelf) then
+					albumCoverSearchWebView:removeSelf()
+				end
+
 				return true
 			end
 		)
@@ -193,6 +201,7 @@ function M.create()
 			"tap",
 			function()
 				native.setKeyboardFocus(nil)
+				return true
 			end
 		)
 		self:insert(background)
@@ -301,9 +310,35 @@ function M.create()
 			albumArtworkContainer.y + albumArtworkContainer.contentHeight + albumArtworkPathButton.contentHeight * 0.5 + 8
 		albumArtworkPathButton.isVisible = false
 
+		albumArtworkGoogleButton =
+			buttonLib.new(
+			{
+				iconName = "google",
+				font = fontAwesomeBrandsFont,
+				fontSize = maxHeight * 0.03,
+				parent = self,
+				onClick = function(event)
+					albumCoverSearchWebView =
+						native.newWebView(background.x, background.y, background.width - 20, background.height - 20)
+					local url =
+						sFormat(
+						"https://www.google.com/search?q=%s+%s+cover&tbm=isch&hl=en&chips=q:%s+%s+cover,g_1:album",
+						song.artist:urlEncode(),
+						song.album:urlEncode(),
+						song.artist:urlEncode(),
+						song.album:urlEncode()
+					)
+					albumCoverSearchWebView:request(url)
+				end
+			}
+		)
+		albumArtworkGoogleButton.x = albumArtworkPathButton.x - albumArtworkPathButton.contentWidth * 0.5
+		albumArtworkGoogleButton.y = albumArtworkPathButton.y
+		albumArtworkPathButton.isVisible = false
+
 		onMusicBrainzDownloadComplete = function(event)
 			local phase = event.phase
-			local coverFileName = sFormat("%s%s", fileUtils.albumArtworkFolder, event.fileName)
+			local coverFileName = event.fileName
 
 			if (phase == "downloaded") then
 				albumArtwork =
@@ -324,12 +359,13 @@ function M.create()
 			end
 
 			albumArtworkPathButton.isVisible = true
+			albumArtworkPathButton.isVisible = true
 
 			return true
 		end
 
 		Runtime:addEventListener(musicBrainz.customEventName, onMusicBrainzDownloadComplete)
-		musicBrainz.getCover(song)
+		musicBrainz:getAlbumCover(song)
 
 		local textFieldLeftEdge = background.x - background.contentWidth * 0.5 + textFieldEdgePadding
 		local durationMinutes = song.duration:sub(1, 2)

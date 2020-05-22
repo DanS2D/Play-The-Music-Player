@@ -57,7 +57,7 @@ local function onAudioEvent(event)
 		mediaBarLib.updatePlaybackTime()
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updateSongText(song)
-		musicBrainz.getCover(song)
+		musicBrainz:getAlbumCover(song)
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
 		audioLib.previousSongIndex = currentSongIndex
