@@ -102,6 +102,20 @@ function string:stripLeadingSpaces(str)
 	return strippedStr
 end
 
+function string:stripTrailingSpaces(str)
+	local wString = str or self
+	local strippedStr = wString:gsub("[ \t]+%f[\r\n%z]", "")
+
+	return strippedStr
+end
+
+function string:stripLeadingAndTrailingSpaces(str)
+	local wString = str or self
+	local strippedStr = wString:match("^%s*(.-)%s*$")
+
+	return strippedStr
+end
+
 function string:getFileName(str)
 	local wString = str or self
 	local start, finish = wString:find("[%w%s!-={-|]+[_%.].+")

@@ -43,7 +43,7 @@ local function onTextFieldInput(event)
 			return
 		end
 	elseif (phase == "ended" or phase == "cancelled") then
-		event.target.text = event.target.text:stripLeadingSpaces()
+		event.target.text = event.target.text:stripLeadingAndTrailingSpaces()
 	end
 
 	return true
@@ -728,17 +728,17 @@ function M.create()
 						)
 					end
 
-					song.album = songAlbumTextField.field.text:stripLeadingSpaces()
-					song.artist = songArtistTextField.field.text:stripLeadingSpaces()
-					song.genre = songGenreTextField.field.text:stripLeadingSpaces()
+					song.album = songAlbumTextField.field.text:stripLeadingAndTrailingSpaces()
+					song.artist = songArtistTextField.field.text:stripLeadingAndTrailingSpaces()
+					song.genre = songGenreTextField.field.text:stripLeadingAndTrailingSpaces()
 					song.year = tonumber(songYearTextField.field.text)
 					song.trackNumber = tonumber(songTrackNumberTextField.field.text)
-					song.comment = songCommentTextField.field.text:stripLeadingSpaces()
+					song.comment = songCommentTextField.field.text:stripLeadingAndTrailingSpaces()
 					song.duration =
 						sFormat("%2s:%2s", songDurationMinutesTextField.field.text, songDurationSecondsTextField.field.text)
 					song.rating = songRating
-					song.title = songTitleTextField.field.text:stripLeadingSpaces()
-					song.sortTitle = songSortTitleTextField.field.text:stripLeadingSpaces()
+					song.title = songTitleTextField.field.text:stripLeadingAndTrailingSpaces()
+					song.sortTitle = songSortTitleTextField.field.text:stripLeadingAndTrailingSpaces()
 
 					tag.set(
 						{

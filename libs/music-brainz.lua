@@ -237,7 +237,7 @@ local function getRemoteCover(song)
 		sFormat(
 		"%s:%s:%s&limit=1&fmt=json",
 		musicBrainzUrl,
-		song.album:gsub("%b()", ""):urlEncode(),
+		song.album:gsub("%b()", ""):urlEncode(), -- strip anything between (and incl) parens "(text)"
 		song.artist:gsub("%b()", ""):urlEncode()
 	)
 
