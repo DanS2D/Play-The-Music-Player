@@ -6,11 +6,9 @@ local lfs = require("lfs")
 local tag = require("plugin.taglib")
 local fileUtils = require("libs.file-utils")
 local pureMagic = require("libs.pure-magic")
+local jDecode = json.decode
 local sFormat = string.format
-local urlRequestListener = nil
-local downloadListener = nil
-local requestedSong = nil
-local tryAgain = true
+local networkRequests = {}
 local coverArtUrl = "http://coverartarchive.org/release-group/"
 local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
 local musicBrainzParams = {
@@ -21,7 +19,7 @@ local musicBrainzParams = {
 local documentsPath = system.pathForFile("", system.DocumentsDirectory)
 local coverSavePath = sFormat("%s%s%s", documentsPath, string.pathSeparator, fileUtils.albumArtworkFolder)
 
-local function dispatchFoundCoverEvent(fileName)
+local function dispatchCoverFoundEvent(fileName)
 	local musicBrainzEvent = {
 		name = M.customEventName or "musicBrainz",
 		fileName = fileName,
@@ -31,7 +29,7 @@ local function dispatchFoundCoverEvent(fileName)
 	Runtime:dispatchEvent(musicBrainzEvent)
 end
 
-local function dispatchNotFoundCoverEvent()
+local function dispatchCoverNotFoundEvent()
 	local musicBrainzEvent = {
 		name = M.customEventName or "musicBrainz",
 		fileName = nil,
@@ -236,28 +234,84 @@ local function getRemoteCover(song)
 	local musicBrainzRequestListener = nil
 	local musicBrainzDownloadListener = nil
 	local fullMusicBrainzUrl =
-		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, song.artist:urlEncode(), song.title:urlEncode())
+		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, song.album:urlEncode(), song.artist:urlEncode())
+
+	print(fullMusicBrainzUrl)
 
 	musicBrainzDownloadListener = function(event)
+		local status = event.status
+		local phase = event.phase
+		local isError = event.isError
+		local response = event.response
+
+		if (isError or status ~= 200) then
+			print("Cover NOT FOUND at coverarchive.org - dispatching notFound event")
+			dispatchCoverNotFoundEvent()
+			return
+		end
+
+		if (phase == "ended") then
+			local fileName = response.filename
+			local fileExtension = fileName:fileExtension()
+			local filePath = system.pathForFile(fileName, system.DocumentsDirectory)
+			local newFileName = fileName
+			local mimetype = pureMagic.via_path(filePath)
+
+			if (mimetype == "image/png" and fileExtension ~= "png") then
+				newFileName = sFormat("%s.%s", fileName:sub(1, fileName:len() - 3), "png")
+				local result, reason = os.rename(filePath, system.pathForFile(newFileName, system.DocumentsDirectory))
+			elseif (mimetype == "image/jpeg" and fileExtension ~= "jpg") then
+				newFileName = sFormat("%s.%s", fileName:sub(1, fileName:len() - 3), "jpg")
+				local result, reason = os.rename(filePath, system.pathForFile(newFileName, system.DocumentsDirectory))
+			end
+
+			if (fileUtils:fileExists(newFileName)) then
+				print("GOT Artwork from opencoverart.org - dispatching found event")
+
+				saveCoverToAudioFile(song, newFileName)
+				dispatchCoverFoundEvent(newFileName)
+			else
+				print("Cover NOT FOUND at coverarchive.org - dispatching notFound event")
+				dispatchCoverNotFoundEvent()
+			end
+		end
 	end
 
 	musicBrainzRequestListener = function(event)
 		local status = event.status
 		local phase = event.phase
 		local isError = event.isError
-		local response = event.response
+		local response = jDecode(event.response)
+		local releaseGroups = response and response["release-groups"]
+		local release = releaseGroups and releaseGroups[1]
 
-		print("status: ", status)
-		print("isError: ", isError)
-		print("phase: ", phase)
+		print("musicBrainzRequest() status: ", status, "isError: ", isError, "phase: ", phase)
 
 		if (isError or status ~= 200) then
-			dispatchNotFoundCoverEvent()
+			dispatchCoverNotFoundEvent()
 			return
+		end
+
+		if (phase == "ended") then
+			if (response and releaseGroups and release) then
+				local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, release.id)
+				local imagePath = sFormat("%s%s.jpg", fileUtils.albumArtworkFolder, song.md5)
+				print(imageUrl)
+				print("attempting to download cover to: ", imagePath)
+
+				networkRequests[#networkRequests + 1] =
+					network.download(imageUrl, "GET", musicBrainzDownloadListener, {}, imagePath, system.DocumentsDirectory)
+			else
+				-- let's try to get the cover via title / artist (TODO:)
+				print("SONG NOT FOUND at MusicBrainz, dispatching notFound event")
+				dispatchCoverNotFoundEvent()
+			end
 		end
 	end
 
-	network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
+	-- let's try to get the cover via album / artist
+	networkRequests[#networkRequests + 1] =
+		network.request(fullMusicBrainzUrl, "GET", musicBrainzRequestListener, musicBrainzParams)
 end
 
 function M:getAlbumCover(song)
@@ -266,18 +320,26 @@ function M:getAlbumCover(song)
 
 		if (phase == "complete") then
 			print("Cover FOUND, dispatching downloaded event")
-			dispatchFoundCoverEvent(event.fileName)
+			dispatchCoverFoundEvent(event.fileName)
 		elseif (phase == "notFound") then
 			print("Cover NOT FOUND, looking for cover at musicbrainz")
 			getRemoteCover(song)
 		end
 	end
 
+	-- cancel any previous cover operations
+	for i = 1, #networkRequests do
+		network.cancel(networkRequests[i])
+		networkRequests[i] = nil
+	end
+
 	local exists, fileName = doesCoverExist(song)
+	networkRequests = nil
+	networkRequests = {}
 
 	if (exists) then
 		print("COVER ALREADY EXISTS ON DISK w/filename: ", fileName)
-		dispatchFoundCoverEvent(fileName)
+		dispatchCoverFoundEvent(fileName)
 	else
 		if (canGetCoverFromAudioFile(song)) then
 			print("COVER DOESN'T EXIST, CHECKING IN FILE FIRST")
