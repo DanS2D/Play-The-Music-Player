@@ -162,13 +162,13 @@ end
 
 local function saveCoverToAudioFile(song, fileName)
 	if (canGetCoverFromAudioFile(song)) then
-		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
+		if (fileUtils:fileExists(fileName)) then
 			tag.setArtwork(
 				{
 					fileName = song.fileName,
 					filePath = song.filePath,
 					imageFileName = fileName,
-					imageFilePath = coverSavePath
+					imageFilePath = documentsPath
 				}
 			)
 		end
@@ -234,7 +234,12 @@ local function getRemoteCover(song)
 	local musicBrainzRequestListener = nil
 	local musicBrainzDownloadListener = nil
 	local fullMusicBrainzUrl =
-		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, song.album:urlEncode(), song.artist:urlEncode())
+		sFormat(
+		"%s:%s:%s&limit=1&fmt=json",
+		musicBrainzUrl,
+		song.album:gsub("%b()", ""):urlEncode(),
+		song.artist:gsub("%b()", ""):urlEncode()
+	)
 
 	print(fullMusicBrainzUrl)
 
