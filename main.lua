@@ -111,10 +111,9 @@ end
 
 local function onMusicBrainzDownloadComplete(event)
 	local phase = event.phase
-	local coverFileName = sFormat("data%salbumArt%s%s", string.pathSeparator, string.pathSeparator, event.fileName)
 
 	if (phase == "downloaded") then
-		mediaBarLib.setAlbumArtwork(coverFileName)
+		mediaBarLib.setAlbumArtwork(event.fileName)
 	end
 
 	return true

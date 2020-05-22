@@ -42,22 +42,6 @@ local function dispatchNotFoundCoverEvent()
 end
 
 --[[
-local function setCoverFromDownload(song, fileName)
-	if (isMp3File(song) or isFlacFile(song) or isMp4File(song)) then
-		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
-			print("setting artwork")
-			tag.setArtwork(
-				{
-					fileName = song.fileName,
-					filePath = song.filePath,
-					imageFileName = fileName,
-					imageFilePath = documentsPath
-				}
-			)
-		end
-	end
-end
-
 urlRequestListener = function(event)
 	if (event.isError) then
 		--print("MusicBrainz urlRequestListener: Network error ", event.response)
@@ -149,78 +133,6 @@ downloadListener = function(event)
 		end
 	end
 end--]]
---[[
-function M.getCover(song)
-	local hash = song.md5
-	local artistTitle = song.artist
-	local albumTitle = song.album
-	local fullMusicBrainzUrl =
-		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, artistTitle:urlEncode(), albumTitle:urlEncode())
-	requestedSong = song
-	currentCoverFileName = sFormat("%s%s.png", fileUtils.albumArtworkFolder, hash)
-	local coverOnDisk, fileName = coverExists(song)
-
-	local function setOrGetData()
-		local foundFile, foundFileName = coverExists(song)
-
-		-- check to see if the cover exists again (it may have still been saving to disk)
-		if (foundFile) then
-			currentCoverFileName = foundFileName
-			--print("artwork exists for " .. requestedSong.artist .. " / " .. requestedSong.album)
-			dispatchCoverEvent()
-		else
-			tryAgain = true
-			--print("REQUESTING artwork for " .. requestedSong.title .. " (artist, album) from musicbrainz")
-			network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
-		end
-	end
-
-	-- check if the file exists
-	if (coverOnDisk) then
-		local cPath = sFormat("%s%s", documentsPath, fileName)
-		local mimetype = pureMagic.via_path(cPath)
-
-		if (mimetype == "image/jpeg" or mimetype == "image/png") then
-			currentCoverFileName = fileName
-			dispatchCoverEvent()
-		else
-			os.remove(cPath)
-			setOrGetData()
-		end
-	else
-		if (canGetCoverFromAudioFile(song)) then
-			getCoverFromAudioFile(song)
-			--print("trying to get cover from mp3 file")
-
-			local function findFileSavedFromMp3(event)
-				local coverOnDiskExists, coverFileName = coverExists(song)
-
-				if (coverOnDiskExists) then
-					local cPath = sFormat("%s%s", documentsPath, coverFileName)
-					local mimetype = pureMagic.via_path(cPath)
-					--print("found cover " .. coverFileName .. " cancelling timer now")
-
-					if (mimetype == "image/jpeg" or mimetype == "image/png") then
-						currentCoverFileName = coverFileName
-						dispatchCoverEvent()
-						timer.cancel(event.source)
-					else
-						timer.cancel(event.source)
-						setOrGetData()
-					end
-				end
-
-				if (event.count >= 20) then
-					setOrGetData()
-				end
-			end
-
-			timer.performWithDelay(50, findFileSavedFromMp3, 30)
-		else
-			setOrGetData()
-		end
-	end
-end--]]
 local function isMp3File(song)
 	return (song.fileName:fileExtension() == "mp3")
 end
@@ -250,6 +162,21 @@ local function getCoverFromAudioFile(song)
 	)
 end
 
+local function saveCoverToAudioFile(song, fileName)
+	if (canGetCoverFromAudioFile(song)) then
+		if (fileUtils:fileExists(fileName, system.DocumentsDirectory)) then
+			tag.setArtwork(
+				{
+					fileName = song.fileName,
+					filePath = song.filePath,
+					imageFileName = fileName,
+					imageFilePath = coverSavePath
+				}
+			)
+		end
+	end
+end
+
 local function doesCoverExist(song)
 	local baseDir = system.DocumentsDirectory
 	local pngFileName = sFormat("%s%s.png", fileUtils.albumArtworkFolder, song.md5)
@@ -263,14 +190,24 @@ local function doesCoverExist(song)
 
 	if (pngFile) then
 		io.close(pngFile)
-		exists = true
-		fileName = pngFileName
+
+		if (fileUtils:fileSize(pngPath) > 0) then
+			exists = true
+			fileName = pngFileName
+		else
+			os.remove(pngPath)
+		end
 	end
 
 	if (jpgFile) then
 		io.close(jpgFile)
-		exists = true
-		fileName = jpgFileName
+
+		if (fileUtils:fileSize(jpgPath) > 0) then
+			exists = true
+			fileName = jpgFileName
+		else
+			os.remove(jpgPath)
+		end
 	end
 
 	pngFile = nil
@@ -284,6 +221,7 @@ local function checkForLocalAlbumCover(song, onComplete)
 		local exists, fileName = doesCoverExist(song)
 
 		if (exists) then
+			print("found cover filename: ", fileName)
 			onComplete({phase = "complete", fileName = fileName})
 			timer.cancel(event.source)
 		elseif (not exists and event.count >= 30) then
@@ -295,6 +233,31 @@ local function checkForLocalAlbumCover(song, onComplete)
 end
 
 local function getRemoteCover(song)
+	local musicBrainzRequestListener = nil
+	local musicBrainzDownloadListener = nil
+	local fullMusicBrainzUrl =
+		sFormat("%s:%s:%s&limit=1&fmt=json", musicBrainzUrl, song.artist:urlEncode(), song.title:urlEncode())
+
+	musicBrainzDownloadListener = function(event)
+	end
+
+	musicBrainzRequestListener = function(event)
+		local status = event.status
+		local phase = event.phase
+		local isError = event.isError
+		local response = event.response
+
+		print("status: ", status)
+		print("isError: ", isError)
+		print("phase: ", phase)
+
+		if (isError or status ~= 200) then
+			dispatchNotFoundCoverEvent()
+			return
+		end
+	end
+
+	network.request(fullMusicBrainzUrl, "GET", urlRequestListener, musicBrainzParams)
 end
 
 function M:getAlbumCover(song)
@@ -302,8 +265,10 @@ function M:getAlbumCover(song)
 		local phase = event.phase
 
 		if (phase == "complete") then
+			print("Cover FOUND, dispatching downloaded event")
 			dispatchFoundCoverEvent(event.fileName)
 		elseif (phase == "notFound") then
+			print("Cover NOT FOUND, looking for cover at musicbrainz")
 			getRemoteCover(song)
 		end
 	end
@@ -311,7 +276,7 @@ function M:getAlbumCover(song)
 	local exists, fileName = doesCoverExist(song)
 
 	if (exists) then
-		print("COVER ALREADY EXISTS ON DISK")
+		print("COVER ALREADY EXISTS ON DISK w/filename: ", fileName)
 		dispatchFoundCoverEvent(fileName)
 	else
 		if (canGetCoverFromAudioFile(song)) then
@@ -319,7 +284,9 @@ function M:getAlbumCover(song)
 			getCoverFromAudioFile(song)
 			checkForLocalAlbumCover(song, onLocalAlbumCoverCheckComplete)
 		else
+			print("CAN'T GET COVER FROM THIS AUDIO FILE, CHECKING MUSICBRAINZ")
 			-- check musicbrainz for the coverArt
+			getRemoteCover(song)
 		end
 	end
 end
