@@ -57,8 +57,8 @@ function M.new(options)
 		"touch",
 		function()
 			group:close()
-			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
-			Runtime:dispatchEvent({name = "musicListEvent", phase = "closeRightClickMenus"})
+			eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.closeRightClickMenus)
 			native.setKeyboardFocus(nil)
 			return true
 		end
@@ -120,8 +120,9 @@ function M.new(options)
 		function mainButton:openSubmenu()
 			self.mainTableView.isVisible = true
 			self.mainTableView:toFront()
-			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
-			Runtime:dispatchEvent({name = "musicListEvent", phase = "closeRightClickMenus"})
+
+			eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.closeRightClickMenus)
 			display.getCurrentStage():insert(self.mainTableView)
 		end
 
@@ -319,7 +320,7 @@ function M.new(options)
 
 		if (phase == "began") then
 			musicList:closeRightClickMenus()
-			Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
+			eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
 		elseif (phase == "editing") then
 			local currentText = event.text
 

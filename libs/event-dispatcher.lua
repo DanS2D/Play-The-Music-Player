@@ -30,6 +30,21 @@ local M = {
 		events = {
 			close = "close"
 		}
+	},
+	mediaBar = {
+		name = "mediaBarEvent",
+		events = {
+			closePlaylists = "closePlaylists",
+			clearSong = "clearSong"
+		}
+	},
+	musicList = {
+		name = "musicListEvent",
+		events = {
+			closeRightClickMenus = "closeRightClickMenus",
+			reloadData = "reloadData",
+			unlockScroll = "unlockScroll"
+		}
 	}
 }
 
@@ -73,6 +88,24 @@ end
 function M:mainMenuEvent(eventPhase)
 	local event = {
 		name = self.mainMenu.name,
+		phase = eventPhase
+	}
+
+	Runtime:dispatchEvent(event)
+end
+
+function M:mediaBarEvent(eventPhase)
+	local event = {
+		name = self.mediaBar.name,
+		phase = eventPhase
+	}
+
+	Runtime:dispatchEvent(event)
+end
+
+function M:musicListEvent(eventPhase)
+	local event = {
+		name = self.musicList.name,
 		phase = eventPhase
 	}
 

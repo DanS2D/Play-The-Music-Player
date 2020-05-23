@@ -52,8 +52,9 @@ function M.new(parent)
 
 	local function playButtonEventHandler(event)
 		local phase = event.phase
+		local playButtonEvent = eventDispatcher.playButton.events
 
-		if (phase == eventDispatcher.playButton.events.setOn) then
+		if (phase == playButtonEvent.setOn) then
 			button:setIsOn(true)
 		end
 

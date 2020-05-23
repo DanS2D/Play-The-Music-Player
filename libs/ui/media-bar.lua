@@ -2,6 +2,7 @@ local M = {}
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
 local settings = require("libs.settings")
+local eventDispatcher = require("libs.event-dispatcher")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local levelVisualization = require("libs.ui.level-visualizer")
 local progressView = require("libs.ui.progress-view")
@@ -126,17 +127,18 @@ end
 
 local function mediaBarEventListener(event)
 	local phase = event.phase
+	local mediaBarEvent = eventDispatcher.mediaBar.events
 
-	if (phase == "clearSong") then
+	if (phase == mediaBarEvent.clearSong) then
 		M.clearPlayingSong()
-	elseif (phase == "closePlaylists") then
+	elseif (phase == mediaBarEvent.closePlaylists) then
 		playlistDropdown:close()
 	end
 
 	return true
 end
 
-Runtime:addEventListener("mediaBar", mediaBarEventListener)
+Runtime:addEventListener(eventDispatcher.mediaBar.name, mediaBarEventListener)
 
 function M.resetSongProgress()
 	playBackTimeText.text = "00:00/00:00"

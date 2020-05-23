@@ -38,10 +38,11 @@ function M.new(parent)
 
 	local function volumeButtonEventHandler(event)
 		local phase = event.phase
+		local volumeButtonEvents = eventDispatcher.volumeButton.events
 
-		if (phase == eventDispatcher.volumeButton.events.setOn) then
+		if (phase == volumeButtonEvents.setOn) then
 			button:setIsOn(true)
-		elseif (phase == eventDispatcher.volumeButton.events.setOff) then
+		elseif (phase == volumeButtonEvents.setOff) then
 			button:setIsOn(false)
 		end
 

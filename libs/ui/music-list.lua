@@ -1,13 +1,14 @@
-local sqlLib = require("libs.sql-lib")
 local M = {
 	musicSearch = nil,
 	musicResultsLimit = 0,
 	rowCreationTimers = {}
 }
 --local mousecursor = require("plugin.mousecursor")
+local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
 local theme = require("libs.theme")
+local eventDispatcher = require("libs.event-dispatcher")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
@@ -257,13 +258,8 @@ function M:createTableView(options, index)
 				if (numClicks == 1) then
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:close()
-
-					for i = 1, #tableViewList do
-						tableViewList[i]:lockScroll(false)
-					end
-
-					Runtime:dispatchEvent({name = "mediaBar", phase = "closePlaylists"})
-					Runtime:dispatchEvent({name = "menuEvent", close = true})
+					eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
+					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				elseif (numClicks >= 2) then
 					local song = self:getRow(row.index)
 
@@ -432,7 +428,7 @@ local function createCategories()
 
 			if (phase == "down") then
 				if (event.isPrimaryButtonDown and not categoryListRightClickMenu:isOpen()) then
-					Runtime:dispatchEvent({name = "menuEvent", close = true})
+					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 
 					for i = 1, #categoryList do
 						categoryList[i].sortIndicator.isVisible = false
@@ -484,7 +480,7 @@ local function createCategories()
 					end
 
 					categoryListRightClickMenu:open(event.x, event.y)
-					Runtime:dispatchEvent({name = "menuEvent", close = true})
+					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				end
 			elseif (phase == "move") then
 			--resizeCursor:hide()
@@ -852,7 +848,7 @@ function M.new()
 						local function onRemoved()
 							if (audioLib.currentSong and audioLib.currentSong.fileName == song.fileName) then
 								audioLib.reset()
-								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
+								eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.clearSong)
 							end
 
 							if (removeFrom == "Playlist") then
@@ -888,7 +884,7 @@ function M.new()
 						local function onRemoved()
 							if (audioLib.currentSong and audioLib.currentSong.fileName == song.fileName) then
 								audioLib.reset()
-								Runtime:dispatchEvent({name = "mediaBar", phase = "clearSong"})
+								eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.clearSong)
 							end
 
 							sqlLib:removeMusicFromAll(song)
@@ -939,6 +935,10 @@ end
 function M:closeRightClickMenus()
 	categoryListRightClickMenu:close()
 	musicListRightClickMenu:close()
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:lockScroll(false)
+	end
 end
 
 function M:removeAllRows()
@@ -1026,18 +1026,23 @@ end
 
 function M:musicListEvent(event)
 	local phase = event.phase
+	local musicListEvent = eventDispatcher.musicList.events
 
-	if (phase == "reloadData") then
+	if (phase == musicListEvent.reloadData) then
 		self:reloadData()
-	elseif (phase == "closeRightClickMenus") then
+	elseif (phase == musicListEvent.closeRightClickMenus) then
 		musicListRightClickMenu:close()
 		categoryListRightClickMenu:close()
+	elseif (phase == musicListEvent.unlockScroll) then
+		for i = 1, #tableViewList do
+			tableViewList[i]:lockScroll(false)
+		end
 	end
 
 	return true
 end
 
-Runtime:addEventListener("musicListEvent", M)
+Runtime:addEventListener(eventDispatcher.musicList.name, M)
 
 function M:setSelectedRow(rowIndex)
 	selectedRowRealIndex = tableViewList[1]:getRowRealIndex(audioLib.previousSongIndex)

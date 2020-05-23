@@ -4,6 +4,7 @@ local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
 local theme = require("libs.theme")
+local eventDispatcher = require("libs.event-dispatcher")
 local tag = require("plugin.taglib")
 local albumArt = require("libs.album-art")
 local buttonLib = require("libs.ui.button")
@@ -724,6 +725,7 @@ function M.create()
 				parent = buttonGroup,
 				onClick = function(event)
 					self:hide()
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
 				end
 			}
 		)
@@ -846,7 +848,8 @@ function M.create()
 					)
 
 					sqlLib:updateMusic(song)
-					Runtime:dispatchEvent({name = "musicListEvent", phase = "reloadData"})
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
 
 					self:hide()
 				end
