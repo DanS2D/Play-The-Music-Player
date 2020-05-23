@@ -358,8 +358,8 @@ function M.new(options)
 				if (searchBar.text:len() > 0) then
 					searchBar.text = ""
 					musicList.musicSearch = nil
-					musicList:setMusicCount(sqlLib:currentMusicCount())
-					musicList:reloadData()
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicCount, sqlLib:currentMusicCount())
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
 				end
 			end
 		}
