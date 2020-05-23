@@ -226,6 +226,7 @@ local function createCategories()
 					end
 
 					categoryListRightClickMenu:open(event.x, event.y)
+					eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
 					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				end
 			elseif (phase == "move") then
@@ -673,6 +674,7 @@ function M:createTableView(options, index)
 					rightClickRowIndex = row.index
 
 					lockScrolling(true)
+					eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:open(event.x, event.y)
 				end
