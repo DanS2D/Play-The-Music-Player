@@ -10,7 +10,8 @@ local M = {
 		["mp1"] = 1,
 		["ogg"] = 1,
 		["flac"] = 1,
-		["wav"] = 1
+		["wav"] = 1,
+		["opus"] = 1
 	},
 	loopOne = false,
 	loopAll = false,
