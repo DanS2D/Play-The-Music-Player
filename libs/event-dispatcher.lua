@@ -44,7 +44,8 @@ local M = {
 			closeRightClickMenus = "closeRightClickMenus",
 			reloadData = "reloadData",
 			cleanReloadData = "cleanReloadData",
-			unlockScroll = "unlockScroll"
+			unlockScroll = "unlockScroll",
+			setSelectedRow = "setSelectedRow"
 		}
 	}
 }
@@ -104,10 +105,11 @@ function M:mediaBarEvent(eventPhase)
 	Runtime:dispatchEvent(event)
 end
 
-function M:musicListEvent(eventPhase)
+function M:musicListEvent(eventPhase, value)
 	local event = {
 		name = self.musicList.name,
-		phase = eventPhase
+		phase = eventPhase,
+		value = value
 	}
 
 	Runtime:dispatchEvent(event)

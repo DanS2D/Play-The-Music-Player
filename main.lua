@@ -22,6 +22,7 @@ local audioLib = require("libs.audio-lib")
 local albumArt = require("libs.album-art")
 local musicImporter = require("libs.music-importer")
 local fileUtils = require("libs.file-utils")
+local eventDispatcher = require("libs.event-dispatcher")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
@@ -77,14 +78,14 @@ local function onAudioEvent(event)
 					mediaBarLib.resetSongProgress()
 					mediaBarLib.clearPlayingSong()
 					audioLib.reset()
-					musicList:setSelectedRow(0)
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
 					return
 				end
 			end
 		end
 
 		local nextSong = musicList:getRow(audioLib.currentSongIndex)
-		musicList:setSelectedRow(audioLib.currentSongIndex)
+		eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, audioLib.currentSongIndex)
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updatePlaybackTime()
 		audioLib.load(nextSong)

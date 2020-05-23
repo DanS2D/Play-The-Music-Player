@@ -38,7 +38,7 @@ function M.new(parent)
 					local nextSong = musicList:getRow(audioLib.currentSongIndex)
 
 					eventDispatcher:playButtonEvent(eventDispatcher.playButton.events.setOn)
-					musicList:setSelectedRow(audioLib.currentSongIndex)
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, audioLib.currentSongIndex)
 					audioLib.load(nextSong)
 					audioLib.play(nextSong)
 				end
