@@ -45,7 +45,11 @@ local M = {
 			reloadData = "reloadData",
 			cleanReloadData = "cleanReloadData",
 			unlockScroll = "unlockScroll",
-			setSelectedRow = "setSelectedRow"
+			setSelectedRow = "setSelectedRow",
+			setMusicCount = "setMusicCount",
+			clearMusicSearch = "clearMusicSearch",
+			setResultsLimit = "setResultsLimit",
+			setMusicSearch = "setMusicSearch"
 		}
 	}
 }

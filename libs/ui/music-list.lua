@@ -540,9 +540,6 @@ function M:createTableView(options, index)
 				local nowPlayingIcon = nil
 
 				if (self.musicSearch) then
-					-- clear the selected row
-					--parent:setRowSelected(0)
-					self.musicResultsLimit = sqlLib:currentMusicCount()
 					parent:setRowLimit(rowLimit)
 				else
 					self.musicResultsLimit = 1
@@ -957,6 +954,16 @@ function M:musicListEvent(event)
 		lockScrolling(false)
 	elseif (phase == musicListEvent.setSelectedRow) then
 		self:setSelectedRow(event.value)
+	elseif (phase == musicListEvent.clearMusicSearch) then
+		-- TODO: reselect the previously selected row
+		self.musicSearch = nil
+	elseif (phase == musicListEvent.setMusicCount) then
+		musicCount = event.value
+	elseif (phase == musicListEvent.setResultsLimit) then
+		self.musicResultsLimit = event.value
+	elseif (phase == musicListEvent.setMusicSearch) then
+		self.musicSearch = event.value
+		M:setSelectedRow(0)
 	end
 
 	return true
@@ -1022,7 +1029,7 @@ function M:reloadData()
 		--tableViewList[i]:setRowSelected(selectedRowIndex)
 
 		if (self.musicSearch) then
-			--print("ReloadData() search: scrolling to top ", prevIndex)
+			--print("ReloadData() search: scrolling to top ")
 			-- clear the selected row
 			--tableViewList[i]:setRowSelected(0)
 			tableViewList[i]:scrollToTop()
@@ -1065,7 +1072,7 @@ function M:recreateMusicList()
 		currentRowCount = 0
 		local newScrollIndex = 0
 
-		print("previous index prior to reload: ", previousIndex)
+		--print("previous index prior to reload: ", previousIndex)
 
 		if (self.musicSearch == nil) then
 			musicData = {}
@@ -1113,10 +1120,6 @@ function M:scrollToIndex(rowIndex)
 	for i = 1, #tableViewList do
 		tableViewList[i]:scrollToIndex(rowIndex)
 	end
-end
-
-function M:setMusicCount(count)
-	musicCount = count
 end
 
 function M:setSelectedRow(rowIndex)

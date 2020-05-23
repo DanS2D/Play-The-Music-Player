@@ -325,15 +325,14 @@ function M.new(options)
 			local currentText = event.text
 
 			if (currentText:len() <= 0) then
-				musicList.musicSearch = nil
-				musicList:setMusicCount(sqlLib:currentMusicCount())
-				musicList:reloadData()
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.clearMusicSearch)
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicCount, sqlLib:currentMusicCount())
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
 			else
-				musicList.musicResultsLimit = sqlLib:currentMusicCount()
-				musicList.musicSearch = currentText:stripAccents()
-				musicList:getSearchData()
-				musicList:setMusicCount(sqlLib:searchCount())
-				musicList:reloadData()
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setResultsLimit, sqlLib:currentMusicCount())
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicSearch, currentText:stripAccents())
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicCount, sqlLib:searchCount())
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
 			end
 		end
 
