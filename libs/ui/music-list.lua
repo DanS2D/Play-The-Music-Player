@@ -90,6 +90,18 @@ local function refreshPlaylistData()
 	return playlistData
 end
 
+local function lockScrolling(lock)
+	for i = 1, #tableViewList do
+		tableViewList[i]:lockScroll(lock)
+	end
+end
+
+local function closeRightClickMenus()
+	categoryListRightClickMenu:close()
+	musicListRightClickMenu:close()
+	lockScrolling(false)
+end
+
 function M:getRow(rowIndex)
 	local row = nil
 
@@ -256,8 +268,7 @@ function M:createTableView(options, index)
 				local parent = row.parent
 
 				if (numClicks == 1) then
-					categoryListRightClickMenu:close()
-					musicListRightClickMenu:close()
+					closeRightClickMenus()
 					eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
 					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				elseif (numClicks >= 2) then
@@ -291,10 +302,7 @@ function M:createTableView(options, index)
 				if (event.isSecondaryButton) then
 					rightClickRowIndex = row.index
 
-					for i = 1, #tableViewList do
-						tableViewList[i]:lockScroll(true)
-					end
-
+					lockScrolling(true)
 					categoryListRightClickMenu:close()
 					musicListRightClickMenu:open(event.x, event.y)
 				end
@@ -516,22 +524,14 @@ local function createCategories()
 			if (phase == "move") then
 				--resizeCursor:show()
 			elseif (phase == "down") then
-				for i = 1, #tableViewList do
-					tableViewList[i]:lockScroll(true)
-				end
-
-				print(self.parent.index)
-
+				lockScrolling(true)
 				tableViewTarget = tableViewList[self.parent.index]
 				display.getCurrentStage():setFocus(tableViewTarget)
 				categoryTarget = categoryList[self.parent.index]
 			elseif (phase == "up") then
 				tableViewTarget = nil
 				display.getCurrentStage():setFocus(nil)
-
-				for i = 1, #tableViewList do
-					tableViewList[i]:lockScroll(false)
-				end
+				lockScrolling(false)
 			end
 
 			return true
@@ -659,10 +659,7 @@ local function onMouseEvent(event)
 	if (eventType == "up") then
 		if (tableViewTarget) then
 			display.getCurrentStage():setFocus(nil)
-
-			for i = 1, #tableViewList do
-				tableViewList[i]:lockScroll(false)
-			end
+			lockScrolling(false)
 		end
 	end
 
@@ -932,15 +929,6 @@ function M:setMusicCount(count)
 	musicCount = count
 end
 
-function M:closeRightClickMenus()
-	categoryListRightClickMenu:close()
-	musicListRightClickMenu:close()
-
-	for i = 1, #tableViewList do
-		tableViewList[i]:lockScroll(false)
-	end
-end
-
 function M:removeAllRows()
 	-- reset the music search function
 	self.musicSearch = nil
@@ -1030,13 +1018,12 @@ function M:musicListEvent(event)
 
 	if (phase == musicListEvent.reloadData) then
 		self:reloadData()
+	elseif (phase == musicListEvent.cleanReloadData) then
+		self:cleanDataReload()
 	elseif (phase == musicListEvent.closeRightClickMenus) then
-		musicListRightClickMenu:close()
-		categoryListRightClickMenu:close()
+		closeRightClickMenus()
 	elseif (phase == musicListEvent.unlockScroll) then
-		for i = 1, #tableViewList do
-			tableViewList[i]:lockScroll(false)
-		end
+		lockScrolling(false)
 	end
 
 	return true

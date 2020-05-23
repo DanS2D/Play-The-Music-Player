@@ -1,6 +1,5 @@
 local M = {}
 local playlistDropdownLib = require("libs.ui.playlist-dropdown")
-local musicList = require("libs.ui.music-list")
 local common = require("libs.ui.media-bar.common")
 local eventDispatcher = require("libs.event-dispatcher")
 
@@ -10,10 +9,10 @@ function M.new(parent)
 		{
 			parent = parent,
 			onClick = function()
-				musicList:closeRightClickMenus()
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.closeRightClickMenus)
 			end,
 			onPlaylistClick = function()
-				musicList:cleanDataReload()
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
 			end
 		}
 	)

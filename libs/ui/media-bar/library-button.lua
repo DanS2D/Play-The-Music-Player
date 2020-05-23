@@ -1,7 +1,6 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local buttonLib = require("libs.ui.button")
-local musicList = require("libs.ui.music-list")
 local common = require("libs.ui.media-bar.common")
 local eventDispatcher = require("libs.event-dispatcher")
 
@@ -19,8 +18,8 @@ function M.new(parent)
 
 				eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
 				sqlLib.currentMusicTable = "music"
-				musicList:closeRightClickMenus()
-				musicList:cleanDataReload()
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.closeRightClickMenus)
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
 			end
 		}
 	)

@@ -43,6 +43,7 @@ local M = {
 		events = {
 			closeRightClickMenus = "closeRightClickMenus",
 			reloadData = "reloadData",
+			cleanReloadData = "cleanReloadData",
 			unlockScroll = "unlockScroll"
 		}
 	}
