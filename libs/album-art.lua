@@ -8,6 +8,7 @@ local M = {
 }
 
 local tag = require("plugin.taglib")
+local discogsProvider = require("libs.album-art-provider-discogs")
 local musicBrainzProvider = require("libs.album-art-provider-musicbrainz")
 local googleProvider = require("libs.album-art-provider-google")
 local fileUtils = require("libs.file-utils")
@@ -65,8 +66,12 @@ local function getCoverFromAudioFile(song)
 end
 
 local function saveCoverToAudioFile(song, fileName)
+	print("save cover to file reached")
+
 	if (canGetCoverFromAudioFile(song)) then
+		print("can save cover")
 		if (fileUtils:fileExists(fileName)) then
+			print("cover exists at ", fileName)
 			tag.setArtwork(
 				{
 					fileName = song.fileName,
@@ -143,6 +148,7 @@ function M:getFileAlbumCover(song)
 			dispatchCoverFoundEvent(event.fileName)
 		elseif (phase == "notFound") then
 			print("local Cover NOT FOUND")
+			dispatchCoverNotFoundEvent()
 		end
 	end
 
@@ -158,17 +164,23 @@ function M:getFileAlbumCover(song)
 			checkForLocalAlbumCover(song, onLocalAlbumCoverCheckComplete)
 		else
 			print("CAN'T GET COVER FROM THIS AUDIO FILE")
-			dispatchCoverFoundEvent()
+			dispatchCoverNotFoundEvent()
 		end
 	end
 end
 
 function M:getRemoteAlbumCover(song, provider)
-	if (provider == self.remoteProviders.musicBrainz) then
+	if (provider == self.remoteProviders.discogs) then
+		discogsProvider:getAlbumCover(song, dispatchCoverFoundEvent, dispatchCoverNotFoundEvent)
+	elseif (provider == self.remoteProviders.musicBrainz) then
 		musicBrainzProvider:getAlbumCover(song, dispatchCoverFoundEvent, dispatchCoverNotFoundEvent)
 	elseif (provider == self.remoteProviders.google) then
 		googleProvider:getAlbumCover(song, dispatchCoverFoundEvent, dispatchCoverNotFoundEvent)
 	end
+end
+
+function M:saveCoverToAudioFile(song, fileName)
+	saveCoverToAudioFile(song, fileName)
 end
 
 return M

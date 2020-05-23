@@ -236,7 +236,7 @@ local applicationMainMenuBar =
 								sqlLib:close()
 								audioLib:reset()
 								musicList:destroy()
-								fileUtils:removeFile("music.db", databasePath)
+								fileUtils:removeFile(sFormat("data%smusic.db", string.pathSeparator), databasePath)
 
 								timer.performWithDelay(
 									100,

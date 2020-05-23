@@ -5,39 +5,44 @@ local fileUtils = require("libs.file-utils")
 local jDecode = json.decode
 local sFormat = string.format
 local networkRequests = {}
-local coverArtUrl = "http://coverartarchive.org/release-group/"
-local musicBrainzUrl = "http://musicbrainz.org/ws/2/release-group/?query=release"
-local musicBrainzParams = {
+local consumerKey = "NZjXwzlQcPuNZVasbAlj"
+local consumerSecret = "etiShvDnZQmeOskwEdpZJuDwHnlPQwZZ"
+local requestTokenUrl = "https://api.discogs.com/oauth/request_token"
+local authUrl = "https://www.discogs.com/oauth/authorize"
+local accessTokenUrl = "https://api.discogs.com/oauth/access_token"
+local discogsUrl = "https://api.discogs.com/database/search?q="
+local discogsParams = {
 	headers = {
-		["User-Agent"] = "Play The Music Player/1.0"
+		["User-Agent"] = "Play The Music Player/1.0 +http://playmusicplayer.net",
+		["Authorization"] = sFormat("Discogs key=%s, secret=%s", consumerKey, consumerSecret)
 	}
 }
 
 function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
-	local fullMusicBrainzUrl =
+	local fullDiscogsUrl =
 		sFormat(
-		"%s:%s:%s&limit=1&fmt=json",
-		musicBrainzUrl,
+		"%s%s&artist=%s&format=album&per_page=1",
+		discogsUrl,
 		song.album:gsub("%b()", ""):urlEncode(), -- strip anything between (and incl) parens "(text)"
 		song.artist:gsub("%b()", ""):urlEncode()
 	)
 
-	print(fullMusicBrainzUrl)
+	print(fullDiscogsUrl)
 
-	local function musicBrainzDownloadListener(event)
+	local function discogsDownloadListener(event)
 		local status = event.status
 		local phase = event.phase
 		local isError = event.isError
 		local response = event.response
 
 		if (isError or status ~= 200) then
-			print("response issue: Cover NOT FOUND at musicbrainz - dispatching notFound event")
+			print("response issue: Cover NOT FOUND at discogs - dispatching notFound event")
 			coverNotFoundEvent()
 			return
 		end
 
 		if (phase == "ended") then
-			local imagePath = "tempArtwork_musicbrainz.jpg"
+			local imagePath = "tempArtwork_discogs.jpg"
 			local file, errorString = io.open(system.pathForFile(imagePath, system.TemporaryDirectory), "wb")
 			file:write(response)
 			file:close()
@@ -57,25 +62,25 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 			end
 
 			if (fileUtils:fileExists(newFileName, system.TemporaryDirectory)) then
-				print("GOT Artwork from musicbrainz - dispatching found event")
+				print("GOT Artwork from discogs - dispatching found event")
 
 				coverFoundEvent(newFileName)
 			else
-				print("Cover NOT FOUND at musicbrainz - dispatching notFound event")
+				print("Cover NOT FOUND at discogs - dispatching notFound event")
 				coverNotFoundEvent()
 			end
 		end
 	end
 
-	local function musicBrainzRequestListener(event)
+	local function discogsRequestListener(event)
 		local status = event.status
 		local phase = event.phase
 		local isError = event.isError
-		local response = jDecode(event.response)
-		local releaseGroups = response and response["release-groups"]
-		local release = releaseGroups and releaseGroups[1]
+		local response = type(event.response) == "string" and jDecode(event.response)
+		local result = response and response["results"]
+		local info = result and result[1]
 
-		print("musicBrainzRequest() status: ", status, "isError: ", isError, "phase: ", phase)
+		print("discogs() status: ", status, "isError: ", isError, "phase: ", phase)
 
 		if (isError or status ~= 200) then
 			coverNotFoundEvent()
@@ -83,16 +88,14 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 		end
 
 		if (phase == "ended") then
-			if (response and releaseGroups and release) then
-				local imageUrl = sFormat("%s%s/front-250?limit=1", coverArtUrl, release.id)
-				local imagePath = sFormat("%s%s.jpg", fileUtils.albumArtworkFolder, "tempArtwork_musicbrainz")
-				print(imageUrl)
-				print("musicbrainz: attempting to download cover to: ", imagePath)
+			if (response and result and info) then
+				local imageUrl = info["cover_image"]
+				print("discogs: attempting to download cover ")
 
-				networkRequests[#networkRequests + 1] = network.request(imageUrl, "GET", musicBrainzDownloadListener, {})
+				networkRequests[#networkRequests + 1] = network.request(imageUrl, "GET", discogsDownloadListener, discogsParams)
 			else
 				-- let's try to get the cover via title / artist (TODO:)
-				print("SONG NOT FOUND at MusicBrainz, dispatching notFound event")
+				print("SONG NOT FOUND at discogs, dispatching notFound event")
 				coverNotFoundEvent()
 			end
 		end
@@ -108,8 +111,7 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 	networkRequests = {}
 
 	-- let's try to get the cover via album / artist
-	networkRequests[#networkRequests + 1] =
-		network.request(fullMusicBrainzUrl, "GET", musicBrainzRequestListener, musicBrainzParams)
+	networkRequests[#networkRequests + 1] = network.request(fullDiscogsUrl, "GET", discogsRequestListener, discogsParams)
 end
 
 return M

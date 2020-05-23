@@ -102,6 +102,8 @@ function M.create()
 	local albumArtwork = nil
 	local albumArtworkPathButton = nil
 	local albumArtworkGoogleButton = nil
+	local albumArtworkMusicBrainzButton = nil
+	local albumArtworkMusicDiscogsButton = nil
 	local albumCoverSearchWebView = nil
 	local tempArtworkFullPath = nil
 	local realArtworkFilename = nil
@@ -277,8 +279,7 @@ function M.create()
 
 						realArtworkFullPath =
 							sFormat("%s%s%s.%s", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, song.md5, fileExtension)
-						tempArtworkFullPath =
-							sFormat("%s%s%s.%s", fileUtils.documentsFullPath, fileUtils.albumArtworkFolder, "tempArtwork", fileExtension)
+						tempArtworkFullPath = sFormat("%s%s.%s", fileUtils.temporaryFullPath, "tempArtwork_chooser", fileExtension)
 
 						fileUtils:copyFile(foundFile, tempArtworkFullPath)
 
@@ -289,8 +290,8 @@ function M.create()
 
 						albumArtwork =
 							display.newImageRect(
-							sFormat("%s%s.%s", fileUtils.albumArtworkFolder, "tempArtwork", fileExtension),
-							system.DocumentsDirectory,
+							sFormat("%s.%s", "tempArtwork_chooser", fileExtension),
+							system.TemporaryDirectory,
 							albumArtworkContainer.contentWidth - 2,
 							albumArtworkContainer.contentHeight - 2
 						)
@@ -310,6 +311,37 @@ function M.create()
 			albumArtworkContainer.y + albumArtworkContainer.contentHeight + albumArtworkPathButton.contentHeight * 0.5 + 8
 		albumArtworkPathButton.isVisible = false
 
+		albumArtworkMusicDiscogsButton =
+			buttonLib.new(
+			{
+				iconName = "compact-disc",
+				fontSize = maxHeight * 0.03,
+				parent = self,
+				onClick = function(clickEvent)
+					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.discogs)
+				end
+			}
+		)
+		albumArtworkMusicDiscogsButton.x =
+			albumArtworkPathButton.x - albumArtworkPathButton.contentWidth * 0.5 + albumArtworkMusicDiscogsButton.contentWidth
+		albumArtworkMusicDiscogsButton.y = albumArtworkPathButton.y
+		albumArtworkMusicDiscogsButton.isVisible = false
+
+		albumArtworkMusicBrainzButton =
+			buttonLib.new(
+			{
+				iconName = "head-side-brain",
+				fontSize = maxHeight * 0.03,
+				parent = self,
+				onClick = function(clickEvent)
+					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.musicBrainz)
+				end
+			}
+		)
+		albumArtworkMusicBrainzButton.x = albumArtworkMusicDiscogsButton.x - albumArtworkMusicBrainzButton.contentWidth - 5
+		albumArtworkMusicBrainzButton.y = albumArtworkMusicDiscogsButton.y
+		albumArtworkMusicBrainzButton.isVisible = false
+
 		albumArtworkGoogleButton =
 			buttonLib.new(
 			{
@@ -322,9 +354,9 @@ function M.create()
 				end
 			}
 		)
-		albumArtworkGoogleButton.x = albumArtworkPathButton.x - albumArtworkPathButton.contentWidth * 0.5
-		albumArtworkGoogleButton.y = albumArtworkPathButton.y
-		albumArtworkPathButton.isVisible = false
+		albumArtworkGoogleButton.x = albumArtworkMusicBrainzButton.x - albumArtworkMusicBrainzButton.contentWidth - 5
+		albumArtworkGoogleButton.y = albumArtworkMusicBrainzButton.y
+		albumArtworkGoogleButton.isVisible = false
 
 		-- google icon name: google (brands font file)
 		-- musicbrains icon name: head-side-brain
@@ -335,13 +367,26 @@ function M.create()
 
 		onAlbumArtDownloadComplete = function(event)
 			local phase = event.phase
-			local coverFileName = event.fileName
 
 			if (phase == "downloaded") then
+				local coverFileName = event.fileName
+
+				tempArtworkFullPath = sFormat("%s%s", fileUtils.temporaryFullPath, coverFileName)
+				realArtworkFullPath =
+					sFormat(
+					"%s%s%s.%s",
+					fileUtils.documentsFullPath,
+					fileUtils.albumArtworkFolder,
+					song.md5,
+					coverFileName:fileExtension()
+				)
+
+				local coverDirectory = coverFileName:find("tempArtwork") and system.TemporaryDirectory or system.DocumentsDirectory
+
 				albumArtwork =
 					display.newImageRect(
 					coverFileName,
-					system.DocumentsDirectory,
+					coverDirectory,
 					albumArtworkContainer.contentWidth - 2,
 					albumArtworkContainer.contentHeight - 2
 				)
@@ -356,7 +401,9 @@ function M.create()
 			end
 
 			albumArtworkPathButton.isVisible = true
-			albumArtworkPathButton.isVisible = true
+			albumArtworkMusicDiscogsButton.isVisible = true
+			albumArtworkMusicBrainzButton.isVisible = true
+			albumArtworkGoogleButton.isVisible = true
 
 			return true
 		end
@@ -625,10 +672,6 @@ function M.create()
 				fontSize = maxHeight * 0.04,
 				parent = buttonGroup,
 				onClick = function(event)
-					if (tempArtworkFullPath) then
-						os.remove(tempArtworkFullPath)
-					end
-
 					self:hide()
 				end
 			}
@@ -715,13 +758,9 @@ function M.create()
 					end
 
 					if (realArtworkFullPath) then
-						tag.setArtwork(
-							{
-								fileName = song.fileName,
-								filePath = song.filePath,
-								imageFileName = realArtworkFullPath:getFileName(),
-								imageFilePath = realArtworkFullPath:getFilePath()
-							}
+						albumArt:saveCoverToAudioFile(
+							song,
+							sFormat("%s%s", fileUtils.albumArtworkFolder, realArtworkFullPath:getFileName())
 						)
 					end
 

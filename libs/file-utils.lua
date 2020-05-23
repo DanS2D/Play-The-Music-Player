@@ -5,6 +5,7 @@ local defaultLocation = system.DocumentsDirectory
 local sFormat = string.format
 
 M.documentsFullPath = sFormat("%s%s", system.pathForFile("", system.DocumentsDirectory), string.pathSeparator)
+M.temporaryFullPath = sFormat("%s%s", system.pathForFile("", system.TemporaryDirectory), string.pathSeparator)
 M.albumArtworkFolder = sFormat("data%salbumArt%s", string.pathSeparator, string.pathSeparator)
 
 function M:loadTable(filename, location)
