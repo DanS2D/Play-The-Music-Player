@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local eventDispatcher = require("libs.event-dispatcher")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local alertPopupLib = require("libs.ui.alert-popup")
 local buttonLib = require("libs.ui.button")
@@ -334,6 +335,18 @@ function M.new(options)
 	group.x = options.x
 	group.y = options.y
 	parent:insert(group)
+
+	local function playlistDropdownEventHandler(event)
+		local phase = event.phase
+
+		if (phase == eventDispatcher.playlistDropdown.events.close) then
+			group:close()
+		end
+
+		return true
+	end
+
+	Runtime:addEventListener(eventDispatcher.playlistDropdown.name, playlistDropdownEventHandler)
 
 	return group
 end

@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local eventDispatcher = require("libs.event-dispatcher")
 local musicList = require("libs.ui.music-list")
 local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
@@ -409,14 +410,16 @@ function M.new(options)
 
 	Runtime:addEventListener("mouse", onMouseEvent)
 
-	local function closeListener(event)
-		if (event.close) then
+	local function playButtonEventHandler(event)
+		local phase = event.phase
+
+		if (phase == "close") then
 			isItemOpen = false
 			closeSubmenus()
 		end
 	end
 
-	Runtime:addEventListener("menuEvent", closeListener)
+	Runtime:addEventListener(eventDispatcher.mainMenu.name, playButtonEventHandler)
 
 	function group:onResize()
 		searchBar.x = display.contentWidth - 10
