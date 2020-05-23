@@ -338,8 +338,9 @@ function M.new(options)
 
 	local function playlistDropdownEventHandler(event)
 		local phase = event.phase
+		local playListEvent = eventDispatcher.playlistDropdown.events
 
-		if (phase == eventDispatcher.playlistDropdown.events.close) then
+		if (phase == playListEvent.close) then
 			group:close()
 		end
 

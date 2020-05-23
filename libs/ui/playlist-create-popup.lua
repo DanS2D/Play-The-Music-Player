@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local eventDispatcher = require("libs.event-dispatcher")
 local buttonLib = require("libs.ui.button")
 local alertPopupLib = require("libs.ui.alert-popup")
 local mMin = math.min
@@ -63,6 +64,8 @@ function M.create()
 	local confirmButton = nil
 
 	function group:show()
+		eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
+
 		if (interactionDisableRect) then
 			display.remove(interactionDisableRect)
 			interactionDisableRect = nil
