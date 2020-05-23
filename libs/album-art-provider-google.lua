@@ -16,7 +16,7 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 	)
 
 	local function saveCover(event)
-		self:saveCover(event, coverFoundEvent, coverFoundEvent)
+		self:saveCover(event, coverFoundEvent, coverNotFoundEvent)
 	end
 
 	local function googleRequestListener(event)

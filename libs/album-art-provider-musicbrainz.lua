@@ -24,7 +24,7 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 	print(fullMusicBrainzUrl)
 
 	local function saveCover(event)
-		self:saveCover(event, coverFoundEvent, coverFoundEvent)
+		self:saveCover(event, coverFoundEvent, coverNotFoundEvent)
 	end
 
 	local function musicBrainzRequestListener(event)

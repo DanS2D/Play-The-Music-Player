@@ -9,7 +9,7 @@ local consumerSecret = "etiShvDnZQmeOskwEdpZJuDwHnlPQwZZ"
 local requestTokenUrl = "https://api.discogs.com/oauth/request_token"
 local authUrl = "https://www.discogs.com/oauth/authorize"
 local accessTokenUrl = "https://api.discogs.com/oauth/access_token"
-local discogsUrl = "https://api.discogs.com/database/search?q="
+local discogsUrl = "https://api.discogs.com/database/search?"
 local discogsParams = {
 	headers = {
 		["User-Agent"] = "Play The Music Player/1.0 +http://playmusicplayer.net",
@@ -20,7 +20,7 @@ local discogsParams = {
 function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 	local fullDiscogsUrl =
 		sFormat(
-		"%s%s&artist=%s&format=album&per_page=1",
+		"%sq=%s+%s&per_page=1&page=1",
 		discogsUrl,
 		song.album:gsub("%b()", ""):urlEncode(), -- strip anything between (and incl) parens "(text)"
 		song.artist:gsub("%b()", ""):urlEncode()
@@ -29,7 +29,7 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 	print(fullDiscogsUrl)
 
 	local function saveCover(event)
-		self:saveCover(event, coverFoundEvent, coverFoundEvent)
+		self:saveCover(event, coverFoundEvent, coverNotFoundEvent)
 	end
 
 	local function discogsRequestListener(event)
