@@ -10,6 +10,7 @@ local buttonLib = require("libs.ui.button")
 local filledButtonLib = require("libs.ui.filled-button")
 local alertPopupLib = require("libs.ui.alert-popup")
 local ratings = require("libs.ui.ratings")
+local activityIndicator = require("libs.ui.activity-indicator")
 local mMin = math.min
 local mMax = math.max
 local sFormat = string.format
@@ -99,6 +100,7 @@ function M.create()
 	local separatorLine = nil
 	local albumArtworkContainer = nil
 	local albumArtworkNotFoundText = nil
+	local albumArtworkActivityIndicator = nil
 	local albumArtwork = nil
 	local albumArtworkPathButton = nil
 	local albumArtworkGoogleButton = nil
@@ -256,6 +258,13 @@ function M.create()
 		albumArtworkNotFoundText.y = albumArtworkContainer.y + albumArtworkContainer.contentHeight * 0.5
 		self:insert(albumArtworkNotFoundText)
 
+		albumArtworkActivityIndicator =
+			activityIndicator.new({name = "editMetadataPopup", parent = self, hideWhenStopped = true})
+		albumArtworkActivityIndicator.x = albumArtworkNotFoundText.x
+		albumArtworkActivityIndicator.y =
+			albumArtworkNotFoundText.y + albumArtworkNotFoundText.contentHeight + albumArtworkActivityIndicator.contentHeight
+		albumArtworkActivityIndicator:start()
+
 		albumArtworkPathButton =
 			filledButtonLib.new(
 			{
@@ -304,6 +313,7 @@ function M.create()
 						self:insert(albumArtwork)
 						albumArtworkNotFoundText.isVisible = false
 
+						albumArtworkActivityIndicator:stop()
 						transition.to(albumArtwork, {alpha = 1, easing.inOutQuad})
 					end
 				end
@@ -330,6 +340,7 @@ function M.create()
 					lastAlbumCoverSource = "\nat Discogs"
 					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
 					albumArtworkNotFoundText.isVisible = true
+					albumArtworkActivityIndicator:start()
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.discogs)
 				end
 			}
@@ -354,6 +365,7 @@ function M.create()
 					lastAlbumCoverSource = "\nat Music Brainz"
 					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
 					albumArtworkNotFoundText.isVisible = true
+					albumArtworkActivityIndicator:start()
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.musicBrainz)
 				end
 			}
@@ -378,6 +390,7 @@ function M.create()
 					lastAlbumCoverSource = "\n at Google"
 					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
 					albumArtworkNotFoundText.isVisible = true
+					albumArtworkActivityIndicator:start()
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.google)
 				end
 			}
@@ -424,6 +437,7 @@ function M.create()
 				self:insert(albumArtwork)
 				albumArtworkNotFoundText.isVisible = false
 
+				albumArtworkActivityIndicator:stop()
 				transition.to(albumArtwork, {alpha = 1, easing.inOutQuad})
 			elseif (phase == "notFound") then
 				if (albumArtwork) then
@@ -433,6 +447,7 @@ function M.create()
 
 				albumArtworkNotFoundText.text = sFormat("No Cover Found%s", lastAlbumCoverSource)
 				albumArtworkNotFoundText.isVisible = true
+				albumArtworkActivityIndicator:stop()
 			end
 
 			albumArtworkPathButton.isVisible = true
