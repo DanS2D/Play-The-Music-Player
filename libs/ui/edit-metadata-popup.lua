@@ -358,13 +358,6 @@ function M.create()
 		albumArtworkGoogleButton.y = albumArtworkMusicBrainzButton.y
 		albumArtworkGoogleButton.isVisible = false
 
-		-- google icon name: google (brands font file)
-		-- musicbrains icon name: head-side-brain
-		-- discogs icon name: compact-disc
-
-		-- to get album artwork from google via network.request in json format:
-		-- https://www.googleapis.com/customsearch/v1?key=AIzaSyBiCyund4Cslo-1o9CPDySZuaz6kw3E1j0&cx=005942035190247331436:pgjtxkxupvn&num=5&searchType=image&exactTerms=meteora&q=linkin park meteora album cover
-
 		onAlbumArtDownloadComplete = function(event)
 			local phase = event.phase
 

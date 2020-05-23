@@ -1,7 +1,6 @@
-local M = {}
+local albumArtProviderBase = require("libs.album-art-provider-base")
+local M = albumArtProviderBase:new("discogs")
 local json = require("json")
-local pureMagic = require("libs.pure-magic")
-local fileUtils = require("libs.file-utils")
 local jDecode = json.decode
 local sFormat = string.format
 local networkRequests = {}
@@ -29,47 +28,8 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 
 	print(fullDiscogsUrl)
 
-	local function discogsDownloadListener(event)
-		local status = event.status
-		local phase = event.phase
-		local isError = event.isError
-		local response = event.response
-
-		if (isError or status ~= 200) then
-			print("response issue: Cover NOT FOUND at discogs - dispatching notFound event")
-			coverNotFoundEvent()
-			return
-		end
-
-		if (phase == "ended") then
-			local imagePath = "tempArtwork_discogs.jpg"
-			local file, errorString = io.open(system.pathForFile(imagePath, system.TemporaryDirectory), "wb")
-			file:write(response)
-			file:close()
-
-			local fileName = imagePath
-			local fileExtension = fileName:fileExtension()
-			local filePath = system.pathForFile(fileName, system.TemporaryDirectory)
-			local newFileName = fileName
-			local mimetype = pureMagic.via_path(filePath)
-
-			if (mimetype == "image/png" and fileExtension ~= "png") then
-				newFileName = sFormat("%s.%s", fileName:sub(1, fileName:len() - 3), "png")
-				local result, reason = os.rename(filePath, system.pathForFile(newFileName, system.TemporaryDirectory))
-			elseif (mimetype == "image/jpeg" and fileExtension ~= "jpg") then
-				newFileName = sFormat("%s.%s", fileName:sub(1, fileName:len() - 3), "jpg")
-				local result, reason = os.rename(filePath, system.pathForFile(newFileName, system.TemporaryDirectory))
-			end
-
-			if (fileUtils:fileExists(newFileName, system.TemporaryDirectory)) then
-				print("GOT Artwork from discogs - dispatching found event")
-
-				coverFoundEvent(newFileName)
-			else
-				print("Cover NOT FOUND at discogs - dispatching notFound event")
-				coverNotFoundEvent()
-			end
-		end
+	local function saveCover(event)
+		self:saveCover(event, coverFoundEvent, coverFoundEvent)
 	end
 
 	local function discogsRequestListener(event)
@@ -79,8 +39,6 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 		local response = type(event.response) == "string" and jDecode(event.response)
 		local result = response and response["results"]
 		local info = result and result[1]
-
-		print("discogs() status: ", status, "isError: ", isError, "phase: ", phase)
 
 		if (isError or status ~= 200) then
 			coverNotFoundEvent()
@@ -92,7 +50,7 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 				local imageUrl = info["cover_image"]
 				print("discogs: attempting to download cover ")
 
-				networkRequests[#networkRequests + 1] = network.request(imageUrl, "GET", discogsDownloadListener, discogsParams)
+				networkRequests[#networkRequests + 1] = network.request(imageUrl, "GET", saveCover, discogsParams)
 			else
 				-- let's try to get the cover via title / artist (TODO:)
 				print("SONG NOT FOUND at discogs, dispatching notFound event")
