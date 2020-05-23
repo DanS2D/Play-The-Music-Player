@@ -154,6 +154,7 @@ function M.create()
 	function group:show(song)
 		self:cleanup()
 
+		local lastAlbumCoverSource = "in\nfile"
 		local textFieldEdgePadding = 20
 		local textFieldYPadding = 10
 		local textFieldHeight = 30
@@ -295,12 +296,15 @@ function M.create()
 							albumArtworkContainer.contentWidth - 2,
 							albumArtworkContainer.contentHeight - 2
 						)
+						albumArtwork.alpha = 0
 						albumArtwork.anchorX = 0
 						albumArtwork.anchorY = 0
 						albumArtwork.x = albumArtworkContainer.x + 1
 						albumArtwork.y = albumArtworkContainer.y + 1
 						self:insert(albumArtwork)
 						albumArtworkNotFoundText.isVisible = false
+
+						transition.to(albumArtwork, {alpha = 1, easing.inOutQuad})
 					end
 				end
 			}
@@ -318,6 +322,14 @@ function M.create()
 				fontSize = maxHeight * 0.03,
 				parent = self,
 				onClick = function(clickEvent)
+					if (albumArtwork) then
+						display.remove(albumArtwork)
+						albumArtwork = nil
+					end
+
+					lastAlbumCoverSource = "\nat Discogs"
+					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
+					albumArtworkNotFoundText.isVisible = true
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.discogs)
 				end
 			}
@@ -334,6 +346,14 @@ function M.create()
 				fontSize = maxHeight * 0.03,
 				parent = self,
 				onClick = function(clickEvent)
+					if (albumArtwork) then
+						display.remove(albumArtwork)
+						albumArtwork = nil
+					end
+
+					lastAlbumCoverSource = "\nat Music Brainz"
+					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
+					albumArtworkNotFoundText.isVisible = true
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.musicBrainz)
 				end
 			}
@@ -350,6 +370,14 @@ function M.create()
 				fontSize = maxHeight * 0.03,
 				parent = self,
 				onClick = function(clickEvent)
+					if (albumArtwork) then
+						display.remove(albumArtwork)
+						albumArtwork = nil
+					end
+
+					lastAlbumCoverSource = "\n at Google"
+					albumArtworkNotFoundText.text = sFormat("Searching for cover%s", lastAlbumCoverSource)
+					albumArtworkNotFoundText.isVisible = true
 					albumArt:getRemoteAlbumCover(song, albumArt.remoteProviders.google)
 				end
 			}
@@ -376,6 +404,11 @@ function M.create()
 
 				local coverDirectory = coverFileName:find("tempArtwork") and system.TemporaryDirectory or system.DocumentsDirectory
 
+				if (albumArtwork) then
+					display.remove(albumArtwork)
+					albumArtwork = nil
+				end
+
 				albumArtwork =
 					display.newImageRect(
 					coverFileName,
@@ -383,14 +416,23 @@ function M.create()
 					albumArtworkContainer.contentWidth - 2,
 					albumArtworkContainer.contentHeight - 2
 				)
+				albumArtwork.alpha = 0
 				albumArtwork.anchorX = 0
 				albumArtwork.anchorY = 0
 				albumArtwork.x = albumArtworkContainer.x + 1
 				albumArtwork.y = albumArtworkContainer.y + 1
 				self:insert(albumArtwork)
 				albumArtworkNotFoundText.isVisible = false
+
+				transition.to(albumArtwork, {alpha = 1, easing.inOutQuad})
 			elseif (phase == "notFound") then
-				albumArtworkNotFoundText.text = "No Cover Found"
+				if (albumArtwork) then
+					display.remove(albumArtwork)
+					albumArtwork = nil
+				end
+
+				albumArtworkNotFoundText.text = sFormat("No Cover Found%s", lastAlbumCoverSource)
+				albumArtworkNotFoundText.isVisible = true
 			end
 
 			albumArtworkPathButton.isVisible = true
@@ -442,6 +484,7 @@ function M.create()
 					)
 
 					if (foundFile ~= nil) then
+						lastAlbumCoverSource = "file"
 						songFilePathTextField.field.text = foundFile
 					end
 				end
