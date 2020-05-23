@@ -36,14 +36,15 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 		local status = event.status
 		local phase = event.phase
 		local isError = event.isError
-		local response = type(event.response) == "string" and jDecode(event.response)
-		local result = response and response["results"]
-		local info = result and result[1]
 
 		if (isError or status ~= 200) then
 			coverNotFoundEvent()
 			return
 		end
+
+		local response = jDecode(event.response)
+		local result = response and response["results"]
+		local info = result and result[1]
 
 		if (phase == "ended") then
 			if (response and result and info) then

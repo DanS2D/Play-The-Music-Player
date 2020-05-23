@@ -23,14 +23,15 @@ function M:getAlbumCover(song, coverFoundEvent, coverNotFoundEvent)
 		local status = event.status
 		local phase = event.phase
 		local isError = event.isError
-		local response = event.response
-		local firstImageStartPos = response:find('" src="https://')
 		local foundCover = false
 
 		if (isError or status ~= 200) then
 			coverNotFoundEvent()
 			return
 		end
+
+		local response = event.response
+		local firstImageStartPos = response:find('" src="https://')
 
 		if (phase == "ended") then
 			if (firstImageStartPos) then
