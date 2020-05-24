@@ -725,19 +725,23 @@ function M:getRow(rowIndex)
 		-- get search row
 		return sqlLib:getMusicRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
 	else
-		-- get normal row
-		if (musicSort == "album") then
-			return sqlLib:getMusicRowByAlbum(rowIndex, musicSortAToZ)
-		elseif (musicSort == "artist") then
-			return sqlLib:getMusicRowByArtist(rowIndex, musicSortAToZ)
-		elseif (musicSort == "duration") then
-			return sqlLib:getMusicRowByDuration(rowIndex, musicSortAToZ)
-		elseif (musicSort == "genre") then
-			return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
-		elseif (musicSort == "rating") then
-			return sqlLib:getMusicRowByRating(rowIndex, musicSortAToZ)
-		elseif (musicSort == "title") then
-			return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
+		if (sqlLib.currentMusicTable == "radio") then
+			return sqlLib:getRadioRow(rowIndex, musicSortAToZ)
+		else
+			-- get normal row
+			if (musicSort == "album") then
+				return sqlLib:getMusicRowByAlbum(rowIndex, musicSortAToZ)
+			elseif (musicSort == "artist") then
+				return sqlLib:getMusicRowByArtist(rowIndex, musicSortAToZ)
+			elseif (musicSort == "duration") then
+				return sqlLib:getMusicRowByDuration(rowIndex, musicSortAToZ)
+			elseif (musicSort == "genre") then
+				return sqlLib:getMusicRowByGenre(rowIndex, musicSortAToZ)
+			elseif (musicSort == "rating") then
+				return sqlLib:getMusicRowByRating(rowIndex, musicSortAToZ)
+			elseif (musicSort == "title") then
+				return sqlLib:getMusicRowByTitle(rowIndex, musicSortAToZ)
+			end
 		end
 	end
 
@@ -871,16 +875,25 @@ function M.new()
 						local messageEnd = sqlLib.currentMusicTable == "music" and "import it again" or "add it again"
 						local song = M:getRow(rightClickRowIndex)
 
+						if (sqlLib.currentMusicTable == "radio") then
+							removeFrom = "Radio"
+							messageEnd = "add it again"
+						end
+
 						local function onRemoved()
 							if (audioLib.currentSong and audioLib.currentSong.fileName == song.fileName) then
 								audioLib.reset()
 								eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.clearSong)
 							end
 
-							if (removeFrom == "Playlist") then
-								sqlLib:removeMusic(song)
+							if (sqlLib.currentMusicTable == "radio") then
+								sqlLib:removeRadio(song)
 							else
-								sqlLib:removeMusicFromAll(song)
+								if (removeFrom == "Playlist") then
+									sqlLib:removeMusic(song)
+								else
+									sqlLib:removeMusicFromAll(song)
+								end
 							end
 
 							M:reloadData()

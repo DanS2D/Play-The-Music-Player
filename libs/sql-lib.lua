@@ -15,17 +15,20 @@ local settingsBinds =
 local musicBinds =
 	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :playCount, :duration, :bitrate, :sampleRate, :sortTitle, :albumSearch, :artistSearch, :titleSearch)"
 local playListTableBinds = "(:key, :md5, :name)"
+local radioBinds = "(:key, :url, :md5, :title, :rating, :playCount, :sortTitle, :titleSearch)"
+
 local function createTables()
-	-- the playlist table simply holds the name and id of the playlists. Each playlist should be
-	-- it's own table. When adding a playlist, add it's name and primary key to the playlists table so it can be referenced.
-	-- when removing it, also remove its entry from the playlists master table.
 	database:exec(
 		[[CREATE TABLE IF NOT EXISTS `settings` (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, theme TEXT, selectedVisualizers TEXT);]]
 	)
 	database:exec(
 		[[CREATE TABLE IF NOT EXISTS `music` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, playCount INTEGER, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
+	database:exec(
+		[[CREATE TABLE IF NOT EXISTS `radio` (id INTEGER PRIMARY KEY, url TEXT, md5 TEXT, title TEXT, rating REAL, playCount INTEGER, sortTitle TEXT, titleSearch TEXT, UNIQUE(md5));]]
+	)
 	database:exec([[CREATE TABLE IF NOT EXISTS `playlists` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]])
+	database:exec([[CREATE INDEX IF NOT EXISTS `radioIndex` on radio (title, rating);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS `musicIndex` on music (album, artist, genre, title);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS `musicAlbumIndex` on music (album);]])
 	database:exec([[CREATE INDEX IF NOT EXISTS `musicArtistIndex` on music (artist);]])
@@ -270,6 +273,73 @@ function M:addToPlaylist(playlistName, musicData)
 	stmt:finalize()
 	musicData = nil
 	stmt = nil
+end
+
+function M:insertRadio(musicData)
+	local hash = cDigest(crypto.md5, musicData.url)
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `radio` VALUES %s; ]], radioBinds))
+
+	stmt:bind_names(
+		{
+			url = musicData.url,
+			md5 = hash,
+			title = musicData.title,
+			rating = musicData.rating,
+			playCount = musicData.playCount,
+			sortTitle = musicData.title,
+			titleSearch = musicData.title:stripAccents()
+		}
+	)
+	stmt:step()
+	stmt:finalize()
+	musicData = nil
+	stmt = nil
+end
+
+function M:removeRadio(musicData)
+	local stmt = database:prepare(sFormat([[ DELETE FROM `radio` WHERE md5='%s'; ]], musicData.md5))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:updateRadio(musicData)
+	local values = buildUpdateString(musicData)
+	local md5 = musicData.md5
+	local stmt = database:prepare(sFormat(" UPDATE `radio` SET %s WHERE md5='%s' ", values, md5))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
+function M:getRadioRow(index, ascending)
+	local stmt = nil
+	local orderType = ascending and "ASC" or "DESC"
+	local music = nil
+
+	if (index > 1) then
+		stmt =
+			database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s LIMIT 1 OFFSET %d; ]], orderType, index - 1))
+	else
+		stmt =
+			database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s LIMIT 1;]], M.currentMusicTable, orderType))
+	end
+
+	for row in stmt:nrows() do
+		music = {
+			url = row.url,
+			md5 = row.md5,
+			title = row.title,
+			rating = row.rating,
+			playCount = row.playCount,
+			sortTitle = row.title
+		}
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return music
 end
 
 function M:insertMusic(musicData)

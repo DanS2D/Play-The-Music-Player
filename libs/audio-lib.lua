@@ -35,6 +35,7 @@ local bassGetVolume = bass.getVolume
 local bassIsChannelPaused = bass.isChannelPaused
 local bassIsChannelPlaying = bass.isChannelPlaying
 local bassLoad = bass.load
+local bassLoadUrl = bass.loadUrl
 local bassPause = bass.pause
 local bassPlay = bass.play
 local bassResume = bass.resume
@@ -218,7 +219,11 @@ local function loadAudio(song)
 		channelHandle = nil
 	end
 
-	channelHandle = bassLoad(currentSong.fileName, currentSong.filePath)
+	if (song.url) then
+		bassLoadUrl(currentSong.url)
+	else
+		channelHandle = bassLoad(currentSong.fileName, currentSong.filePath)
+	end
 end
 
 local function playAudio(song)

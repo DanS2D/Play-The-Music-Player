@@ -467,11 +467,11 @@ local applicationMainMenuBar =
 	}
 )
 
-background = display.newRect(0, 0, display.contentWidth, display.contentHeight - 161)
+background = display.newRect(0, 0, display.contentWidth, display.contentHeight - 150)
 background.anchorX = 0
 background.anchorY = 0
 background.x = 0
-background.y = 161
+background.y = 150
 background:setFillColor(unpack(theme:get().backgroundColor.primary))
 
 mediaBar = mediaBarLib.new({})
