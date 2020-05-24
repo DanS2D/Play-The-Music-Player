@@ -53,6 +53,7 @@ local function onAudioEvent(event)
 
 	if (phase == "started") then
 		--print("song STARTED")
+		eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadedUrl)
 		mediaBarLib.updatePlayPauseState(true)
 		mediaBarLib.removeAlbumArtwork()
 		mediaBarLib.resetSongProgress()
@@ -207,7 +208,7 @@ local applicationMainMenuBar =
 								musicList:removeAllRows()
 								musicImporter.pushProgessToFront()
 								musicImporter.showProgressBar()
-								musicImporter.getFolderList(lastChosenPath, populateTableViews)
+								musicImporter.getFolderList(selectedPath, populateTableViews)
 							else
 								mainMenuBar.setEnabled(true)
 								playInterruptedSong()

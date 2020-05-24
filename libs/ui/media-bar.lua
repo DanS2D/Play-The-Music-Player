@@ -4,7 +4,6 @@ local sqlLib = require("libs.sql-lib")
 local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")
 local mainMenuBar = require("libs.ui.main-menu-bar")
-local levelVisualization = require("libs.ui.level-visualizer")
 local progressView = require("libs.ui.progress-view")
 local ratings = require("libs.ui.ratings")
 local previousButtonLib = require("libs.ui.media-bar.previous-button")
@@ -19,6 +18,7 @@ local radioListButtonLib = require("libs.ui.media-bar.radio-button")
 local shuffleButtonLib = require("libs.ui.media-bar.shuffle-button")
 local loopButtonLib = require("libs.ui.media-bar.loop-button")
 local nowPlayingTextLib = require("libs.ui.media-bar.now-playing-text")
+local levelVisualization = require("libs.ui.media-bar.level-visualizer")
 local playbackTimeTextLib = require("libs.ui.media-bar.playback-time-text")
 local sFormat = string.format
 local mMin = math.min
@@ -145,6 +145,14 @@ local function mediaBarEventListener(event)
 		M.clearPlayingSong()
 	elseif (phase == mediaBarEvent.closePlaylists) then
 		playlistDropdown:close()
+	elseif (phase == mediaBarEvent.loadingUrl) then
+		songTitleText.isVisible = true
+		songAlbumText.isVisible = true
+		levelVisualizer.isVisible = false
+		songTitleText:setText(event.value.title)
+		songAlbumText:setText("Loading...")
+	elseif (phase == mediaBarEvent.loadedUrl) then
+		levelVisualizer.isVisible = true
 	end
 
 	return true

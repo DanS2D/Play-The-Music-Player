@@ -35,7 +35,9 @@ local M = {
 		name = "mediaBarEvent",
 		events = {
 			closePlaylists = "closePlaylists",
-			clearSong = "clearSong"
+			clearSong = "clearSong",
+			loadingUrl = "loadingUrl",
+			loadedUrl = "loadedUrl"
 		}
 	},
 	musicList = {
@@ -100,10 +102,11 @@ function M:mainMenuEvent(eventPhase)
 	Runtime:dispatchEvent(event)
 end
 
-function M:mediaBarEvent(eventPhase)
+function M:mediaBarEvent(eventPhase, value)
 	local event = {
 		name = self.mediaBar.name,
-		phase = eventPhase
+		phase = eventPhase,
+		value = value
 	}
 
 	Runtime:dispatchEvent(event)

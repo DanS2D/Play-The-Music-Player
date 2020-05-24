@@ -663,8 +663,20 @@ function M:createTableView(options, index)
 					tableViewList[1]:reloadRow(row.realIndex)
 
 					audioLib.currentSongIndex = row.index
-					audioLib.load(song)
-					audioLib.play(song)
+
+					if (song.url) then
+						eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadingUrl, song)
+						timer.performWithDelay(
+							50,
+							function()
+								audioLib.load(song)
+								audioLib.play(song)
+							end
+						)
+					else
+						audioLib.load(song)
+						audioLib.play(song)
+					end
 				end
 			end,
 			onRowMouseClick = function(event)

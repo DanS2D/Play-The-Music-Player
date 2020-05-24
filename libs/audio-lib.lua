@@ -22,6 +22,7 @@ local M = {
 }
 local bass = require("plugin.bass")
 local settings = require("libs.settings")
+local eventDispatcher = require("libs.event-dispatcher")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
@@ -32,6 +33,7 @@ local bassGetDuration = bass.getDuration
 local bassGetLevel = bass.getLevel
 local bassGetPlayBackTime = bass.getPlaybackTime
 local bassGetVolume = bass.getVolume
+local bassIsChannelActive = bass.isChannelActive
 local bassIsChannelPaused = bass.isChannelPaused
 local bassIsChannelPlaying = bass.isChannelPlaying
 local bassLoad = bass.load
@@ -392,7 +394,19 @@ end
 
 function M.resume()
 	if (channelHandle ~= nil) then
-		bassResume(channelHandle)
+		if (currentSong.url) then
+			eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadingUrl, currentSong)
+			timer.performWithDelay(
+				50,
+				function()
+					bassStop(channelHandle)
+					loadAudio(currentSong)
+					playAudio(currentSong)
+				end
+			)
+		else
+			bassResume(channelHandle)
+		end
 	end
 end
 
