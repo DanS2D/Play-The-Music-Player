@@ -642,7 +642,7 @@ function M:createTableView(options, index)
 					closeRightClickMenus()
 					eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
 					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
-				elseif (numClicks >= 2) then
+				elseif (numClicks >= 2 and row.isVisible) then
 					local song = self:getRow(row.index)
 
 					if (song == nil) then
@@ -682,13 +682,15 @@ function M:createTableView(options, index)
 			onRowMouseClick = function(event)
 				local row = event.row
 
-				if (event.isSecondaryButton) then
-					rightClickRowIndex = row.index
+				if (row.isVisible) then
+					if (event.isSecondaryButton) then
+						rightClickRowIndex = row.index
 
-					lockScrolling(true)
-					eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
-					categoryListRightClickMenu:close()
-					musicListRightClickMenu:open(event.x, event.y)
+						lockScrolling(true)
+						eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
+						categoryListRightClickMenu:close()
+						musicListRightClickMenu:open(event.x, event.y)
+					end
 				end
 			end,
 			onRowScroll = function(event)

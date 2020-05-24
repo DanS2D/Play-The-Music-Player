@@ -111,6 +111,7 @@ function M.new(options)
 			rows[i].isSelected = false
 			rows[i].contentWidth = width
 			rows[i].contentHeight = rowHeight
+			rows[i].isHitTestable = true
 			rows[i]:addEventListener("tap", onRowTap)
 
 			self:insert(rows[i])
