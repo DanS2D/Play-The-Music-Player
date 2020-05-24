@@ -152,6 +152,10 @@ function M:getFileAlbumCover(song)
 		end
 	end
 
+	if (song.url) then
+		return
+	end
+
 	local exists, fileName = doesCoverExist(song)
 
 	if (exists) then

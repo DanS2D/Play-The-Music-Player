@@ -15,6 +15,7 @@ local volumeSliderLib = require("libs.ui.media-bar.volume-slider")
 local volumeButtonLib = require("libs.ui.media-bar.volume-button")
 local libraryButtonLib = require("libs.ui.media-bar.library-button")
 local playlistButtonLib = require("libs.ui.media-bar.playlist-button")
+local radioListButtonLib = require("libs.ui.media-bar.radio-button")
 local shuffleButtonLib = require("libs.ui.media-bar.shuffle-button")
 local loopButtonLib = require("libs.ui.media-bar.loop-button")
 local nowPlayingTextLib = require("libs.ui.media-bar.now-playing-text")
@@ -40,15 +41,22 @@ local albumArtwork = nil
 local songContainerBox = nil
 local songContainer = nil
 local playlistDropdown = nil
+local radioListDropdown = nil
 local loopButton = nil
 local levelVisualizer = nil
 local musicDuration = 0
+local currentSong = nil
 
 local function updateMediaBar()
 	if (audioLib.isChannelPlaying()) then
-		playBackTimeText:update()
-		songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
-		songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
+		playBackTimeText:update(currentSong)
+
+		if (currentSong and currentSong.url) then
+			songProgressView:setOverallProgress(0)
+		else
+			songProgressView:setElapsedProgress(songProgressView:getElapsedProgress() + 1)
+			songProgressView:setOverallProgress(songProgressView:getElapsedProgress() / musicDuration)
+		end
 	end
 end
 
@@ -87,6 +95,10 @@ function M.new(options)
 	playlistDropdown = playlistButtonLib.new(group)
 	playlistDropdown.x = songContainerBox.x + songContainerBox.contentWidth
 	playlistDropdown.y = previousButton.y
+
+	radioListDropdown = radioListButtonLib.new(group)
+	radioListDropdown.x = songContainerBox.x + songContainerBox.contentWidth + radioListDropdown.contentWidth
+	radioListDropdown.y = previousButton.y
 
 	shuffleButton = shuffleButtonLib.new(group)
 	shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
@@ -224,6 +236,7 @@ end
 
 function M.updateSongText(song)
 	levelVisualizer.isVisible = true
+	currentSong = song
 
 	if (ratingStars ~= nil) then
 		ratingStars:destroy()
@@ -261,7 +274,12 @@ function M.updateSongText(song)
 	--)
 	playBackTimeText.isVisible = true
 	songTitleText:setText(song.title)
-	songAlbumText:setText(song.album)
+
+	if (song.url) then
+		songAlbumText:setText(song.url)
+	else
+		songAlbumText:setText(song.album)
+	end
 
 	if (albumArtwork) then
 		transition.to(shuffleButton, {x = songContainerBox.x + 90, time = 250, transition = easing.inOutQuad})
@@ -274,7 +292,7 @@ function M.updateSongText(song)
 end
 
 function M.updatePlaybackTime()
-	playBackTimeText:update()
+	playBackTimeText:update(currentSong)
 end
 
 function M:onResize()

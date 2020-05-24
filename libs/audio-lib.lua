@@ -191,7 +191,7 @@ end
 
 local function cleanupAudio()
 	if (channelHandle ~= nil) then
-		print("cleaning up audio")
+		--print("cleaning up audio")
 		bassStop(channelHandle)
 		bassDispose(channelHandle)
 	end
@@ -206,7 +206,10 @@ local function getRemainingPlaybackTimeInSeconds()
 end
 
 local function loadAudio(song)
-	if (currentSong ~= nil and currentSong.fileName == song.fileName and bassIsChannelPlaying(channelHandle)) then
+	if
+		(currentSong ~= nil and currentSong.fileName and currentSong.fileName == song.fileName and
+			bassIsChannelPlaying(channelHandle))
+	 then
 		return
 	end
 
@@ -220,7 +223,7 @@ local function loadAudio(song)
 	end
 
 	if (song.url) then
-		bassLoadUrl(currentSong.url)
+		channelHandle = bassLoadUrl(currentSong.url)
 	else
 		channelHandle = bassLoad(currentSong.fileName, currentSong.filePath)
 	end
@@ -273,7 +276,7 @@ local function handleAudioEvents()
 		for i = 1, #audioChannels do
 			local channel = audioChannels[i]
 
-			if (channel) then
+			if (channel and not currentSong.url) then
 				if (not bassIsChannelPlaying(channel) and not bassIsChannelPaused(channel)) then
 					local event = {
 						name = "bass-internal",
@@ -358,12 +361,14 @@ function M.isChannelPlaying()
 end
 
 function M.load(song)
-	if (isChiptunes(song)) then
-		print("loading chiptunes plugin")
-		M.loadChipTunesPlugin()
-	else
-		M.unloadChipTunesPlugin()
-		collectgarbage("collect")
+	if (song.fileName) then
+		if (isChiptunes(song)) then
+			--print("loading chiptunes plugin")
+			M.loadChipTunesPlugin()
+		else
+			M.unloadChipTunesPlugin()
+			collectgarbage("collect")
+		end
 	end
 
 	loadAudio(song)

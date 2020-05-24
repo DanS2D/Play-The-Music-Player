@@ -1,5 +1,5 @@
 local M = {}
-local playlistDropdownLib = require("libs.ui.playlist-dropdown")
+local playlistDropdownLib = require("libs.ui.media-bar.playlist-dropdown")
 local common = require("libs.ui.media-bar.common")
 local eventDispatcher = require("libs.event-dispatcher")
 

@@ -15,7 +15,7 @@ local settingsBinds =
 local musicBinds =
 	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :playCount, :duration, :bitrate, :sampleRate, :sortTitle, :albumSearch, :artistSearch, :titleSearch)"
 local playListTableBinds = "(:key, :md5, :name)"
-local radioBinds = "(:key, :url, :md5, :title, :rating, :playCount, :sortTitle, :titleSearch)"
+local radioBinds = "(:key, :url, :md5, :title, :genre, :rating, :playCount, :sortTitle, :titleSearch)"
 
 local function createTables()
 	database:exec(
@@ -25,7 +25,7 @@ local function createTables()
 		[[CREATE TABLE IF NOT EXISTS `music` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, playCount INTEGER, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
 	database:exec(
-		[[CREATE TABLE IF NOT EXISTS `radio` (id INTEGER PRIMARY KEY, url TEXT, md5 TEXT, title TEXT, rating REAL, playCount INTEGER, sortTitle TEXT, titleSearch TEXT, UNIQUE(md5));]]
+		[[CREATE TABLE IF NOT EXISTS `radio` (id INTEGER PRIMARY KEY, url TEXT, md5 TEXT, title TEXT, genre TEXT, rating REAL, playCount INTEGER, sortTitle TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
 	database:exec([[CREATE TABLE IF NOT EXISTS `playlists` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]])
 	database:exec([[CREATE INDEX IF NOT EXISTS `radioIndex` on radio (title, rating);]])
@@ -284,6 +284,7 @@ function M:insertRadio(musicData)
 			url = musicData.url,
 			md5 = hash,
 			title = musicData.title,
+			genre = musicData.genre,
 			rating = musicData.rating,
 			playCount = musicData.playCount,
 			sortTitle = musicData.title,
@@ -312,6 +313,21 @@ function M:updateRadio(musicData)
 	stmt = nil
 end
 
+function M:radioCount()
+	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `radio`; ]])
+	local count = 0
+
+	for row in stmt:nrows() do
+		count = row.count
+		break
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return count
+end
+
 function M:getRadioRow(index, ascending)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
@@ -321,12 +337,34 @@ function M:getRadioRow(index, ascending)
 		stmt =
 			database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s LIMIT 1 OFFSET %d; ]], orderType, index - 1))
 	else
-		stmt =
-			database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s LIMIT 1;]], M.currentMusicTable, orderType))
+		stmt = database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s LIMIT 1;]], orderType))
 	end
 
 	for row in stmt:nrows() do
 		music = {
+			url = row.url,
+			md5 = row.md5,
+			title = row.title,
+			genre = row.genre,
+			rating = row.rating,
+			playCount = row.playCount,
+			sortTitle = row.title
+		}
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return music
+end
+
+function M:geRadioRows(ascending)
+	local orderType = ascending and "ASC" or "DESC"
+	local music = {}
+	local stmt = database:prepare(sFormat([[ SELECT * FROM `radio` ORDER BY sortTitle %s; ]], orderType))
+
+	for row in stmt:nrows() do
+		music[#music + 1] = {
 			url = row.url,
 			md5 = row.md5,
 			title = row.title,
