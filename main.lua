@@ -46,6 +46,7 @@ local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isWindows = system.getInfo("platform") == "win32"
+sqlLib.currentMusicTable = settings.lastView
 
 local function onAudioEvent(event)
 	local phase = event.phase
@@ -124,7 +125,7 @@ end
 Runtime:addEventListener("AlbumArtDownload", onAlbumArtDownloadComplete)
 
 local function populateTableViews()
-	if (sqlLib:currentMusicCount() > 0) then
+	if (sqlLib:currentMusicCount() > 0 or sqlLib:radioCount() > 0) then
 		mainMenuBar.setEnabled(true)
 
 		if (lastChosenPath ~= nil) then
@@ -531,6 +532,19 @@ end
 
 display.getCurrentStage():insert(applicationMainMenuBar)
 Runtime:addEventListener("key", keyEventListener)
+
+local function onMainEvent(event)
+	local phase = event.phase
+	local mainEvent = eventDispatcher.mainEvent.events
+
+	if (phase == mainEvent.populateTableViews) then
+		populateTableViews()
+	end
+
+	return true
+end
+
+Runtime:addEventListener(eventDispatcher.mainEvent.name, onMainEvent)
 
 local function onResize(event)
 	if (alertPopupLib:isOpen()) then

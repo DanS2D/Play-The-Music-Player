@@ -1082,6 +1082,8 @@ function M:reloadDataClean()
 
 	if (sqlLib.currentMusicTable == "music") then
 		musicListRightClickMenu:changeItemTitle(3, "Remove From Library")
+	elseif (sqlLib.currentMusicTable == "radio") then
+		musicListRightClickMenu:changeItemTitle(3, "Remove From Radio")
 	else
 		musicListRightClickMenu:changeItemTitle(3, "Remove From Playlist")
 	end

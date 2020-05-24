@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")
 local desktopTableView = require("libs.ui.desktop-table-view")
 local alertPopupLib = require("libs.ui.alert-popup")
@@ -129,9 +130,13 @@ function M.new(options)
 							parent = group,
 							onClick = function(event)
 								local function onRemoved()
+									local currentMusicTable = sqlLib.currentMusicTable
 									sqlLib:removePlaylist(itemData.name)
-									sqlLib.currentMusicTable = "music"
-									-- TODO: issue a clean reload of the music list here when deleting a playlist
+
+									if (sqlLib.currentMusicTable == sFormat("%sPlaylist", itemData.name)) then
+										sqlLib.currentMusicTable = "music"
+										eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
+									end
 								end
 
 								ingoreTouch = true
@@ -165,6 +170,8 @@ function M.new(options)
 					if (type(onPlaylistClick) == "function" and not ingoreTouch) then
 						--event.playlistName = itemData.name
 						sqlLib.currentMusicTable = sFormat("%sPlaylist", itemData.name)
+						settings.lastView = sqlLib.currentMusicTable
+						settings:save()
 						musicList.musicSearch = nil
 						onPlaylistClick(event)
 						row.parent.isVisible = false

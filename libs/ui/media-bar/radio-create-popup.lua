@@ -1,6 +1,7 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")
 local buttonLib = require("libs.ui.button")
 local alertPopupLib = require("libs.ui.alert-popup")
@@ -71,6 +72,10 @@ local function onConfirm()
 			playCount = 0
 		}
 	)
+	sqlLib.currentMusicTable = "radio"
+	settings.lastView = sqlLib.currentMusicTable
+	settings:save()
+	eventDispatcher:mainLuaEvent(eventDispatcher.mainEvent.events.populateTableViews)
 	eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
 end
 

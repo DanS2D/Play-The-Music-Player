@@ -1,11 +1,13 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
 local theme = require("libs.theme")
+local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")
 local buttonLib = require("libs.ui.button")
 local alertPopupLib = require("libs.ui.alert-popup")
 local mMin = math.min
 local mMax = math.max
+local sFormat = string.format
 local uPack = unpack
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
@@ -49,6 +51,10 @@ local function onConfirm()
 
 	group:hide()
 	sqlLib:createPlaylist(enteredPlaylistName)
+	sqlLib.currentMusicTable = sFormat("%sPlaylist", enteredPlaylistName)
+	settings.lastView = sqlLib.currentMusicTable
+	settings:save()
+	eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
 end
 
 function M.create()

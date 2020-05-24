@@ -23,7 +23,7 @@ local M = {
 	showVisualizer = true,
 	theme = "dark",
 	selectedVisualizers = {},
-	lastView = "musicList"
+	lastView = "music"
 }
 local sqlLib = require("libs.sql-lib")
 local hasLoadedSettings = false
@@ -45,10 +45,6 @@ function M:load()
 end
 
 function M:save()
-	if (not hasLoadedSettings) then
-		self:load()
-	end
-
 	sqlLib:updateSettings(self)
 end
 

@@ -39,8 +39,20 @@ function M.new(parent)
 
 					eventDispatcher:playButtonEvent(eventDispatcher.playButton.events.setOn)
 					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, audioLib.currentSongIndex)
-					audioLib.load(previousSong)
-					audioLib.play(previousSong)
+
+					if (previousSong.url) then
+						eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadingUrl, previousSong)
+						timer.performWithDelay(
+							50,
+							function()
+								audioLib.load(previousSong)
+								audioLib.play(previousSong)
+							end
+						)
+					else
+						audioLib.load(previousSong)
+						audioLib.play(previousSong)
+					end
 				end
 			end
 		}

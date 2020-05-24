@@ -53,6 +53,12 @@ local M = {
 			setResultsLimit = "setResultsLimit",
 			setMusicSearch = "setMusicSearch"
 		}
+	},
+	mainEvent = {
+		name = "mainEvent",
+		events = {
+			populateTableViews = "populateTableViews"
+		}
 	}
 }
 
@@ -117,6 +123,15 @@ function M:musicListEvent(eventPhase, value)
 		name = self.musicList.name,
 		phase = eventPhase,
 		value = value
+	}
+
+	Runtime:dispatchEvent(event)
+end
+
+function M:mainLuaEvent(eventPhase)
+	local event = {
+		name = self.mainEvent.name,
+		phase = eventPhase
 	}
 
 	Runtime:dispatchEvent(event)

@@ -21,16 +21,6 @@ function M.new(parent)
 			onClick = function(event)
 				local radioCount = sqlLib:radioCount()
 
-				if (sqlLib:totalMusicCount() <= 0) then
-					alertPopup:onlyUseOkButton()
-					alertPopup:setTitle("No Music Added!")
-					alertPopup:setMessage(
-						"You haven't added any music yet!\nYou can't add a radio/podcast until you've added some music to your library."
-					)
-					alertPopup:show()
-					return
-				end
-
 				if (radioCount <= 0) then
 					alertPopup:onlyUseOkButton()
 					alertPopup:setTitle("No Radio/Podcasts Created!")
@@ -58,16 +48,6 @@ function M.new(parent)
 			fontSize = common.smallButtonFontSize,
 			parent = group,
 			onClick = function(event)
-				if (sqlLib:totalMusicCount() <= 0) then
-					alertPopup:onlyUseOkButton()
-					alertPopup:setTitle("No Music Added!")
-					alertPopup:setMessage(
-						"You haven't added any music yet!\nYou can create radio/podcast after you have imported some music to your library."
-					)
-					alertPopup:show()
-					return
-				end
-
 				radioCreatePopup:show()
 			end
 		}
