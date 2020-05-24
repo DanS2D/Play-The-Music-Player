@@ -1,5 +1,6 @@
 local M = {}
 local sqlLib = require("libs.sql-lib")
+local settings = require("libs.settings")
 local buttonLib = require("libs.ui.button")
 local musicList = require("libs.ui.music-list")
 local alertPopupLib = require("libs.ui.alert-popup")
@@ -32,6 +33,8 @@ function M.new(parent)
 				end
 
 				sqlLib.currentMusicTable = "radio"
+				settings.lastView = sqlLib.currentMusicTable
+				settings:save()
 				musicList.musicSearch = nil
 				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.closeRightClickMenus)
 				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
