@@ -11,7 +11,7 @@ function M.new(parent)
 	local button =
 		buttonLib.new(
 		{
-			iconName = "album-collection",
+			iconName = "user-music",
 			fontSize = common.mainButtonFontSize,
 			parent = parent,
 			onClick = function(event)
