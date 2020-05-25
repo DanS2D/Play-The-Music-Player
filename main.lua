@@ -76,7 +76,10 @@ local function onAudioEvent(event)
 			until audioLib.currentSongIndex ~= currentSongIndex
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
-			if (audioLib.currentSongIndex > musicList:getMusicCount()) then
+			if
+				(musicList.musicSearch and audioLib.currentSongIndex > sqlLib.searchCount or
+					audioLib.currentSongIndex > musicList:getMusicCount())
+			 then
 				if (audioLib.loopAll) then
 					audioLib.currentSongIndex = 1
 				else

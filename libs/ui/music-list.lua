@@ -583,11 +583,6 @@ function M:createTableView(options, index)
 						row:insert(nowPlayingIcon)
 					end
 
-					if (row.index == 1 and parent.orderIndex == 1) then
-						print(musicData[row.index].title)
-						print(musicData[row.index][options[index].rowTitle])
-					end
-
 					local rowTitleText =
 						display.newText(
 						{
