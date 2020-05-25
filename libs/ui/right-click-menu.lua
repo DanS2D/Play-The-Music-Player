@@ -1,6 +1,7 @@
 local M = {}
 local theme = require("libs.theme")
 local desktopTableView = require("libs.ui.desktop-table-view")
+local eventDispatcher = require("libs.event-dispatcher")
 local mRound = math.round
 local uPack = unpack
 local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
@@ -229,6 +230,7 @@ function M.new(options)
 									onClick(event)
 
 									if (itemData.closeOnClick) then
+										eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
 										menu:close()
 									end
 								end

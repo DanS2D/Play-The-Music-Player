@@ -313,9 +313,7 @@ local applicationMainMenuBar =
 								timer.performWithDelay(
 									100,
 									function()
-										print(#settings.musicFolderPaths)
 										settings.musicFolderPaths = {}
-										print(#settings.musicFolderPaths)
 										settings:load()
 										mediaBarLib.resetSongProgress()
 										mediaBarLib.clearPlayingSong()

@@ -1,6 +1,6 @@
 local M = {
-	lastSearchQuery = nil,
-	currentMusicTable = "music"
+	currentMusicTable = "music",
+	searchCount = 0
 }
 local sqlite3 = require("sqlite3")
 local json = require("json")
@@ -14,6 +14,8 @@ local settingsBinds =
 	"(:key, :musicFolderPaths, :volume, :loopOne, :loopAll, :shuffle, :lastPlayedSongIndex, :lastPlayedSongTime, :fadeInTrack, :fadeOutTrack, :fadeInTime, :fadeOutTime, :crossFade, :displayAlbumArtwork, :columnOrder, :hiddenColumns, :columnSizes, :lastUsedColumn, :lastUsedColumnSortAToZ, :showVisualizer, :lastView, :theme, :selectedVisualizers)"
 local musicBinds =
 	"(:key, :fileName, :filePath, :md5, :title, :artist, :album, :genre, :comment, :year, :trackNumber, :rating, :playCount, :duration, :bitrate, :sampleRate, :sortTitle, :albumSearch, :artistSearch, :titleSearch)"
+local musicFields =
+	"(id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, playCount INTEGER, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5))"
 local playListTableBinds = "(:key, :md5, :name)"
 local radioBinds = "(:key, :url, :md5, :title, :genre, :rating, :playCount, :sortTitle, :titleSearch)"
 
@@ -21,9 +23,7 @@ local function createTables()
 	database:exec(
 		[[CREATE TABLE IF NOT EXISTS `settings` (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, theme TEXT, selectedVisualizers TEXT);]]
 	)
-	database:exec(
-		[[CREATE TABLE IF NOT EXISTS `music` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, playCount INTEGER, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]]
-	)
+	database:exec(sFormat("CREATE TABLE IF NOT EXISTS `music` %s;", musicFields))
 	database:exec(
 		[[CREATE TABLE IF NOT EXISTS `radio` (id INTEGER PRIMARY KEY, url TEXT, md5 TEXT, title TEXT, genre TEXT, rating REAL, playCount INTEGER, sortTitle TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
@@ -176,12 +176,7 @@ function M:getSettings()
 end
 
 function M:createPlaylist(name)
-	database:exec(
-		sFormat(
-			[[CREATE TABLE IF NOT EXISTS `%sPlaylist` (id INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, md5 TEXT, title TEXT, artist TEXT, album TEXT, genre TEXT, comment TEXT, year INTEGER, trackNumber INTEGER, rating REAL, duration INTEGER, bitrate INTEGER, sampleRate INTEGER, sortTitle TEXT, albumSearch TEXT, artistSearch TEXT, titleSearch TEXT, UNIQUE(md5));]],
-			name
-		)
-	)
+	database:exec(sFormat([[CREATE TABLE IF NOT EXISTS `%sPlaylist` %s;]], name, musicFields))
 	local hash = cDigest(crypto.md5, name)
 	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `playlists` VALUES %s; ]], playListTableBinds))
 	stmt:bind_names({name = name, md5 = hash})
@@ -239,39 +234,6 @@ function M:removePlaylist(playlistName)
 	local stmt = database:prepare(sFormat([[ DROP TABLE '%sPlaylist'; ]], playlistName))
 	stmt:step()
 	stmt:finalize()
-	stmt = nil
-end
-
-function M:addToPlaylist(playlistName, musicData)
-	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
-	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `%sPlaylist` VALUES %s; ]], playlistName, musicBinds))
-
-	stmt:bind_names(
-		{
-			fileName = musicData.fileName,
-			filePath = musicData.filePath,
-			md5 = hash,
-			title = musicData.title,
-			artist = musicData.artist,
-			album = musicData.album,
-			genre = musicData.genre,
-			comment = musicData.comment,
-			year = musicData.year,
-			trackNumber = musicData.trackNumber,
-			rating = musicData.rating,
-			playCount = musicData.playCount,
-			duration = musicData.duration,
-			bitrate = musicData.bitrate,
-			sampleRate = musicData.sampleRate,
-			sortTitle = musicData.title,
-			albumSearch = musicData.album:stripAccents(),
-			artistSearch = musicData.artist:stripAccents(),
-			titleSearch = musicData.title:stripAccents()
-		}
-	)
-	stmt:step()
-	stmt:finalize()
-	musicData = nil
 	stmt = nil
 end
 
@@ -342,6 +304,7 @@ function M:getRadioRow(index, ascending)
 
 	for row in stmt:nrows() do
 		music = {
+			id = row.id,
 			url = row.url,
 			md5 = row.md5,
 			title = row.title,
@@ -365,6 +328,7 @@ function M:geRadioRows(ascending)
 
 	for row in stmt:nrows() do
 		music[#music + 1] = {
+			id = row.id,
 			url = row.url,
 			md5 = row.md5,
 			title = row.title,
@@ -380,9 +344,118 @@ function M:geRadioRows(ascending)
 	return music
 end
 
-function M:insertMusic(musicData)
+function M:getRadioRowBySearch(index, ascending, search, limit)
+	local stmt = nil
+	local orderType = ascending and "ASC" or "DESC"
+	local music = nil
+	local count = 0
+	-- %% SEARCH %% == anywhere in the string
+	-- SEARCH %% == begins with string
+	-- %% SEARCH == ends with string
+	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
+
+	if (index > 1) then
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `radio` WHERE titleSearch %s ORDER BY sortTitle %s LIMIT %d OFFSET %d; ]],
+				likeQuery,
+				orderType,
+				limit,
+				index - 1
+			)
+		)
+	else
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `radio` WHERE titleSearch %s ORDER BY sortTitle %s LIMIT %d; ]],
+				likeQuery,
+				orderType,
+				limit
+			)
+		)
+	end
+
+	for row in stmt:nrows() do
+		music = {
+			id = row.id,
+			url = row.url,
+			md5 = row.md5,
+			title = row.title,
+			rating = row.rating,
+			playCount = row.playCount,
+			sortTitle = row.title
+		}
+
+		count = count + 1
+	end
+
+	stmt:finalize()
+	stmt = nil
+	self.searchCount = count
+
+	return music
+end
+
+function M:getRadioRowsBySearch(index, ascending, orderBy, search, limit)
+	local stmt = nil
+	local orderType = ascending and "ASC" or "DESC"
+	local music = {}
+	local count = 0
+	-- %% SEARCH %% == anywhere in the string
+	-- SEARCH %% == begins with string
+	-- %% SEARCH == ends with string
+	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
+
+	if (index > 1) then
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `radio` WHERE titleSearch %s ORDER BY sortTitle %s LIMIT %d OFFSET %d; ]],
+				likeQuery,
+				orderType,
+				limit,
+				index - 1
+			)
+		)
+	else
+		stmt =
+			database:prepare(
+			sFormat(
+				[[ SELECT * FROM `radio` WHERE titleSearch %s ORDER BY sortTitle %s LIMIT %d; ]],
+				likeQuery,
+				orderType,
+				limit
+			)
+		)
+	end
+
+	for row in stmt:nrows() do
+		music[#music + 1] = {
+			id = row.id,
+			url = row.url,
+			md5 = row.md5,
+			title = row.title,
+			rating = row.rating,
+			playCount = row.playCount,
+			sortTitle = row.title
+		}
+
+		count = count + 1
+	end
+
+	stmt:finalize()
+	stmt = nil
+	self.searchCount = count
+
+	return music
+end
+
+function M:insertMusic(musicData, sqlTable)
 	local hash = cDigest(crypto.md5, musicData.title .. musicData.album)
-	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `music` VALUES %s; ]], musicBinds))
+	local sqliteTable = sqlTable or "music"
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `%s` VALUES %s; ]], sqliteTable, musicBinds))
 
 	stmt:bind_names(
 		{
@@ -545,13 +618,13 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
 	local music = nil
+	local count = 0
 	-- %% SEARCH %% == anywhere in the string
 	-- SEARCH %% == begins with string
 	-- %% SEARCH == ends with string
 	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
 	local artistQuery = sFormat("OR artistSearch %s", likeQuery)
 	local titleQuery = sFormat("OR titleSearch %s", likeQuery)
-	self.lastSearchQuery = sFormat([[WHERE albumSearch %s %s %s; ]], likeQuery, artistQuery, titleQuery)
 
 	if (index > 1) then
 		stmt =
@@ -603,10 +676,13 @@ function M:getMusicRowBySearch(index, ascending, search, limit)
 			artistSearch = row.artist,
 			titleSearch = row.title
 		}
+
+		count = count + 1
 	end
 
 	stmt:finalize()
 	stmt = nil
+	self.searchCount = count
 
 	return music
 end
@@ -615,13 +691,13 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"
 	local music = {}
+	local count = 0
 	-- %% SEARCH %% == anywhere in the string
 	-- SEARCH %% == begins with string
 	-- %% SEARCH == ends with string
 	local likeQuery = sFormat("LIKE '%%%s%%'", escapeString(search))
 	local artistQuery = sFormat("OR artistSearch %s", likeQuery)
 	local titleQuery = sFormat("OR titleSearch %s", likeQuery)
-	self.lastSearchQuery = sFormat([[WHERE albumSearch %s %s %s; ]], likeQuery, artistQuery, titleQuery)
 
 	if (index > 1) then
 		stmt =
@@ -677,10 +753,13 @@ function M:getMusicRowsBySearch(index, ascending, orderBy, search, limit)
 			artistSearch = row.artist,
 			titleSearch = row.title
 		}
+
+		count = count + 1
 	end
 
 	stmt:finalize()
 	stmt = nil
+	self.searchCount = count
 
 	return music
 end
@@ -702,26 +781,6 @@ end
 
 function M:totalMusicCount()
 	local stmt = database:prepare([[ SELECT COUNT(*) AS count FROM `music`; ]])
-	local count = 0
-
-	for row in stmt:nrows() do
-		count = row.count
-		break
-	end
-
-	stmt:finalize()
-	stmt = nil
-
-	return count
-end
-
-function M:searchCount()
-	if (self.lastSearchQuery == nil) then
-		return 0
-	end
-
-	local stmt =
-		database:prepare(sFormat([[ SELECT COUNT(*) AS count FROM `%s` %s ]], self.currentMusicTable, self.lastSearchQuery))
 	local count = 0
 
 	for row in stmt:nrows() do

@@ -1,6 +1,5 @@
 local M = {}
 local audioLib = require("libs.audio-lib")
-local sqlLib = require("libs.sql-lib")
 local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")
 local mainMenuBar = require("libs.ui.main-menu-bar")

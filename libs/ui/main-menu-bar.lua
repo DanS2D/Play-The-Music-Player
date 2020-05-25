@@ -31,6 +31,7 @@ local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isDisabled = false
 local searchBar = nil
+local searchTimer = nil
 local menuBarHeight = 28
 local rowHeight = menuBarHeight + 6
 
@@ -324,15 +325,27 @@ function M.new(options)
 		elseif (phase == "editing") then
 			local currentText = event.text
 
+			if (searchTimer) then
+				timer.cancel(searchTimer)
+				searchTimer = nil
+			end
+
 			if (currentText:len() <= 0) then
 				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.clearMusicSearch)
 				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicCount, sqlLib:currentMusicCount())
 				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
 			else
-				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setResultsLimit, sqlLib:currentMusicCount())
-				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicSearch, currentText:stripAccents())
-				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicCount, sqlLib:searchCount())
-				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
+				searchTimer =
+					timer.performWithDelay(
+					500,
+					function()
+						if (currentText:len() > 0) then
+							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setResultsLimit, sqlLib:currentMusicCount())
+							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicSearch, currentText:stripAccents())
+							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
+						end
+					end
+				)
 			end
 		end
 

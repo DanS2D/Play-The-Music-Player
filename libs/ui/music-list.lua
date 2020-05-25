@@ -509,7 +509,7 @@ local function refreshPlaylistData()
 			closeOnClick = true,
 			onClick = function(event)
 				local song = M:getRow(rightClickRowIndex)
-				sqlLib:addToPlaylist(event.playlistName, song)
+				sqlLib:insertMusic(song, sFormat("%sPlaylist", event.playlistName))
 			end
 		}
 	end
@@ -537,7 +537,7 @@ function M:createTableView(options, index)
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
-				local rowLimit = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
+				local rowLimit = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount() -- problem is here
 				local nowPlayingIcon = nil
 
 				if (self.musicSearch) then
@@ -708,7 +708,7 @@ function M:createTableView(options, index)
 
 	function tView:populate()
 		--print("Creating initial rows")
-		musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
+		musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
 
 		tView:deleteAllRows()
 		tView:createRows()
@@ -737,7 +737,11 @@ function M:getRow(rowIndex)
 
 	if (self.musicSearch) then
 		-- get search row
-		return sqlLib:getMusicRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
+		if (sqlLib.currentMusicTable == "radio") then
+			return sqlLib:getRadioRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
+		else
+			return sqlLib:getMusicRowBySearch(rowIndex, musicSortAToZ, self.musicSearch, 1)
+		end
 	else
 		if (sqlLib.currentMusicTable == "radio") then
 			return sqlLib:getRadioRow(rowIndex, musicSortAToZ)
@@ -763,7 +767,14 @@ function M:getRow(rowIndex)
 end
 
 function M:getSearchData()
-	local mData = sqlLib:getMusicRowsBySearch(1, musicSortAToZ, musicSort, self.musicSearch, self.musicResultsLimit)
+	local mData = nil
+
+	if (sqlLib.currentMusicTable == "radio") then
+		mData = sqlLib:getRadioRowsBySearch(1, musicSortAToZ, musicSort, self.musicSearch, self.musicResultsLimit)
+	else
+		mData = sqlLib:getMusicRowsBySearch(1, musicSortAToZ, musicSort, self.musicSearch, self.musicResultsLimit)
+	end
+
 	-- reset the music data
 	musicData = {}
 
@@ -1080,7 +1091,7 @@ function M:reloadDataClean()
 	currentRowCount = 0
 	musicData = nil
 	musicData = {}
-	musicCount = self.musicSearch ~= nil and sqlLib:searchCount() or sqlLib:currentMusicCount()
+	musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
 
 	if (sqlLib.currentMusicTable == "music") then
 		musicListRightClickMenu:changeItemTitle(3, "Remove From Library")
