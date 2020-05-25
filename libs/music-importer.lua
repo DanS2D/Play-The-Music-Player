@@ -14,6 +14,7 @@ local musicFolders = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
 local isWindows = system.getInfo("platform") == "win32"
+local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 local userHomeDirectoryMusicPath = isWindows and "%HOMEPATH%\\Music\\" or "~/Music"
 
 local function isMusicFile(fileName)
@@ -177,18 +178,6 @@ function M.showFolderSelectDialog()
 end
 
 function M.showFileSelectDialog(onComplete)
-	local json = require("json")
-
-	-- local saveFilePath =
-	-- 	tfd.saveFileDialog(
-	-- 	{
-	-- 		title = "Save As",
-	-- 		initialPath = userHomeDirectoryMusicPath .. "\\fuckBalls.mp3",
-	-- 		filters = audioLib.fileSelectFilter,
-	-- 		singleFilterDescription = "Audio Files| *.mp3;*.flac;*.ogg;*.wav;*.ape;*.vgm;*.mod etc"
-	-- 	}
-	-- )
-
 	local foundFiles =
 		tfd.openFileDialog(
 		{
@@ -202,6 +191,22 @@ function M.showFileSelectDialog(onComplete)
 
 	if (foundFiles ~= nil) then
 		M.scanFiles(foundFiles, onComplete)
+	end
+end
+
+function M.showFileSaveDialog(onComplete)
+	local saveFilePath =
+		tfd.saveFileDialog(
+		{
+			title = "Save As",
+			initialPath = userHomeDirectoryMusicPath,
+			filters = audioLib.fileSelectFilter,
+			singleFilterDescription = "Audio Files| *.mp3;*.flac;*.ogg;*.wav;*.ape;*.vgm;*.mod etc"
+		}
+	)
+
+	if (saveFilePath ~= nil) then
+		onComplete()
 	end
 end
 

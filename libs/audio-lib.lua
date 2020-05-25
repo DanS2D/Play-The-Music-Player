@@ -49,6 +49,7 @@ local channelHandle = nil
 local currentSong = nil
 local previousVolume = 1.0
 local audioChannels = {}
+local isWindows = system.getInfo("platform") == "win32"
 
 -- chiptunes formats:
 -- ZX Spectrum (ASC, FTC, GTR, PSC, PSG, PSM, PT1/PT2/PT3, SQT, STC/ST1/ST3, STP, VTX, YM, TurboSound tracks, AY with embedded player, TXT files for Vortex Tracker II, CHI, DMM, DST, ET1, PDT, SQD, STR, TFC, TFD, TFE)
@@ -161,6 +162,10 @@ M.fileSelectFilter = {}
 
 for k, v in pairs(chipTunesFormats) do
 	M.supportedFormats[k] = v
+end
+
+if (isWindows) then
+	M.supportedFormats["wma"] = 1
 end
 
 for k, v in pairs(M.supportedFormats) do
