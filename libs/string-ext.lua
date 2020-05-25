@@ -134,6 +134,11 @@ end
 
 function string:fileExtension(str)
 	local wString = str or self
+
+	if (wString:match("^.+(%..+)$") == nil) then
+		return ""
+	end
+
 	wString = wString:match("^.+(%..+)$"):lower()
 	wString = wString:sub(2, wString:len())
 

@@ -16,6 +16,7 @@ theme:set(settings.theme)
 theme:setDefaultBackgroundColor()
 math.randomseed(os.time())
 
+local tfd = require("plugin.tinyFileDialogs")
 local strict = require("strict")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
@@ -47,6 +48,8 @@ local subTitleFont = "fonts/Jost-300-Light.otf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isWindows = system.getInfo("platform") == "win32"
 sqlLib.currentMusicTable = settings.lastView
+local isWindows = system.getInfo("platform") == "win32"
+local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 
 local function onAudioEvent(event)
 	local phase = event.phase
@@ -228,6 +231,72 @@ local applicationMainMenuBar =
 							end
 
 							musicImporter.showFileSelectDialog(onComplete)
+						end
+					},
+					{
+						title = "Import Music Library",
+						iconName = "file-import",
+						onClick = function()
+							local foundFile =
+								tfd.openFileDialog(
+								{
+									title = "Select Music Library",
+									initialPath = userHomeDirectoryPath,
+									filters = {"*.db"},
+									singleFilterDescription = "Database File| *.db",
+									multiSelect = false
+								}
+							)
+
+							if (foundFile ~= nil) then
+								local newPath = system.pathForFile(sFormat("data%smusic.db", string.pathSeparator), system.DocumentsDirectory)
+
+								settings:save()
+								sqlLib:close()
+
+								timer.performWithDelay(
+									200,
+									function()
+										fileUtils:copyFile(foundFile, newPath)
+										settings:load()
+										sqlLib.currentMusicTable = settings.lastView
+										eventDispatcher:mainLuaEvent(eventDispatcher.mainEvent.events.populateTableViews)
+										eventDispatcher:musicListEvent(eventDispatcher.musicList.events.cleanReloadData)
+									end
+								)
+							end
+						end
+					},
+					{
+						title = "Export Music Library",
+						iconName = "file-export",
+						onClick = function()
+							local saveFilePath =
+								tfd.saveFileDialog(
+								{
+									title = "Save As",
+									initialPath = userHomeDirectoryPath,
+									filters = {"*.db"},
+									singleFilterDescription = "Database File| *.db"
+								}
+							)
+
+							if (saveFilePath ~= nil) then
+								local oldPath = system.pathForFile(sFormat("data%smusic.db", string.pathSeparator), system.DocumentsDirectory)
+								local fileExtension = saveFilePath:fileExtension()
+
+								if (fileExtension == nil) then
+									saveFilePath = sFormat("%s.db", saveFilePath)
+								else
+									saveFilePath = saveFilePath:sub(1, saveFilePath:len() - fileExtension:len())
+									saveFilePath = sFormat("%s.db", saveFilePath)
+								end
+
+								settings:save()
+								sqlLib:close()
+								fileUtils:copyFile(oldPath, saveFilePath)
+								settings:load()
+							end
 						end
 					},
 					{
