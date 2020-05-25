@@ -16,7 +16,7 @@ function M.new(parent)
 	local radioListButton =
 		buttonLib.new(
 		{
-			iconName = "signal-stream",
+			iconName = "radio",
 			fontSize = common.mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
