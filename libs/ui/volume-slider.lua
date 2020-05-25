@@ -56,19 +56,19 @@ function M.new(options)
 				target.x = width - target.contentWidth * 0.5
 			end
 
+			self.parent:setValue(target.x + target.contentWidth * 0.5)
+
 			if (type(listener) == "function") then
 				local listenerEvent = {
-					value = target.x + (target.contentWidth * 0.5)
+					value = group:getValue() * 100
 				}
 
 				listener(listenerEvent)
 			end
-
-			self.parent:setValue(target.x + target.contentWidth * 0.5)
 		elseif (phase == "ended" or phase == "cancelled") then
 			if (type(onTouchEnded) == "function") then
 				local listenerEvent = {
-					value = target.x + (target.contentWidth * 0.5)
+					value = group:getValue() * 100
 				}
 
 				onTouchEnded(listenerEvent)
