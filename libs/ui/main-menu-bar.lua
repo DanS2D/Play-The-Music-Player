@@ -358,7 +358,6 @@ function M.new(options)
 					500,
 					function()
 						if (currentText:len() > 0) then
-							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setResultsLimit, sqlLib:currentMusicCount())
 							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setMusicSearch, currentText:stripAccents())
 							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.reloadData)
 						end

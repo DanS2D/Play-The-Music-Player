@@ -50,7 +50,6 @@ local M = {
 			setSelectedRow = "setSelectedRow",
 			setMusicCount = "setMusicCount",
 			clearMusicSearch = "clearMusicSearch",
-			setResultsLimit = "setResultsLimit",
 			setMusicSearch = "setMusicSearch"
 		}
 	},
