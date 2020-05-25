@@ -19,7 +19,7 @@ function M.new(parent)
 					alertPopup:onlyUseOkButton()
 					alertPopup:setTitle("No Music Added!")
 					alertPopup:setMessage(
-						"You haven't added any music yet!\nYou can create playlists after you have imported some music to your library."
+						"You haven't added any music yet!\nYou can view your library after you have imported some music into it."
 					)
 					alertPopup:show()
 					return
