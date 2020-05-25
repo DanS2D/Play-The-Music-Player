@@ -13,10 +13,10 @@ local radioCreatePopup = radioCreatePopupLib.create()
 function M.new(parent)
 	local group = display.newGroup()
 
-	local radioListButton =
+	local podcastListButton =
 		buttonLib.new(
 		{
-			iconName = "radio",
+			iconName = "podcast",
 			fontSize = common.mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
@@ -24,9 +24,9 @@ function M.new(parent)
 
 				if (radioCount <= 0) then
 					alertPopup:onlyUseOkButton()
-					alertPopup:setTitle("No Radio Stations Added!")
+					alertPopup:setTitle("No Podcasts Added!")
 					alertPopup:setMessage(
-						"You haven't added any radio stations yet!\nYou can add a radio station by clicking the + button above the radio button."
+						"You haven't added any podcasts yet!\nYou can add a podcast by clicking the + button above the podcast button."
 					)
 					alertPopup:show()
 					return
@@ -41,8 +41,8 @@ function M.new(parent)
 			end
 		}
 	)
-	radioListButton.x = radioListButton.contentWidth + 10
-	radioListButton.y = 0
+	podcastListButton.x = podcastListButton.contentWidth + 10
+	podcastListButton.y = 0
 
 	local addNewRadioButton =
 		buttonLib.new(
@@ -51,12 +51,12 @@ function M.new(parent)
 			fontSize = common.smallButtonFontSize,
 			parent = group,
 			onClick = function(event)
-				radioCreatePopup:show()
+				--radioCreatePopup:show()
 			end
 		}
 	)
-	addNewRadioButton.x = radioListButton.x + radioListButton.contentWidth * 0.5 + addNewRadioButton.contentWidth * 0.7
-	addNewRadioButton.y = radioListButton.y - radioListButton.contentHeight * 0.5
+	addNewRadioButton.x = podcastListButton.x + podcastListButton.contentWidth * 0.5 + addNewRadioButton.contentWidth * 0.7
+	addNewRadioButton.y = podcastListButton.y - podcastListButton.contentHeight * 0.5
 	parent:insert(group)
 
 	return group

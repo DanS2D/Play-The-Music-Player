@@ -14,6 +14,7 @@ local volumeButtonLib = require("libs.ui.media-bar.volume-button")
 local libraryButtonLib = require("libs.ui.media-bar.library-button")
 local playlistButtonLib = require("libs.ui.media-bar.playlist-button")
 local radioListButtonLib = require("libs.ui.media-bar.radio-button")
+local podcastListButtonLib = require("libs.ui.media-bar.podcast-button")
 local shuffleButtonLib = require("libs.ui.media-bar.shuffle-button")
 local loopButtonLib = require("libs.ui.media-bar.loop-button")
 local nowPlayingTextLib = require("libs.ui.media-bar.now-playing-text")
@@ -31,7 +32,6 @@ local previousButton = nil
 local playButton = nil
 local nextButton = nil
 local shuffleButton = nil
-local libraryButton = nil
 local volumeButton = nil
 local volumeSlider = nil
 local ratingStars = nil
@@ -39,8 +39,10 @@ local playBackTimeText = nil
 local albumArtwork = nil
 local songContainerBox = nil
 local songContainer = nil
+local podcastListButton = nil
+local radioButton = nil
 local playlistDropdown = nil
-local radioListDropdown = nil
+local libraryButton = nil
 local loopButton = nil
 local levelVisualizer = nil
 local musicDuration = 0
@@ -76,28 +78,36 @@ function M.new(options)
 	nextButton.x = (playButton.x + playButton.contentWidth + controlButtonsXOffset)
 	nextButton.y = previousButton.y
 
-	volumeSlider = volumeSliderLib.new(group)
-	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 28
-	volumeSlider.y = previousButton.y
-
 	volumeButton = volumeButtonLib.new(group)
-	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
+	volumeButton.x = (nextButton.x + nextButton.contentWidth + volumeButton.contentWidth * 0.25 + controlButtonsXOffset)
 	volumeButton.y = previousButton.y
 	volumeButton:setIsOn(settings.volume ~= 0)
 
+	volumeSlider = volumeSliderLib.new(group)
+	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth * 0.70 + controlButtonsXOffset)
+	volumeSlider.y = previousButton.y
+
 	songContainerBox, songContainer = songContainerLib.new(group)
 
-	libraryButton = libraryButtonLib.new(group)
-	libraryButton.x = songContainerBox.x - libraryButton.contentWidth - 10
-	libraryButton.y = previousButton.y
+	podcastListButton = podcastListButtonLib.new(group)
+	podcastListButton.anchorX = 1
+	podcastListButton.x = (display.contentWidth - podcastListButton.contentWidth - 50)
+	podcastListButton.y = previousButton.y
+
+	radioButton = radioListButtonLib.new(group)
+	radioButton.anchorX = 1
+	radioButton.x = podcastListButton.x - podcastListButton.contentWidth - controlButtonsXOffset - 7
+	radioButton.y = previousButton.y
 
 	playlistDropdown = playlistButtonLib.new(group)
-	playlistDropdown.x = songContainerBox.x + songContainerBox.contentWidth
+	playlistDropdown.anchorX = 1
+	playlistDropdown.x = radioButton.x - radioButton.contentWidth - controlButtonsXOffset
 	playlistDropdown.y = previousButton.y
 
-	radioListDropdown = radioListButtonLib.new(group)
-	radioListDropdown.x = songContainerBox.x + songContainerBox.contentWidth + radioListDropdown.contentWidth
-	radioListDropdown.y = previousButton.y
+	libraryButton = libraryButtonLib.new(group)
+	libraryButton.anchorX = 1
+	libraryButton.x = playlistDropdown.x + controlButtonsXOffset - 2
+	libraryButton.y = previousButton.y
 
 	shuffleButton = shuffleButtonLib.new(group)
 	shuffleButton.x = songContainerBox.x + shuffleButton.contentWidth
@@ -304,19 +314,21 @@ end
 
 function M:onResize()
 	-- todo: you're going to have to update whether or not the current song title text (etc) needs to scroll as this happens.
-	volumeSlider.x = display.contentWidth - volumeSlider.contentWidth - 28
-	volumeButton.x = volumeSlider.x - volumeButton.contentWidth
-	songContainerBox.width = mMax(489, display.contentWidth / 2)
-	songContainerBox.x = display.contentCenterX - songContainerBox.contentWidth * 0.5 - 38
+	songContainerBox.width = mMax(528, display.contentWidth / 2)
+	songContainerBox.x = mMax(265, display.contentCenterX - songContainerBox.contentWidth * 0.5)
 	songContainer.width = songContainerBox.contentWidth - 140
 	songContainer.x = songContainerBox.x + 105
 	shuffleButton.x = songContainerBox.x + 90
 	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
-	libraryButton.x = songContainerBox.x - libraryButton.contentWidth - 10
-	playlistDropdown.x = songContainerBox.x + songContainerBox.contentWidth
+	volumeButton.x = (nextButton.x + nextButton.contentWidth + volumeButton.contentWidth * 0.25 + controlButtonsXOffset)
+	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth * 0.70 + controlButtonsXOffset)
 	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
 	songProgressView.x = songContainerBox.x
 	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 16
+	podcastListButton.x = (display.contentWidth - podcastListButton.contentWidth - 50)
+	radioButton.x = podcastListButton.x - podcastListButton.contentWidth - controlButtonsXOffset - 7
+	playlistDropdown.x = radioButton.x - radioButton.contentWidth - controlButtonsXOffset
+	libraryButton.x = playlistDropdown.x + controlButtonsXOffset - 2
 
 	if (albumArtwork) then
 		albumArtwork.x = songContainerBox.x + 5

@@ -9,7 +9,7 @@ function M.new(parent)
 	local slider =
 		volumeSliderLib.new(
 		{
-			width = 100,
+			width = 60,
 			value = 100,
 			listener = function(event)
 				local convertedValue = event.value / 100

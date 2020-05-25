@@ -27,7 +27,7 @@ settings =
 	window =
 	{
 		defaultMode = "normal",
-		minViewWidth = 850,
+		minViewWidth = 1054,
 		minViewHeight = 564,
 		defaultViewWidth = 1650,
 		defaultViewHeight = 1024,

@@ -6,9 +6,9 @@ local mMax = math.max
 local uPack = unpack
 
 function M.new(parent)
-	local songContainerBox = display.newRoundedRect(0, 0, mMax(489, display.contentWidth / 2), common.barHeight, 2)
+	local songContainerBox = display.newRoundedRect(0, 0, mMax(528, display.contentWidth / 2), common.barHeight, 2)
 	songContainerBox.anchorX = 0
-	songContainerBox.x = display.contentCenterX - songContainerBox.contentWidth * 0.5 - 38
+	songContainerBox.x = mMax(265, display.contentCenterX - songContainerBox.contentWidth * 0.5)
 	songContainerBox.y = (common.barHeight - 5)
 	songContainerBox.strokeWidth = 1
 	songContainerBox:setFillColor(uPack(theme:get().backgroundColor.primary))
