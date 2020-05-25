@@ -120,6 +120,8 @@ function M.new(options)
 
 		function mainButton:openSubmenu()
 			self.mainTableView.isVisible = true
+			self.mainTableView.outlineRect.isVisible = true
+			self.mainTableView.outlineRect:toFront()
 			self.mainTableView:toFront()
 
 			eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.closePlaylists)
@@ -129,6 +131,7 @@ function M.new(options)
 
 		function mainButton:closeSubmenu()
 			self.mainTableView.isVisible = false
+			self.mainTableView.outlineRect.isVisible = false
 		end
 
 		local height = #items[i].subItems * menuBarHeight
@@ -199,7 +202,7 @@ function M.new(options)
 							}
 						)
 						switch.anchorX = 1
-						switch.x = rowContentWidth - 8
+						switch.x = rowContentWidth - 14
 						row.switch = switch
 
 						switch:setIsOn(isOn)
@@ -273,9 +276,9 @@ function M.new(options)
 						local rowYEnd = rowHeight * i
 
 						if (y >= rowYStart and y <= rowYEnd) then
-							row._background:setFillColor(unpack(rowColor.over))
+							row._background:setFillColor(uPack(rowColor.over))
 						else
-							row._background:setFillColor(unpack(rowColor.default))
+							row._background:setFillColor(uPack(rowColor.default))
 						end
 					end
 				end
@@ -285,6 +288,21 @@ function M.new(options)
 		)
 		mainButton.mainTableView.isVisible = false
 		menuButtons[i] = mainButton
+
+		mainButton.mainTableView.outlineRect =
+			display.newRoundedRect(0, 0, itemListWidth + 2, (#items[i].subItems * rowHeight) + 2, 2)
+		mainButton.mainTableView.outlineRect.strokeWidth = 1
+		mainButton.mainTableView.outlineRect:setFillColor(uPack(theme:get().backgroundColor.primary))
+		mainButton.mainTableView.outlineRect:setStrokeColor(uPack(theme:get().backgroundColor.outline))
+		mainButton.mainTableView.outlineRect.x =
+			mainButton.mainTableView.x + mainButton.mainTableView.contentWidth +
+			mainButton.mainTableView.outlineRect.contentWidth * 0.5 -
+			2
+		mainButton.mainTableView.outlineRect.y =
+			mainButton.mainTableView.y + mainButton.mainTableView.contentHeight +
+			mainButton.mainTableView.outlineRect.contentHeight * 0.5 -
+			2
+		mainButton.mainTableView.outlineRect.isVisible = false
 
 		for k = 1, #items[i].subItems do
 			tableViewParams[#tableViewParams + 1] = {
