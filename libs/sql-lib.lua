@@ -20,23 +20,71 @@ local musicFields =
 local podcastBinds = sFormat("%s, %s)", musicBinds:sub(1, musicBinds:len() - 1), ":podcast")
 local podcastFields = sFormat("%s%s, UNIQUE(md5))", musicFields:sub(1, musicFields:len() - 12), "podcast INTEGER")
 local playListTableBinds = "(:key, :md5, :name)"
+local podcastTableBinds = "(:key, :md5, :name)"
 local radioBinds = "(:key, :url, :md5, :title, :genre, :rating, :playCount, :sortTitle, :titleSearch)"
 
 local function createTables()
-	database:exec(
+	local stmt =
+		database:prepare(
 		[[CREATE TABLE IF NOT EXISTS `settings` (id INTEGER PRIMARY KEY, musicFolderPaths TEXT, volume REAL, loopOne INTEGER, loopAll INTEGER, shuffle INTEGER, lastPlayedSongIndex INTEGER, lastPlayedSongTime TEXT, fadeInTrack INTEGER, fadeOutTrack INTEGER, fadeInTime INTEGER, fadeOutTime INTEGER, crossFade INTEGER, displayAlbumArtwork INTEGER, columnOrder TEXT, hiddenColumns TEXT, columnSizes TEXT, lastUsedColumn TEXT, lastUsedColumnSortAToZ INTEGER, showVisualizer INTEGER, lastView TEXT, theme TEXT, selectedVisualizers TEXT)]]
 	)
-	database:exec(sFormat("CREATE TABLE IF NOT EXISTS `music` %s;", musicFields))
-	database:exec(
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare(sFormat("CREATE TABLE IF NOT EXISTS `music` %s;", musicFields))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(
 		[[CREATE TABLE IF NOT EXISTS `radio` (id INTEGER PRIMARY KEY, url TEXT, md5 TEXT, title TEXT, genre TEXT, rating REAL, playCount INTEGER, sortTitle TEXT, titleSearch TEXT, UNIQUE(md5));]]
 	)
-	database:exec(sFormat("CREATE TABLE IF NOT EXISTS `podcasts` %s;", podcastFields))
-	database:exec([[CREATE TABLE IF NOT EXISTS `playlists` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]])
-	database:exec([[CREATE INDEX IF NOT EXISTS `radioIndex` on radio (title, rating);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS `musicIndex` on music (album, artist, genre, title);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS `musicAlbumIndex` on music (album);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS `musicArtistIndex` on music (artist);]])
-	database:exec([[CREATE INDEX IF NOT EXISTS `musicTitleIndex` on music (title);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(
+		[[CREATE TABLE IF NOT EXISTS `podcasts` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]]
+	)
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(
+		[[CREATE TABLE IF NOT EXISTS `playlists` (id INTEGER PRIMARY KEY, md5 TEXT, name TEXT, UNIQUE(md5));]]
+	)
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare([[CREATE INDEX IF NOT EXISTS `radioIndex` on radio (title, rating);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare([[CREATE INDEX IF NOT EXISTS `musicIndex` on music (album, artist, genre, title);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare([[CREATE INDEX IF NOT EXISTS `musicAlbumIndex` on music (album);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare([[CREATE INDEX IF NOT EXISTS `musicArtistIndex` on music (artist);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt = database:prepare([[CREATE INDEX IF NOT EXISTS `musicTitleIndex` on music (title);]])
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
 end
 
 local function escapeString(string)
@@ -178,8 +226,52 @@ function M:getSettings()
 	return settings
 end
 
+function M:createPodcast(name)
+	local stmt = database:prepare(sFormat([[CREATE TABLE IF NOT EXISTS `%sPodcast` %s;]], name, podcastFields))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local hash = cDigest(crypto.md5, name)
+	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `Podcasts` VALUES %s; ]], podcastTableBinds))
+	stmt:bind_names({name = name, md5 = hash})
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+end
+
 function M:createPlaylist(name)
-	database:exec(sFormat([[CREATE TABLE IF NOT EXISTS `%sPlaylist` %s;]], name, musicFields))
+	local stmt = database:prepare(sFormat([[CREATE TABLE IF NOT EXISTS `%sPlaylist` %s;]], name, musicFields))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(
+		sFormat([[CREATE INDEX IF NOT EXISTS `%sIndex` on %sPlaylist (album, artist, genre, title);]], name, name)
+	)
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(sFormat([[CREATE INDEX IF NOT EXISTS `%sAlbumIndex` on %sPlaylist (album);]], name, name))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(sFormat([[CREATE INDEX IF NOT EXISTS `%sArtistIndex` on %sPlaylist (artist);]], name, name))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
+	local stmt =
+		database:prepare(sFormat([[CREATE INDEX IF NOT EXISTS `%sTitleIndex` on %sPlaylist (title);]], name, name))
+	stmt:step()
+	stmt:finalize()
+	stmt = nil
+
 	local hash = cDigest(crypto.md5, name)
 	local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `playlists` VALUES %s; ]], playListTableBinds))
 	stmt:bind_names({name = name, md5 = hash})
