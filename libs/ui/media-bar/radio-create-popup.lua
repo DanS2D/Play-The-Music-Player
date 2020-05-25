@@ -141,7 +141,7 @@ function M.create()
 		titleText =
 			display.newText(
 			{
-				text = "Create New Radio station/podcast",
+				text = "Add New Radio station",
 				font = titleFont,
 				x = 0,
 				y = 0,
@@ -158,7 +158,7 @@ function M.create()
 		messageText =
 			display.newText(
 			{
-				text = "Please enter the title, url & genre (optional) for your new radio station/podcast.",
+				text = "Please enter the title, url & genre (optional) for your new radio station.",
 				font = titleFont,
 				x = 0,
 				y = 0,
@@ -177,7 +177,7 @@ function M.create()
 		titleTextField.anchorY = 0.5
 		titleTextField.x = display.contentCenterX
 		titleTextField.y = messageText.y + messageText.contentHeight + 15
-		titleTextField.placeholder = "Radio/Podcast title..."
+		titleTextField.placeholder = "Radio station title..."
 		titleTextField.align = "center"
 		self:insert(titleTextField)
 
@@ -186,7 +186,7 @@ function M.create()
 		urlTextField.anchorY = 0.5
 		urlTextField.x = display.contentCenterX
 		urlTextField.y = titleTextField.y + titleTextField.contentHeight + 10
-		urlTextField.placeholder = "Radio/Podcast url..."
+		urlTextField.placeholder = "Radio station url..."
 		urlTextField.align = "center"
 		self:insert(urlTextField)
 
@@ -195,7 +195,7 @@ function M.create()
 		genreTextField.anchorY = 0.5
 		genreTextField.x = display.contentCenterX
 		genreTextField.y = urlTextField.y + urlTextField.contentHeight + 10
-		genreTextField.placeholder = "Radio/Podcast genre..."
+		genreTextField.placeholder = "Radio station genre..."
 		genreTextField.align = "center"
 		self:insert(genreTextField)
 
