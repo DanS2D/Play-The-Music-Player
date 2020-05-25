@@ -1,6 +1,7 @@
 local M = {
 	currentMusicTable = "music",
-	searchCount = 0
+	searchCount = 0,
+	dbFilePath = string.format("data%slibrary.pmdb", string.pathSeparator)
 }
 local sqlite3 = require("sqlite3")
 local json = require("json")
@@ -68,8 +69,7 @@ end
 
 function M:open()
 	if (database == nil) then
-		local dbFilePath = sFormat("data%smusic.db", string.pathSeparator)
-		local databasePath = system.pathForFile(dbFilePath, system.DocumentsDirectory)
+		local databasePath = system.pathForFile(self.dbFilePath, system.DocumentsDirectory)
 		database = sqlite3.open(databasePath)
 
 		if (database) then

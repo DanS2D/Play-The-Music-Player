@@ -242,14 +242,14 @@ local applicationMainMenuBar =
 								{
 									title = "Select Music Library",
 									initialPath = userHomeDirectoryPath,
-									filters = {"*.db"},
-									singleFilterDescription = "Database File| *.db",
+									filters = {"*.pmdb"},
+									singleFilterDescription = "Play Media Library| *.pmdb",
 									multiSelect = false
 								}
 							)
 
 							if (foundFile ~= nil) then
-								local newPath = system.pathForFile(sFormat("data%smusic.db", string.pathSeparator), system.DocumentsDirectory)
+								local newPath = system.pathForFile(sqlLib.dbFilePath, system.DocumentsDirectory)
 
 								settings:save()
 								sqlLib:close()
@@ -276,20 +276,20 @@ local applicationMainMenuBar =
 								{
 									title = "Save As",
 									initialPath = userHomeDirectoryPath,
-									filters = {"*.db"},
-									singleFilterDescription = "Database File| *.db"
+									filters = {"*.pmdb"},
+									singleFilterDescription = "Play Media Library| *.pmdb"
 								}
 							)
 
 							if (saveFilePath ~= nil) then
-								local oldPath = system.pathForFile(sFormat("data%smusic.db", string.pathSeparator), system.DocumentsDirectory)
+								local oldPath = system.pathForFile(sqlLib.dbFilePath, system.DocumentsDirectory)
 								local fileExtension = saveFilePath:fileExtension()
 
 								if (fileExtension == nil) then
-									saveFilePath = sFormat("%s.db", saveFilePath)
+									saveFilePath = sFormat("%s.pmdb", saveFilePath)
 								else
 									saveFilePath = saveFilePath:sub(1, saveFilePath:len() - fileExtension:len())
-									saveFilePath = sFormat("%s.db", saveFilePath)
+									saveFilePath = sFormat("%s.pmdb", saveFilePath)
 								end
 
 								settings:save()
@@ -308,7 +308,7 @@ local applicationMainMenuBar =
 								sqlLib:close()
 								audioLib:reset()
 								musicList:destroy()
-								fileUtils:removeFile(sFormat("data%smusic.db", string.pathSeparator), databasePath)
+								fileUtils:removeFile(sqlLib.dbFilePath, databasePath)
 
 								timer.performWithDelay(
 									100,
