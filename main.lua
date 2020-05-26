@@ -215,7 +215,7 @@ local applicationMainMenuBar =
 								musicList:removeAllRows()
 								musicImporter.pushProgessToFront()
 								musicImporter.showProgressBar()
-								musicImporter.getFolderList(selectedPath, populateTableViews)
+								musicImporter.scanSelectedFolder(selectedPath, populateTableViews)
 							else
 								mainMenuBar.setEnabled(true)
 								playInterruptedSong()

@@ -9,7 +9,6 @@ local dHeight = display.contentHeight
 local headingText = nil
 local subHeadingText = nil
 local logo = nil
-local importProgressView = nil
 local titleFont = "fonts/Jost-500-Medium.otf"
 local subTitleFont = "fonts/Jost-300-Light.otf"
 
@@ -36,7 +35,6 @@ function M.new()
 		{
 			text = "To get started, click `file > add music folder` to import your music",
 			font = subTitleFont,
-			width = dWidth - 20,
 			align = "center",
 			fontSize = 20
 		}
@@ -46,22 +44,9 @@ function M.new()
 	subHeadingText:setFillColor(uPack(theme:get().textColor.secondary))
 	group:insert(subHeadingText)
 
-	importProgressView =
-		progressView.new(
-		{
-			width = (dWidth / 2) - 20,
-			height = 12,
-			allowTouch = false
-		}
-	)
-	importProgressView.x = display.contentCenterX - importProgressView.contentWidth * 0.5
-	importProgressView.y = subHeadingText.y + subHeadingText.contentHeight + 7
-	importProgressView.isVisible = false
-	group:insert(importProgressView)
-
 	logo = display.newImageRect("img/icons/play.png", 60, 60)
 	logo.x = display.contentCenterX
-	logo.y = importProgressView.y + importProgressView.contentHeight + (logo.contentHeight * 0.5) + 8
+	logo.y = subHeadingText.y + subHeadingText.contentHeight + (logo.contentHeight * 0.5) + 8
 	group:insert(logo)
 
 	function group:updateHeading(text)
@@ -73,7 +58,11 @@ function M.new()
 	end
 
 	function group:setTotalProgress(progress)
-		importProgressView:setOverallProgress(progress)
+		--importProgressView:setOverallProgress(progress)
+	end
+
+	function group:getSubheading()
+		return subHeadingText
 	end
 
 	function group:hide()
@@ -85,17 +74,17 @@ function M.new()
 	end
 
 	function group:hideProgressBar()
-		importProgressView.isVisible = false
+		--importProgressView.isVisible = false
 	end
 
 	function group:showProgressBar()
-		importProgressView.isVisible = true
+		--importProgressView.isVisible = true
 	end
 
 	function group:onResize()
 		headingText.x = display.contentCenterX
 		subHeadingText.x = display.contentCenterX
-		importProgressView.x = display.contentCenterX - importProgressView.contentWidth * 0.5
+		--importProgressView.x = display.contentCenterX - importProgressView.contentWidth * 0.5
 		logo.x = display.contentCenterX
 	end
 

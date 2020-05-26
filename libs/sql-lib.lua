@@ -551,6 +551,50 @@ function M:insertMusic(musicData, sqlTable)
 	stmt = nil
 end
 
+function M:insertMusicBatch(musicData, sqlTable)
+	local sqliteTable = sqlTable or "music"
+	local stmtStart = database:prepare([[ BEGIN TRANSACTION ]])
+	stmtStart:step()
+
+	for i = 1, #musicData do
+		local stmt = database:prepare(sFormat([[ INSERT OR IGNORE INTO `%s` VALUES %s; ]], sqliteTable, musicBinds))
+		local hash = cDigest(crypto.md5, musicData[i].title .. musicData[i].album)
+
+		stmt:bind_names(
+			{
+				fileName = musicData[i].fileName,
+				filePath = musicData[i].filePath,
+				md5 = hash,
+				title = musicData[i].title,
+				artist = musicData[i].artist,
+				album = musicData[i].album,
+				genre = musicData[i].genre,
+				comment = musicData[i].comment,
+				year = musicData[i].year,
+				trackNumber = musicData[i].trackNumber,
+				rating = musicData[i].rating,
+				playCount = musicData[i].playCount,
+				duration = musicData[i].duration,
+				bitrate = musicData[i].bitrate,
+				sampleRate = musicData[i].sampleRate,
+				sortTitle = musicData[i].title,
+				albumSearch = musicData[i].album:stripAccents(),
+				artistSearch = musicData[i].artist:stripAccents(),
+				titleSearch = musicData[i].title:stripAccents()
+			}
+		)
+		stmt:step()
+		stmt:finalize()
+		stmt = nil
+	end
+
+	local stmtEnd = database:prepare([[ END TRANSACTION ]])
+	stmtEnd:step()
+	stmtStart:finalize()
+	stmtEnd:finalize()
+	musicData = nil
+end
+
 function M:removeMusic(musicData)
 	local stmt = database:prepare(sFormat([[ DELETE FROM `%s` WHERE md5='%s'; ]], self.currentMusicTable, musicData.md5))
 	stmt:step()

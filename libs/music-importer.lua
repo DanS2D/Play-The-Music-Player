@@ -7,10 +7,12 @@ local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
 local ratings = require("libs.ui.ratings")
 local importProgressLib = require("libs.ui.import-progress")
+local activityIndicatorLib = require("libs.ui.activity-indicator")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
 local musicFolders = {}
+local musicFiles = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
 local isWindows = system.getInfo("platform") == "win32"
@@ -21,44 +23,49 @@ local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
-function M.getFolderList(path, onComplete)
+function M.scanSelectedFolder(path, onComplete)
 	local paths = {path}
 	local count = 0
-	local iterationDelay = 25
+	local iterationDelay = 2
 	local scanTimer = nil
 	M.setTotalProgress(0)
 	M.pushProgessToFront()
 	importProgress:show()
-	importProgress:showProgressBar()
 	M.showProgress()
-	importProgress:updateHeading("Searching folder hierarchy")
+	importProgress:updateHeading("Scanning for music")
+	importProgress:updateSubHeading("Please wait...")
 	sqlLib:open()
 	onFinished = onComplete
-	musicFolders = {}
-	musicFolders = nil
-	musicFolders = {}
-	print("root folder from gather is:" .. paths[1])
-	importProgress:updateSubHeading(sFormat("Added folder: %s", paths[1]))
-	musicFolders[#musicFolders + 1] = {name = paths[1], path = paths[1]}
+	local startSecond = os.date("*t").sec
+	local subHeading = importProgress:getSubheading()
+	local activityIndicator = activityIndicatorLib.new({name = "musicImporter", fontSize = 18, hideWhenStopped = false})
+	activityIndicator.x = subHeading.x + subHeading.contentWidth * 0.5 + activityIndicator.contentWidth * 0.5
+	activityIndicator.y = subHeading.y
+	activityIndicator:start()
 
-	local function gatherFolders()
+	local function scanFoldersRecursively()
 		if (#paths == 0) then
 			if (scanTimer) then
 				timer.cancel(scanTimer)
 				scanTimer = nil
 			end
 
+			activityIndicator:stop()
+			display.remove(activityIndicator)
+			activityIndicator = nil
 			paths = nil
 			importProgress:setTotalProgress(0)
 			importProgress:updateHeading("Retrieved folder list")
 			importProgress:updateSubHeading("Now finding music...")
 
-			timer.performWithDelay(
-				500,
-				function()
-					M.scanFolders()
-				end
-			)
+			if (#musicFiles < 200) then
+				sqlLib:insertMusicBatch(musicFiles)
+				musicFiles = nil
+				musicFiles = {}
+			end
+
+			print("DONE: total time: ", os.difftime(os.date("*t").sec, startSecond))
+			onComplete()
 
 			return
 		end
@@ -70,75 +77,15 @@ function M.getFolderList(path, onComplete)
 
 				if (isDir) then
 					--print(fullPath)
-					--	paths[#paths + 1] = fullPath
-					importProgress:updateSubHeading(sFormat("Added folder: %s", file))
-					-- add this folder to the folder list
-					musicFolders[#musicFolders + 1] = {name = file, path = fullPath}
 					tInsert(paths, fullPath)
-				end
-			end
-		end
-
-		tRemove(paths, 1)
-		scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
-	end
-
-	scanTimer = timer.performWithDelay(iterationDelay, gatherFolders)
-end
-
-function M.scanFolders()
-	local iterationDelay = 25
-	local currentIndex = 0
-	local totalFiles = 0
-	local scanTimer = nil
-	M.setTotalProgress(0)
-	M.pushProgessToFront()
-	importProgress:show()
-	importProgress:showProgressBar()
-	M.showProgress()
-	importProgress:updateHeading(sFormat("Scanning %s...", musicFolders[currentIndex + 1].name))
-
-	local function checkContents()
-		currentIndex = currentIndex + 1
-		importProgress:setTotalProgress((currentIndex - 1) / #musicFolders)
-
-		if (currentIndex > #musicFolders) then
-			print(">>>>>>>>>>FINISHED IMPORTING")
-			if (scanTimer) then
-				timer.cancel(scanTimer)
-				scanTimer = nil
-			end
-			importProgress:updateHeading(sFormat("All done! I found %d music files", totalFiles))
-			importProgress:updateSubHeading("Thank you for your patience. Enjoy your music :)")
-			musicFolders = {}
-			musicFolders = nil
-			musicFolders = {}
-			collectgarbage("collect")
-
-			if (type(onFinished) == "function") then
-				onFinished()
-			end
-
-			return
-		end
-
-		if (type(musicFolders) == "table") then
-			local path = musicFolders[currentIndex].path
-			local folderName = musicFolders[currentIndex].name
-			local fileCount = 0
-			importProgress:updateHeading(sFormat("Scanning %s...", folderName))
-
-			for file in lfs.dir(path) do
-				if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
-					local fullPath = path .. string.pathSeparator .. file
-					local isDir = lfs.attributes(fullPath, "mode") == "directory"
-
-					if (not isDir and isMusicFile(file)) then
+				else
+					if (isMusicFile(file)) then
 						if (fileUtils:fileSize(fullPath) > 0) then
-							local tags = tag.get({fileName = file, filePath = path})
-							local musicData = {
+							local tags = tag.get({fileName = file, filePath = paths[1]})
+
+							musicFiles[#musicFiles + 1] = {
 								fileName = file,
-								filePath = path,
+								filePath = paths[1],
 								title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or file,
 								artist = tags.artist:stripLeadingAndTrailingSpaces(),
 								album = tags.album:stripLeadingAndTrailingSpaces(),
@@ -152,25 +99,23 @@ function M.scanFolders()
 								bitrate = tags.bitrate,
 								sampleRate = tags.sampleRate
 							}
-							--print("found file: " .. file)
-							sqlLib:insertMusic(musicData)
-							fileCount = fileCount + 1
-						else
-							-- TODO: keep a table of any corrupt files and offer to remove them from disk
-							-- after the import process is complete
-							print("couldn't add file " .. file .. " as it is corrupt")
+
+							if (#musicFiles >= 200) then
+								sqlLib:insertMusicBatch(musicFiles)
+								musicFiles = nil
+								musicFiles = {}
+							end
 						end
 					end
 				end
 			end
-
-			totalFiles = totalFiles + fileCount
-			importProgress:updateSubHeading(sFormat("Found %d music files", totalFiles))
-			scanTimer = timer.performWithDelay(iterationDelay, checkContents)
 		end
+
+		tRemove(paths, 1)
+		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 	end
 
-	scanTimer = timer.performWithDelay(iterationDelay, checkContents)
+	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 end
 
 function M.showFolderSelectDialog()
