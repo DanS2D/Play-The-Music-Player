@@ -20,7 +20,6 @@ function M.new()
 		{
 			text = "Welcome To Play!",
 			font = titleFont,
-			width = dWidth - 20,
 			align = "center",
 			fontSize = 24
 		}
@@ -59,6 +58,10 @@ function M.new()
 
 	function group:setTotalProgress(progress)
 		--importProgressView:setOverallProgress(progress)
+	end
+
+	function group:getHeading()
+		return headingText
 	end
 
 	function group:getSubheading()

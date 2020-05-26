@@ -11,7 +11,6 @@ local activityIndicatorLib = require("libs.ui.activity-indicator")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
-local musicFolders = {}
 local musicFiles = {}
 local importProgress = importProgressLib.new()
 local onFinished = nil
@@ -26,24 +25,26 @@ end
 function M.scanSelectedFolder(path, onComplete)
 	local paths = {path}
 	local count = 0
-	local iterationDelay = 2
+	local iterationDelay = 35
 	local scanTimer = nil
+	musicFiles = {}
+	musicFiles = nil
+	musicFiles = {}
 	M.setTotalProgress(0)
 	M.pushProgessToFront()
 	importProgress:show()
 	M.showProgress()
-	importProgress:updateHeading("Scanning for music")
-	importProgress:updateSubHeading("Please wait...")
-	sqlLib:open()
-	onFinished = onComplete
+	importProgress:updateHeading("Looking for music")
+	importProgress:updateSubHeading(sFormat("Scanning... %s", paths[1]))
 	local startSecond = os.date("*t").sec
-	local subHeading = importProgress:getSubheading()
+	local heading = importProgress:getHeading()
 	local activityIndicator = activityIndicatorLib.new({name = "musicImporter", fontSize = 18, hideWhenStopped = false})
-	activityIndicator.x = subHeading.x + subHeading.contentWidth * 0.5 + activityIndicator.contentWidth * 0.5
-	activityIndicator.y = subHeading.y
+	activityIndicator.x = heading.x + heading.contentWidth * 0.5 + activityIndicator.contentWidth * 0.5
+	activityIndicator.y = heading.y
 	activityIndicator:start()
+	timer.allowInterationsWithinFrame = true
 
-	local function scanFoldersRecursively()
+	local function scanFoldersRecursively(event)
 		if (#paths == 0) then
 			if (scanTimer) then
 				timer.cancel(scanTimer)
@@ -55,8 +56,8 @@ function M.scanSelectedFolder(path, onComplete)
 			activityIndicator = nil
 			paths = nil
 			importProgress:setTotalProgress(0)
-			importProgress:updateHeading("Retrieved folder list")
-			importProgress:updateSubHeading("Now finding music...")
+			importProgress:updateHeading("Done!")
+			importProgress:updateSubHeading("Thanks for waiting")
 
 			if (#musicFiles < 200) then
 				sqlLib:insertMusicBatch(musicFiles)
@@ -70,19 +71,25 @@ function M.scanSelectedFolder(path, onComplete)
 			return
 		end
 
+		local filesInDir = 0
+		local fullPath = nil
+		local attributes = nil
+		local lock = lfs.lock_dir(paths[1])
+
 		for file in lfs.dir(paths[1]) do
-			if (file:sub(1, 1) ~= "." and file ~= "." and file ~= "..") then
-				local fullPath = paths[1] .. string.pathSeparator .. file
-				local isDir = lfs.attributes(fullPath, "mode") == "directory"
+			if (file ~= "." and file ~= "..") then
+				fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
+				attributes = lfs.attributes(fullPath)
 
-				if (isDir) then
-					--print(fullPath)
-					tInsert(paths, fullPath)
-				else
-					if (isMusicFile(file)) then
-						if (fileUtils:fileSize(fullPath) > 0) then
+				if (attributes) then
+					if (attributes.mode == "directory") then
+						--print("file: " .. file .. " is directory")
+						tInsert(paths, fullPath)
+					elseif (attributes.mode == "file") then
+						if (isMusicFile(file) and attributes.size > 0) then
+							filesInDir = filesInDir + 1
+
 							local tags = tag.get({fileName = file, filePath = paths[1]})
-
 							musicFiles[#musicFiles + 1] = {
 								fileName = file,
 								filePath = paths[1],
@@ -111,7 +118,15 @@ function M.scanSelectedFolder(path, onComplete)
 			end
 		end
 
+		lock:free()
 		tRemove(paths, 1)
+
+		if (scanTimer) then
+			timer.cancel(scanTimer)
+			scanTimer = nil
+		end
+
+		importProgress:updateSubHeading(sFormat("Scanning... %s\nFinished scanning %s", paths[1] or "done", prevPath))
 		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 	end
 
@@ -124,7 +139,7 @@ end
 
 function M.showFileSelectDialog(onComplete)
 	local foundFiles =
-		tfd.openFileDialog(
+	tfd.openFileDialog(
 		{
 			title = "Select Music Files (limited to 32 files)",
 			initialPath = userHomeDirectoryMusicPath,
@@ -141,7 +156,7 @@ end
 
 function M.showFileSaveDialog(onComplete)
 	local saveFilePath =
-		tfd.saveFileDialog(
+	tfd.saveFileDialog(
 		{
 			title = "Save As",
 			initialPath = userHomeDirectoryMusicPath,
