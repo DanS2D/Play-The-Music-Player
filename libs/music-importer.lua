@@ -42,7 +42,6 @@ function M.scanSelectedFolder(path, onComplete)
 	activityIndicator.x = heading.x + heading.contentWidth * 0.5 + activityIndicator.contentWidth * 0.5
 	activityIndicator.y = heading.y
 	activityIndicator:start()
-	timer.allowInterationsWithinFrame = true
 
 	local function scanFoldersRecursively(event)
 		if (#paths == 0) then
@@ -119,6 +118,7 @@ function M.scanSelectedFolder(path, onComplete)
 		end
 
 		lock:free()
+		local prevPath = paths[1]
 		tRemove(paths, 1)
 
 		if (scanTimer) then
@@ -139,7 +139,7 @@ end
 
 function M.showFileSelectDialog(onComplete)
 	local foundFiles =
-	tfd.openFileDialog(
+		tfd.openFileDialog(
 		{
 			title = "Select Music Files (limited to 32 files)",
 			initialPath = userHomeDirectoryMusicPath,
@@ -156,7 +156,7 @@ end
 
 function M.showFileSaveDialog(onComplete)
 	local saveFilePath =
-	tfd.saveFileDialog(
+		tfd.saveFileDialog(
 		{
 			title = "Save As",
 			initialPath = userHomeDirectoryMusicPath,

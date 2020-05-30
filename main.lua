@@ -77,9 +77,9 @@ local function onAudioEvent(event)
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
 			if
-			(musicList.musicSearch and audioLib.currentSongIndex > sqlLib.searchCount or
-				audioLib.currentSongIndex > musicList:getMusicCount())
-			then
+				(musicList.musicSearch and audioLib.currentSongIndex > sqlLib.searchCount or
+					audioLib.currentSongIndex > musicList:getMusicCount())
+			 then
 				if (audioLib.loopAll) then
 					audioLib.currentSongIndex = 1
 				else
@@ -103,7 +103,7 @@ local function onAudioEvent(event)
 	return true
 end
 
-Runtime:addEventListener("bass", onAudioEvent)
+Runtime:addEventListener("playAudio", onAudioEvent)
 
 local function playInterruptedSong()
 	if (wasSongPlaying) then
@@ -147,7 +147,7 @@ local function populateTableViews()
 		end
 
 		musicList:populate() --################################################ << CPU HOG ########################################################################
-		--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
+	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 	end
 end
 
@@ -175,7 +175,7 @@ local function changeTheme(newTheme)
 end
 
 local applicationMainMenuBar =
-mainMenuBar.new(
+	mainMenuBar.new(
 	{
 		font = subTitleFont,
 		items = {
@@ -241,7 +241,7 @@ mainMenuBar.new(
 						iconName = "file-import",
 						onClick = function()
 							local foundFile =
-							tfd.openFileDialog(
+								tfd.openFileDialog(
 								{
 									title = "Select Music Library",
 									initialPath = userHomeDirectoryPath,
@@ -275,7 +275,7 @@ mainMenuBar.new(
 						iconName = "file-export",
 						onClick = function()
 							local saveFilePath =
-							tfd.saveFileDialog(
+								tfd.saveFileDialog(
 								{
 									title = "Save As",
 									initialPath = userHomeDirectoryPath,
@@ -592,7 +592,7 @@ local function keyEventListener(event)
 					audioLib.play(musicFiles[audioLib.currentSongIndex])
 				end
 			elseif (keyDescriptor == "mediastop") then
-				-- stop audio
+			-- stop audio
 			end
 		end
 	end
@@ -637,7 +637,7 @@ local function onResize(event)
 		end
 
 		resizeTimer =
-		timer.performWithDelay(
+			timer.performWithDelay(
 			500,
 			function()
 				musicList:recreateMusicList()

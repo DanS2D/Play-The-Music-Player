@@ -17,6 +17,7 @@ function M.new(options)
 	local height = options.height or error("desktop-table-view() options.height number expect, got ", type(options.height))
 	local maxRows = options.maxRows or 22
 	local visibleRows = maxRows - 1
+	local useMouseListener = options.useMouseListener
 	local rowLimit = options.rowLimit or maxRows
 	local rowColorDefault = options.rowColorDefault or {default = {0, 0, 0}, over = {0.2, 0.2, 0.2}}
 	local rowHeight = options.rowHeight or 20
@@ -397,7 +398,9 @@ function M.new(options)
 		return true
 	end
 
-	Runtime:addEventListener("mouse", tableView)
+	if (useMouseListener) then
+		Runtime:addEventListener("mouse", tableView)
+	end
 
 	return tableView
 end

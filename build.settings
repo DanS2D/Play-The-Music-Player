@@ -33,7 +33,7 @@ settings =
 		defaultViewHeight = 1024,
 		resizable = true,
 		enableMinimizeButton = true,
-		enableMaximizeButton = false,
+		enableMaximizeButton = true,
 		enableCloseButton = true,
 		suspendWhenMinimized = false,
 		titleText = {
@@ -74,6 +74,6 @@ settings =
 	--
 	excludeFiles =
 	{
-		all = { ".vscode", ".git", "*.md", "*.txt", "*.ico", "Icon.png", ".gitignore", "*.iss" },
+		all = { ".vscode", ".git", "*.md", "*.txt", "*.ico", "Icon.png", ".gitignore", "*.iss", "*.bat" },
 	},
 }

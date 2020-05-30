@@ -224,6 +224,9 @@ local function createCategories()
 					eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
 					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				end
+			elseif (phase == "up") then
+				display.getCurrentStage():setFocus(nil)
+				lockScrolling(false)
 			elseif (phase == "move") then
 			--resizeCursor:hide()
 			end
@@ -473,6 +476,10 @@ local function onMouseEvent(event)
 			display.getCurrentStage():setFocus(nil)
 			lockScrolling(false)
 		end
+	end
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:mouse(event)
 	end
 
 	--resizeCursor:hide()

@@ -50,7 +50,7 @@ local currentSong = nil
 
 local function updateMediaBar()
 	if (audioLib.isChannelPlaying()) then
-		playBackTimeText:update(currentSong)
+		playBackTimeText:update(currentSong, songProgressView:getElapsedProgress(), musicDuration)
 
 		if (currentSong and currentSong.url) then
 			songProgressView:setOverallProgress(0)
@@ -309,7 +309,7 @@ function M.updateSongText(song)
 end
 
 function M.updatePlaybackTime()
-	playBackTimeText:update(currentSong)
+	playBackTimeText:update(currentSong, songProgressView:getElapsedProgress(), musicDuration)
 end
 
 function M:onResize()

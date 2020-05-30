@@ -48,6 +48,8 @@ function M.new(options)
 	local group = display.newGroup()
 	local isItemOpen = false
 	local menuButtons = {}
+	local primaryTextColor = theme:get().textColor.primary
+	local secondaryTextColor = theme:get().textColor.secondary
 
 	local background = display.newRect(0, 0, dWidth, menuBarHeight)
 	background.anchorX = 0
@@ -71,7 +73,7 @@ function M.new(options)
 
 		for j = 1, #menuButtons do
 			if (j ~= target.index) then
-				menuButtons[j]:setFillColor(uPack(theme:get().textColor.primary))
+				menuButtons[j]:setFillColor(primaryTextColor[1], primaryTextColor[2], primaryTextColor[3], primaryTextColor[4])
 				menuButtons[j]:closeSubmenu()
 			end
 		end
@@ -93,7 +95,7 @@ function M.new(options)
 				iconName = items[i].title,
 				font = font,
 				fontSize = fontSize + 4,
-				fillColor = theme:get().textColor.primary,
+				fillColor = primaryTextColor,
 				onClick = function(event)
 					local target = event.target
 
@@ -106,7 +108,7 @@ function M.new(options)
 					if (not isItemOpen) then
 						closeSubmenus()
 					else
-						target:setFillColor(uPack(theme:get().textColor.secondary))
+						target:setFillColor(secondaryTextColor[1], secondaryTextColor[2], secondaryTextColor[3], secondaryTextColor[4])
 						target:openSubmenu()
 						closeSubmenus(target)
 					end
@@ -182,7 +184,7 @@ function M.new(options)
 					)
 					subItemText.anchorX = 0
 					subItemText.x = 30
-					subItemText:setFillColor(uPack(theme:get().textColor.primary))
+					subItemText:setFillColor(primaryTextColor[1], primaryTextColor[2], primaryTextColor[3], primaryTextColor[4])
 					row:insert(subItemText)
 
 					if (params.useCheckmark) then
@@ -398,6 +400,20 @@ function M.new(options)
 	clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
 	clearSearchButton.y = (menuBarHeight / 2)
 
+	local overButton =
+		display.newText(
+		{
+			text = "",
+			font = font,
+			fontSize = fontSize + 4
+		}
+	)
+	overButton.anchorX = 0
+	overButton.x = -500
+	overButton.y = -500
+	overButton:setFillColor(secondaryTextColor[1], secondaryTextColor[2], secondaryTextColor[3], secondaryTextColor[4])
+	group:insert(overButton)
+
 	local function onMouseEvent(event)
 		local eventType = event.type
 
@@ -421,24 +437,34 @@ function M.new(options)
 						if (isItemOpen) then
 							closeSubmenus(button)
 							button:openSubmenu()
-							button:setFillColor(uPack(theme:get().textColor.secondary))
+
+							if (overButton.text ~= button.text) then
+								overButton.text = button.text
+								overButton.x = button.x
+								overButton.y = button.y
+							end
 						else
-							closeSubmenus()
-							button:setFillColor(uPack(theme:get().textColor.secondary))
+							if (overButton.text ~= button.text) then
+								overButton.text = button.text
+								overButton.x = button.x
+								overButton.y = button.y
+							end
 						end
-					else
-						button:setFillColor(uPack(theme:get().textColor.primary))
-					end
-				else
-					if (not isItemOpen) then
-						button:setFillColor(uPack(theme:get().textColor.primary))
 					end
 				end
+			end
+
+			if
+				(event.x > menuButtons[#menuButtons].x + menuButtons[#menuButtons].contentWidth or
+					event.y > background.contentHeight - 2)
+			 then
+				overButton.x = -500
+				overButton.y = -500
 			end
 		end
 	end
 
-	Runtime:addEventListener("mouse", onMouseEvent)
+	background:addEventListener("mouse", onMouseEvent)
 
 	local function playButtonEventHandler(event)
 		local phase = event.phase

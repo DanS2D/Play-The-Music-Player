@@ -19,19 +19,11 @@ function M.new(parent)
 	playbackTimeText:setFillColor(uPack(theme:get().textColor.primary))
 	parent:insert(playbackTimeText)
 
-	function playbackTimeText:update(song)
-		local playbackTime = audioLib.getPlaybackTime()
-
-		if (playbackTime) then
-			local pbElapsed = playbackTime.elapsed
-			local pbDuration = playbackTime.duration
-
-			if (song and song.url) then
-				playbackTimeText.text = sFormat("%02d:%02d", pbElapsed.minutes, pbElapsed.seconds)
-			else
-				playbackTimeText.text =
-					sFormat("%02d:%02d/%02d:%02d", pbElapsed.minutes, pbElapsed.seconds, pbDuration.minutes, pbDuration.seconds)
-			end
+	function playbackTimeText:update(song, elapsed, duration)
+		if (song and song.url) then
+			playbackTimeText.text = sFormat("%02d:%02d", elapsed % 60, elapsed / 60)
+		else
+			playbackTimeText.text = sFormat("%02d:%02d/%02d:%02d", elapsed / 60, elapsed % 60, duration / 60, duration % 60)
 		end
 	end
 

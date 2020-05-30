@@ -1,7 +1,17 @@
 local M = {
 	supportedFormats = {
-		["spx"] = 1, ["mpc"] = 1, ["ape"] = 1, ["ac3"] = 1, ["aiff"] = 1, ["mp3"] = 1, ["mp2"] = 1,
-		["mp1"] = 1, ["ogg"] = 1, ["flac"] = 1, ["wav"] = 1, ["opus"] = 1
+		["spx"] = 1,
+		["mpc"] = 1,
+		["ape"] = 1,
+		["ac3"] = 1,
+		["aiff"] = 1,
+		["mp3"] = 1,
+		["mp2"] = 1,
+		["mp1"] = 1,
+		["ogg"] = 1,
+		["flac"] = 1,
+		["wav"] = 1,
+		["opus"] = 1
 	},
 	loopOne = false,
 	loopAll = false,
@@ -26,6 +36,9 @@ local bassGetVolume = bass.getVolume
 local bassIsChannelActive = bass.isChannelActive
 local bassIsChannelPaused = bass.isChannelPaused
 local bassIsChannelPlaying = bass.isChannelPlaying
+local bassIsChipTunesPluginLoaded = bass.isChipTunesPluginLoaded
+local bassLoadChipTunesPlugin = bass.loadChipTunesPlugin
+local bassUnloadChipTunesPlugin = bass.unloadChipTunesPlugin
 local bassLoad = bass.load
 local bassLoadUrl = bass.loadUrl
 local bassPause = bass.pause
@@ -63,17 +76,90 @@ local isWindows = system.getInfo("platform") == "win32"
 -- Saturn (SSF)
 
 local chipTunesFormats = {
-	["asc"] = 1, ["ftc"] = 1, ["gtr"] = 1, ["psc"] = 1, ["psg"] = 1, ["psm"] = 1, ["pt1"] = 1, ["pt2"] = 1,
-	["pt3"] = 1, ["sqt"] = 1, ["stc"] = 1, ["st1"] = 1, ["st3"] = 1, ["stp"] = 1, ["vtx"] = 1, ["ym"] = 1,
-	["chi"] = 1, ["dmm"] = 1, ["dst"] = 1, ["et1"] = 1, ["pdt"] = 1, ["sqd"] = 1, ["str"] = 1, ["tfc"] = 1,
-	["tfd"] = 1, ["tfe"] = 1, ["669"] = 1, ["amf"] = 1, ["dmf"] = 1, ["far"] = 1, ["fnk"] = 1, ["gdm"] = 1,
-	["imf"] = 1, ["it"] = 1, ["liq"] = 1, ["mdl"] = 1, ["mtm"] = 1, ["ptm"] = 1, ["rtm"] = 1, ["s3m"] = 1,
-	["stim"] = 1, ["stm"] = 1, ["stx"] = 1, ["ult"] = 1, ["v2m"] = 1, ["xm"] = 1, ["dbm"] = 1, ["emod"] = 1,
-	["mod"] = 1, ["mtn"] = 1, ["ims"] = 1, ["med"] = 1, ["okt"] = 1, ["pt36"] = 1, ["sfx"] = 1, ["ahx"] = 1,
-	["dtm"] = 1, ["gtk"] = 1, ["tcb"] = 1, ["sap"] = 1, ["rmt"] = 1, ["dtt"] = 1, ["cop"] = 1, ["sid"] = 1,
-	["ayc"] = 1, ["spc"] = 1, ["mtc"] = 1, ["vgm"] = 1, ["vgz"] = 1, ["gym"] = 1, ["nsf"] = 1, ["nsfe"] = 1,
-	["gbs"] = 1, ["gsf"] = 1, ["hes"] = 1, ["kss"] = 1, ["psf"] = 1, ["psf2"] = 1, ["at3"] = 1, ["at9"] = 1,
-	["usf"] = 1, ["2sf"] = 1, ["dsf"] = 1, ["ssf"] = 1
+	["asc"] = 1,
+	["ftc"] = 1,
+	["gtr"] = 1,
+	["psc"] = 1,
+	["psg"] = 1,
+	["psm"] = 1,
+	["pt1"] = 1,
+	["pt2"] = 1,
+	["pt3"] = 1,
+	["sqt"] = 1,
+	["stc"] = 1,
+	["st1"] = 1,
+	["st3"] = 1,
+	["stp"] = 1,
+	["vtx"] = 1,
+	["ym"] = 1,
+	["chi"] = 1,
+	["dmm"] = 1,
+	["dst"] = 1,
+	["et1"] = 1,
+	["pdt"] = 1,
+	["sqd"] = 1,
+	["str"] = 1,
+	["tfc"] = 1,
+	["tfd"] = 1,
+	["tfe"] = 1,
+	["669"] = 1,
+	["amf"] = 1,
+	["dmf"] = 1,
+	["far"] = 1,
+	["fnk"] = 1,
+	["gdm"] = 1,
+	["imf"] = 1,
+	["it"] = 1,
+	["liq"] = 1,
+	["mdl"] = 1,
+	["mtm"] = 1,
+	["ptm"] = 1,
+	["rtm"] = 1,
+	["s3m"] = 1,
+	["stim"] = 1,
+	["stm"] = 1,
+	["stx"] = 1,
+	["ult"] = 1,
+	["v2m"] = 1,
+	["xm"] = 1,
+	["dbm"] = 1,
+	["emod"] = 1,
+	["mod"] = 1,
+	["mtn"] = 1,
+	["ims"] = 1,
+	["med"] = 1,
+	["okt"] = 1,
+	["pt36"] = 1,
+	["sfx"] = 1,
+	["ahx"] = 1,
+	["dtm"] = 1,
+	["gtk"] = 1,
+	["tcb"] = 1,
+	["sap"] = 1,
+	["rmt"] = 1,
+	["dtt"] = 1,
+	["cop"] = 1,
+	["sid"] = 1,
+	["ayc"] = 1,
+	["spc"] = 1,
+	["mtc"] = 1,
+	["vgm"] = 1,
+	["vgz"] = 1,
+	["gym"] = 1,
+	["nsf"] = 1,
+	["nsfe"] = 1,
+	["gbs"] = 1,
+	["gsf"] = 1,
+	["hes"] = 1,
+	["kss"] = 1,
+	["psf"] = 1,
+	["psf2"] = 1,
+	["at3"] = 1,
+	["at9"] = 1,
+	["usf"] = 1,
+	["2sf"] = 1,
+	["dsf"] = 1,
+	["ssf"] = 1
 }
 M.fileSelectFilter = {}
 
@@ -95,7 +181,7 @@ end
 
 local function dispatchPlayEvent(song)
 	local event = {
-		name = "bass",
+		name = "playAudio",
 		phase = "started",
 		song = song
 	}
@@ -105,7 +191,7 @@ end
 
 local function dispatchCompleteEvent(song)
 	local event = {
-		name = "bass",
+		name = "playAudio",
 		phase = "ended",
 		song = song
 	}
@@ -118,6 +204,7 @@ local function cleanupAudio()
 		--print("cleaning up audio")
 		bassStop(channelHandle)
 		bassDispose(channelHandle)
+		collectgarbage("collect")
 	end
 end
 
@@ -131,9 +218,9 @@ end
 
 local function loadAudio(song)
 	if
-	(currentSong ~= nil and currentSong.fileName and currentSong.fileName == song.fileName and
-		bassIsChannelPlaying(channelHandle))
-	then
+		(currentSong ~= nil and currentSong.fileName and currentSong.fileName == song.fileName and
+			bassIsChannelPlaying(channelHandle))
+	 then
 		return
 	end
 
@@ -178,9 +265,10 @@ local function playAudio(song)
 		bassFadeIn(channelHandle, settings.fadeInTime)
 	end
 
-	dispatchPlayEvent(currentSong)
+	--dispatchPlayEvent(currentSong)
 end
 
+--[[
 local function onAudioComplete(event)
 	if (M.loopOne) then
 		loadAudio(currentSong)
@@ -220,7 +308,40 @@ local function handleAudioEvents()
 	end
 end
 
-Runtime:addEventListener("enterFrame", handleAudioEvents)
+Runtime:addEventListener("enterFrame", handleAudioEvents)--]]
+local function audioEventListener(event)
+	local completed = event.completed
+	local started = event.started
+	local phase = event.phase
+
+	for k, v in pairs(event) do
+		print(k, v)
+	end
+
+	print("---------------------")
+
+	if (phase == "playback") then
+		if (started) then
+			dispatchPlayEvent(currentSong)
+		end
+
+		if (completed) then
+			if (M.loopOne) then
+				loadAudio(currentSong)
+				playAudio(currentSong)
+
+				return
+			end
+
+			cleanupAudio()
+			dispatchCompleteEvent(currentSong)
+		end
+	end
+
+	return true
+end
+
+Runtime:addEventListener("bass", audioEventListener)
 
 function M.dispose()
 	if (channelHandle ~= nil) then
@@ -299,8 +420,8 @@ function M.load(song)
 end
 
 function M.loadChipTunesPlugin()
-	if (not bass.isChipTunesPluginLoaded()) then
-		bass.loadChipTunesPlugin()
+	if (not bassIsChipTunesPluginLoaded()) then
+		bassLoadChipTunesPlugin()
 	end
 end
 
@@ -368,7 +489,7 @@ function M.reset()
 end
 
 function M.unloadChipTunesPlugin()
-	bass.unloadChipTunesPlugin()
+	bassUnloadChipTunesPlugin()
 end
 
 return M
