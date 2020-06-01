@@ -34,6 +34,7 @@ function M.new(options)
 				self,
 				{
 					tag = name,
+					time = 1000,
 					rotation = 360,
 					onComplete = function()
 						self.rotation = 0
