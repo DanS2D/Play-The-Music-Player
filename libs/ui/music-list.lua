@@ -552,6 +552,11 @@ function M:createTableView(options, index)
 					row.isVisible = true
 				end
 
+				local songExists =
+					fileUtils:fileExistsAtRawPath(
+					sFormat("%s%s%s", musicData[row.index].filePath, string.pathSeparator, musicData[row.index].fileName)
+				)
+
 				if (options[index].rowTitle == "rating") then
 					local ratingStars =
 						ratings.new(
@@ -571,22 +576,42 @@ function M:createTableView(options, index)
 						}
 					)
 				else
-					if (parent.orderIndex == 1 and row.index == selectedRowIndex) then
-						nowPlayingIcon =
-							display.newText(
-							{
-								text = "volume",
-								font = fontAwesomeSolidFont,
-								x = 0,
-								y = (rowContentHeight * 0.5),
-								fontSize = rowFontSize,
-								align = "left"
-							}
-						)
-						nowPlayingIcon:setFillColor(uPack(theme:get().iconColor.primary))
-						nowPlayingIcon.anchorX = 0
-						nowPlayingIcon.x = 8
-						row:insert(nowPlayingIcon)
+					if (parent.orderIndex == 1) then
+						if (songExists and row.index == selectedRowIndex) then
+							nowPlayingIcon =
+								display.newText(
+								{
+									text = "volume",
+									font = fontAwesomeSolidFont,
+									x = 0,
+									y = (rowContentHeight * 0.5),
+									fontSize = rowFontSize,
+									align = "left"
+								}
+							)
+							nowPlayingIcon:setFillColor(uPack(theme:get().iconColor.primary))
+							nowPlayingIcon.anchorX = 0
+							nowPlayingIcon.x = 8
+							row:insert(nowPlayingIcon)
+						end
+
+						if (not songExists) then
+							nowPlayingIcon =
+								display.newText(
+								{
+									text = "exclamation-circle",
+									font = fontAwesomeSolidFont,
+									x = 0,
+									y = (rowContentHeight * 0.5),
+									fontSize = rowFontSize,
+									align = "left"
+								}
+							)
+							nowPlayingIcon:setFillColor(uPack(theme:get().iconColor.primary))
+							nowPlayingIcon.anchorX = 0
+							nowPlayingIcon.x = 8
+							row:insert(nowPlayingIcon)
+						end
 					end
 
 					local rowTitleText =
@@ -637,6 +662,13 @@ function M:createTableView(options, index)
 					eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.close)
 				elseif (numClicks >= 2 and row.isVisible) then
 					local song = self:getRow(row.index)
+					local songExists =
+						fileUtils:fileExistsAtRawPath(sFormat("%s%s%s", song.filePath, string.pathSeparator, song.fileName))
+
+					if (not songExists) then
+						print("not playing as the file doesn't exist")
+						return
+					end
 
 					if (song == nil) then
 						print("SONG IS NIL")
