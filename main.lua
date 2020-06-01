@@ -353,6 +353,7 @@ local applicationMainMenuBar =
 						title = "Scan For Removed Media",
 						iconName = "sync",
 						onClick = function(event)
+							musicImporter:checkForRemovedFiles()
 						end
 					},
 					{

@@ -22,6 +22,61 @@ local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
+function M:scanFiles(files, onComplete)
+	if (type(files) == "string") then
+		local fileName, filePath = files:getFileNameAndPath()
+		local tags = tag.get({fileName = fileName, filePath = filePath})
+		local musicData = {
+			fileName = fileName,
+			filePath = filePath,
+			title = tags.title:len() > 0 and tags.title or fileName,
+			artist = tags.artist,
+			album = tags.album,
+			genre = tags.genre,
+			comment = tags.comment,
+			year = tags.year,
+			trackNumber = tags.trackNumber,
+			rating = ratings:convert(tags.rating),
+			duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+			bitrate = tags.bitrate,
+			sampleRate = tags.sampleRate
+		}
+		--print("found file: " .. fileName)
+		sqlLib:insertMusic(musicData)
+	elseif (type(files) == "table") then
+		local musicData = {}
+
+		for i = 1, #files do
+			local fileName, filePath = files[i]:getFileNameAndPath()
+			local tags = tag.get({fileName = fileName, filePath = filePath})
+
+			musicData[#musicData + 1] = {
+				fileName = fileName,
+				filePath = filePath,
+				title = tags.title:len() > 0 and tags.title or fileName,
+				artist = tags.artist,
+				album = tags.album,
+				genre = tags.genre,
+				comment = tags.comment,
+				year = tags.year,
+				trackNumber = tags.trackNumber,
+				rating = ratings:convert(tags.rating),
+				duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+				bitrate = tags.bitrate,
+				sampleRate = tags.sampleRate
+			}
+			--print("found file: " .. fileName)
+		end
+
+		sqlLib:insertMusicBatch(musicData)
+		musicData = nil
+	end
+
+	if (type(onComplete) == "function") then
+		onComplete()
+	end
+end
+
 function M:scanSelectedFolder(path, onInitial, onComplete)
 	local paths = {path}
 	local count = 0
@@ -155,6 +210,27 @@ function M:checkForNewFiles()
 	end
 end
 
+function M:checkForRemovedFiles()
+	print("checking for missing files")
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
+
+	local startSecond = os.time()
+	local stmt = sqlLib:getAllMusicRows()
+	local count = 0
+
+	for row in stmt:nrows() do
+		count = count + 1
+		if (not fileUtils:fileExistsAtRawPath(sFormat("%s%s%s", row.filePath, string.pathSeparator, row.fileName))) then
+			print("file:", row.fileName, "is missing")
+		end
+	end
+
+	stmt:finalize()
+	stmt = nil
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+	print("finished missing file check: total time:", os.difftime(os.time(), startSecond))
+end
+
 function M:showFolderSelectDialog()
 	return tfd.openFolderDialog({title = "Select Music Folder", initialPath = userHomeDirectoryMusicPath})
 end
@@ -188,61 +264,6 @@ function M:showFileSaveDialog(onComplete)
 	)
 
 	if (saveFilePath ~= nil) then
-		onComplete()
-	end
-end
-
-function M:scanFiles(files, onComplete)
-	if (type(files) == "string") then
-		local fileName, filePath = files:getFileNameAndPath()
-		local tags = tag.get({fileName = fileName, filePath = filePath})
-		local musicData = {
-			fileName = fileName,
-			filePath = filePath,
-			title = tags.title:len() > 0 and tags.title or fileName,
-			artist = tags.artist,
-			album = tags.album,
-			genre = tags.genre,
-			comment = tags.comment,
-			year = tags.year,
-			trackNumber = tags.trackNumber,
-			rating = ratings:convert(tags.rating),
-			duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
-			bitrate = tags.bitrate,
-			sampleRate = tags.sampleRate
-		}
-		--print("found file: " .. fileName)
-		sqlLib:insertMusic(musicData)
-	elseif (type(files) == "table") then
-		local musicData = {}
-
-		for i = 1, #files do
-			local fileName, filePath = files[i]:getFileNameAndPath()
-			local tags = tag.get({fileName = fileName, filePath = filePath})
-
-			musicData[#musicData + 1] = {
-				fileName = fileName,
-				filePath = filePath,
-				title = tags.title:len() > 0 and tags.title or fileName,
-				artist = tags.artist,
-				album = tags.album,
-				genre = tags.genre,
-				comment = tags.comment,
-				year = tags.year,
-				trackNumber = tags.trackNumber,
-				rating = ratings:convert(tags.rating),
-				duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
-				bitrate = tags.bitrate,
-				sampleRate = tags.sampleRate
-			}
-			--print("found file: " .. fileName)
-		end
-
-		sqlLib:insertMusicBatch(musicData)
-		musicData = nil
-	end
-
-	if (type(onComplete) == "function") then
 		onComplete()
 	end
 end
