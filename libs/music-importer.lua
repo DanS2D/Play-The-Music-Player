@@ -211,13 +211,16 @@ function M:scanFiles(files, onComplete)
 			bitrate = tags.bitrate,
 			sampleRate = tags.sampleRate
 		}
-		print("found file: " .. fileName)
+		--print("found file: " .. fileName)
 		sqlLib:insertMusic(musicData)
 	elseif (type(files) == "table") then
+		local musicData = {}
+
 		for i = 1, #files do
 			local fileName, filePath = files[i]:getFileNameAndPath()
 			local tags = tag.get({fileName = fileName, filePath = filePath})
-			local musicData = {
+
+			musicData[#musicData + 1] = {
 				fileName = fileName,
 				filePath = filePath,
 				title = tags.title:len() > 0 and tags.title or fileName,
@@ -232,9 +235,11 @@ function M:scanFiles(files, onComplete)
 				bitrate = tags.bitrate,
 				sampleRate = tags.sampleRate
 			}
-			print("found file: " .. fileName)
-			sqlLib:insertMusic(musicData)
+			--print("found file: " .. fileName)
 		end
+
+		sqlLib:insertMusicBatch(musicData)
+		musicData = nil
 	end
 
 	if (type(onComplete) == "function") then
