@@ -131,7 +131,6 @@ end
 Runtime:addEventListener("AlbumArtDownload", onAlbumArtDownloadComplete)
 
 local function populateTableViews()
-	--if (sqlLib:currentMusicCount() > 0 or sqlLib:radioCount() > 0) then
 	mainMenuBar.setEnabled(true)
 
 	if (lastChosenPath ~= nil) then
@@ -139,16 +138,12 @@ local function populateTableViews()
 		settings:save()
 	end
 
-	--musicImporter.pushProgessToFront()
-	--musicImporter.showProgressBar()
-
 	if (musicList:getTableViewListCount() <= 0) then
 		musicTableView = musicList.new()
 	end
 
-	musicList:populate() --################################################ << CPU HOG ########################################################################
+	musicList:populate()
 	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
-	--end
 end
 
 local function reloadTableViews()
@@ -221,8 +216,6 @@ local applicationMainMenuBar =
 
 								background:toFront()
 								musicList:removeAllRows()
-								--musicImporter.pushProgessToFront()
-								--musicImporter.showProgressBar()
 								musicImporter.scanSelectedFolder(selectedPath, updateTableViews, reloadTableViews)
 							else
 								mainMenuBar.setEnabled(true)
@@ -235,10 +228,6 @@ local applicationMainMenuBar =
 						iconName = "file-music",
 						onClick = function()
 							local function onComplete()
-								--musicList:removeAllRows()
-								--musicImporter.pushProgessToFront()
-								--musicImporter.showProgressBar()
-								--populateTableViews()
 								reloadTableViews()
 							end
 
@@ -329,11 +318,6 @@ local applicationMainMenuBar =
 										settings:load()
 										mediaBarLib.resetSongProgress()
 										mediaBarLib.clearPlayingSong()
-										--musicImporter.updateHeading("Welcome To Play!")
-										--musicImporter.updateSubHeading("To get started, click `file > add music folder` to import your music")
-										--musicImporter.hideProgressBar()
-										--musicImporter.pushProgessToFront()
-										--musicImporter.showProgress()
 									end
 								)
 							end
@@ -558,7 +542,6 @@ background:setFillColor(unpack(theme:get().backgroundColor.primary))
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
 background:toFront()
---musicImporter.pushProgessToFront()
 
 local function keyEventListener(event)
 	local phase = event.phase
@@ -636,7 +619,6 @@ local function onResize(event)
 
 	applicationMainMenuBar:onResize()
 	mediaBarLib:onResize()
-	--musicImporter:onResize()
 	musicList:onResize()
 
 	if (sqlLib:currentMusicCount() > 0) then
@@ -678,4 +660,4 @@ Runtime:addEventListener("system", onSystemEvent)
 
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)
-populateTableViews() --################################################ << CPU HOG ########################################################################
+populateTableViews()
