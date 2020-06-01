@@ -153,12 +153,13 @@ function M:scanSelectedFolder(path, onInitial, onComplete)
 
 								local currentMusicFileCount = #musicFiles
 
-								if (currentMusicFileCount >= 200) then
+								if (currentMusicFileCount > 1 and currentMusicFileCount <= 2) then
+									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+								elseif (currentMusicFileCount >= 200) then
 									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
 									sqlLib:insertMusicBatch(musicFiles)
 									musicFiles = nil
 									musicFiles = {}
-									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
 									onInitial()
 								end
 							end

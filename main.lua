@@ -51,9 +51,32 @@ sqlLib.currentMusicTable = settings.lastView
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 
+local function reachedEndOfMusicList()
+	local reachedEnd = false
+
+	if
+		(musicList.musicSearch and audioLib.currentSongIndex > sqlLib.searchCount or
+			audioLib.currentSongIndex > musicList:getMusicCount() or
+			audioLib.currentSongIndex <= 1)
+	 then
+		if (audioLib.loopAll) then
+			audioLib.currentSongIndex = 1
+		else
+			mediaBarLib.resetSongProgress()
+			mediaBarLib.clearPlayingSong()
+			audioLib.reset()
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
+			reachedEnd = true
+		end
+	end
+
+	return reachedEnd
+end
+
 local function onAudioEvent(event)
 	local phase = event.phase
 	local song = event.song
+	local decrementIndex = event.decrementIndex
 
 	if (phase == "started") then
 		--print("song STARTED")
@@ -67,7 +90,12 @@ local function onAudioEvent(event)
 	elseif (phase == "ended") then
 		local currentSongIndex = audioLib.currentSongIndex
 		audioLib.previousSongIndex = currentSongIndex
-		audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+
+		if (decrementIndex) then
+			audioLib.currentSongIndex = audioLib.currentSongIndex - 1
+		else
+			audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+		end
 
 		-- handle shuffle
 		if (audioLib.shuffle) then
@@ -76,23 +104,33 @@ local function onAudioEvent(event)
 			until audioLib.currentSongIndex ~= currentSongIndex
 		else
 			-- stop audio after last index, or reset the index depending on loop mode
-			if
-				(musicList.musicSearch and audioLib.currentSongIndex > sqlLib.searchCount or
-					audioLib.currentSongIndex > musicList:getMusicCount())
-			 then
-				if (audioLib.loopAll) then
-					audioLib.currentSongIndex = 1
-				else
-					mediaBarLib.resetSongProgress()
-					mediaBarLib.clearPlayingSong()
-					audioLib.reset()
-					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
-					return
-				end
+			if (reachedEndOfMusicList()) then
+				return
 			end
 		end
 
 		local nextSong = musicList:getRow(audioLib.currentSongIndex)
+		local songExists =
+			fileUtils:fileExistsAtRawPath(sFormat("%s%s%s", nextSong.filePath, string.pathSeparator, nextSong.fileName))
+
+		if (not songExists) then
+			repeat
+				if (decrementIndex) then
+					audioLib.currentSongIndex = audioLib.currentSongIndex - 1
+				else
+					audioLib.currentSongIndex = audioLib.currentSongIndex + 1
+				end
+
+				if (reachedEndOfMusicList()) then
+					break
+				end
+
+				nextSong = musicList:getRow(audioLib.currentSongIndex)
+				songExists =
+					fileUtils:fileExistsAtRawPath(sFormat("%s%s%s", nextSong.filePath, string.pathSeparator, nextSong.fileName))
+			until songExists
+		end
+
 		eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, audioLib.currentSongIndex)
 		mediaBarLib.resetSongProgress()
 		mediaBarLib.updatePlaybackTime()

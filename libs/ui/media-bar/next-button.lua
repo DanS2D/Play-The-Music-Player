@@ -22,38 +22,7 @@ function M.new(parent)
 					return
 				end
 
-				if (audioLib.shuffle) then
-					repeat
-						audioLib.currentSongIndex = mRandom(1, musicList:getMusicCount())
-					until audioLib.currentSongIndex ~= currentSongIndex
-				else
-					if (audioLib.currentSongIndex + 1 <= musicList:getMusicCount()) then
-						audioLib.currentSongIndex = audioLib.currentSongIndex + 1
-					else
-						canPlay = false
-					end
-				end
-
-				if (canPlay) then
-					local nextSong = musicList:getRow(audioLib.currentSongIndex)
-
-					eventDispatcher:playButtonEvent(eventDispatcher.playButton.events.setOn)
-					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, audioLib.currentSongIndex)
-
-					if (nextSong.url) then
-						eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadingUrl, nextSong)
-						timer.performWithDelay(
-							50,
-							function()
-								audioLib.load(nextSong)
-								audioLib.play(nextSong)
-							end
-						)
-					else
-						audioLib.load(nextSong)
-						audioLib.play(nextSong)
-					end
-				end
+				Runtime:dispatchEvent({name = "playAudio", phase = "ended"})
 			end
 		}
 	)

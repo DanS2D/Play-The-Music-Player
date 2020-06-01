@@ -26,6 +26,7 @@ local eventDispatcher = require("libs.event-dispatcher")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
+local lType = type
 local bassDispose = bass.dispose
 local bassFadeIn = bass.fadeIn
 local bassFadeOut = bass.fadeOut
@@ -219,6 +220,7 @@ end
 local function loadAudio(song)
 	if
 		(currentSong ~= nil and currentSong.fileName and currentSong.fileName == song.fileName and
+			lType(channelHandle) == "number" and
 			bassIsChannelPlaying(channelHandle))
 	 then
 		return
@@ -241,7 +243,7 @@ local function loadAudio(song)
 end
 
 local function playAudio(song)
-	if (type(channelHandle) == "number") then
+	if (lType(channelHandle) == "number") then
 		if (bassIsChannelPlaying(channelHandle)) then
 			bassRewind(channelHandle)
 
@@ -390,7 +392,7 @@ function M.isChannelHandleValid()
 end
 
 function M.isChannelPaused()
-	if (channelHandle ~= nil) then
+	if (channelHandle ~= nil and lType(channelHandle) == "number") then
 		return bassIsChannelPaused(channelHandle)
 	end
 
@@ -398,7 +400,7 @@ function M.isChannelPaused()
 end
 
 function M.isChannelPlaying()
-	if (channelHandle ~= nil) then
+	if (channelHandle ~= nil and lType(channelHandle) == "number") then
 		return bassIsChannelPlaying(channelHandle)
 	end
 
@@ -478,7 +480,7 @@ end
 
 function M.reset()
 	for i = 1, #audioChannels do
-		if (type(audioChannels[i]) == "number") then
+		if (lType(audioChannels[i]) == "number") then
 			bassStop(audioChannels[i])
 			bassDispose(audioChannels[i])
 		end
