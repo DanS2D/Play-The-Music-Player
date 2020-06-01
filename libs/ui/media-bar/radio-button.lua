@@ -32,6 +32,10 @@ function M.new(parent)
 					return
 				end
 
+				if (sqlLib.currentMusicTable ~= "radio") then
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
+				end
+
 				sqlLib.currentMusicTable = "radio"
 				settings.lastView = sqlLib.currentMusicTable
 				settings:save()

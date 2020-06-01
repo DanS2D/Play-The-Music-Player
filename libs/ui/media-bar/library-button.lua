@@ -26,6 +26,11 @@ function M.new(parent)
 				end
 
 				eventDispatcher:playlistDropdownEvent(eventDispatcher.playlistDropdown.events.close)
+
+				if (sqlLib.currentMusicTable ~= "music") then
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
+				end
+
 				sqlLib.currentMusicTable = "music"
 				settings.lastView = sqlLib.currentMusicTable
 				settings:save()

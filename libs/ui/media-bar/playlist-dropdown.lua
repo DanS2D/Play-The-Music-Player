@@ -168,6 +168,10 @@ function M.new(options)
 					end
 
 					if (type(onPlaylistClick) == "function" and not ingoreTouch) then
+						if (sqlLib.currentMusicTable ~= sFormat("%sPlaylist", itemData.name)) then
+							eventDispatcher:musicListEvent(eventDispatcher.musicList.events.setSelectedRow, 0)
+						end
+
 						--event.playlistName = itemData.name
 						sqlLib.currentMusicTable = sFormat("%sPlaylist", itemData.name)
 						settings.lastView = sqlLib.currentMusicTable
