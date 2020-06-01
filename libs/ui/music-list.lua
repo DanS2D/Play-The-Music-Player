@@ -9,7 +9,6 @@ local fileUtils = require("libs.file-utils")
 local theme = require("libs.theme")
 local eventDispatcher = require("libs.event-dispatcher")
 local desktopTableView = require("libs.ui.desktop-table-view")
-local musicImporter = require("libs.music-importer")
 local ratings = require("libs.ui.ratings")
 local rightClickMenu = require("libs.ui.right-click-menu")
 local alertPopupLib = require("libs.ui.alert-popup")
@@ -539,7 +538,7 @@ function M:createTableView(options, index)
 				local row = event.row
 				local rowContentWidth = row.contentWidth
 				local rowContentHeight = row.contentHeight
-				local rowLimit = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
+				local rowLimit = self.musicSearch ~= nil and sqlLib.searchCount or musicCount
 				local nowPlayingIcon = nil
 				parent:setRowLimit(rowLimit)
 
@@ -701,10 +700,18 @@ function M:createTableView(options, index)
 
 	function tView:populate()
 		--print("Creating initial rows")
-		musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
-
 		tView:deleteAllRows()
 		tView:createRows()
+		tView:setRowLimit(musicCount)
+	end
+
+	function tView:update()
+		if (musicCount <= 200) then
+			--print("music count <= 200, recreating rows")
+			tView:deleteAllRows()
+			tView:createRows()
+		end
+
 		tView:setRowLimit(musicCount)
 	end
 
@@ -991,7 +998,7 @@ Runtime:addEventListener(eventDispatcher.musicList.name, M)
 function M:onResize()
 	categoryBar.width = display.contentWidth
 
-	if (sqlLib:currentMusicCount() > 0) then
+	if (musicCount > 0) then
 		for i = 1, #tableViewList do
 			tableViewList[i]:resizeAllRowBackgrounds(display.contentWidth)
 		end
@@ -999,21 +1006,15 @@ function M:onResize()
 end
 
 function M:populate()
+	musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
+
+	print("populating")
 	--print("POPULATE CALLED >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	local startSecond = os.date("*t").sec
-	musicImporter.pushProgessToFront()
-	musicImporter.showProgressBar()
-	musicImporter.updateHeading("Loading music library")
-	musicImporter.updateSubHeading("Give me a sec..")
 
 	for i = 1, #tableViewList do
 		tableViewList[i]:populate()
-		musicImporter.setTotalProgress(i / #tableViewList)
 		tableViewList[i]:toFront()
-
-		if (i == #tableViewList) then
-			musicImporter.hideProgress()
-		end
 	end
 end
 
@@ -1164,6 +1165,17 @@ function M:setSelectedRow(rowIndex)
 
 	if (selectedRowRealIndex > 0) then
 		tableViewList[1]:reloadRow(selectedRowRealIndex)
+	end
+end
+
+function M:update()
+	musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
+
+	--print("updating tableViews - music count: ", musicCount)
+
+	for i = 1, #tableViewList do
+		tableViewList[i]:update()
+		tableViewList[i]:toFront()
 	end
 end
 

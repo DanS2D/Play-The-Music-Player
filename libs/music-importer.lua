@@ -6,13 +6,12 @@ local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
 local ratings = require("libs.ui.ratings")
-local importProgressLib = require("libs.ui.import-progress")
+local eventDispatcher = require("libs.event-dispatcher")
 local activityIndicatorLib = require("libs.ui.activity-indicator")
 local sFormat = string.format
 local tInsert = table.insert
 local tRemove = table.remove
 local musicFiles = {}
-local importProgress = importProgressLib.new()
 local onFinished = nil
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
@@ -22,26 +21,15 @@ local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
-function M.scanSelectedFolder(path, onComplete)
+function M.scanSelectedFolder(path, onInitial, onComplete)
 	local paths = {path}
 	local count = 0
-	local iterationDelay = 35
+	local iterationDelay = 5
 	local scanTimer = nil
-	musicFiles = {}
 	musicFiles = nil
 	musicFiles = {}
-	M.setTotalProgress(0)
-	M.pushProgessToFront()
-	importProgress:show()
-	M.showProgress()
-	importProgress:updateHeading("Looking for music")
-	importProgress:updateSubHeading(sFormat("Scanning... %s", paths[1]))
-	local startSecond = os.date("*t").sec
-	local heading = importProgress:getHeading()
-	local activityIndicator = activityIndicatorLib.new({name = "musicImporter", fontSize = 18, hideWhenStopped = false})
-	activityIndicator.x = heading.x + heading.contentWidth * 0.5 + activityIndicator.contentWidth * 0.5
-	activityIndicator.y = heading.y
-	activityIndicator:start()
+	local startSecond = os.time()
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
 
 	local function scanFoldersRecursively(event)
 		if (#paths == 0) then
@@ -50,13 +38,7 @@ function M.scanSelectedFolder(path, onComplete)
 				scanTimer = nil
 			end
 
-			activityIndicator:stop()
-			display.remove(activityIndicator)
-			activityIndicator = nil
 			paths = nil
-			importProgress:setTotalProgress(0)
-			importProgress:updateHeading("Done!")
-			importProgress:updateSubHeading("Thanks for waiting")
 
 			if (#musicFiles < 200) then
 				sqlLib:insertMusicBatch(musicFiles)
@@ -64,7 +46,10 @@ function M.scanSelectedFolder(path, onComplete)
 				musicFiles = {}
 			end
 
-			print("DONE: total time: ", os.difftime(os.date("*t").sec, startSecond))
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+
+			print("DONE: total time: ", os.difftime(os.time(), startSecond))
 			onComplete()
 
 			return
@@ -75,59 +60,78 @@ function M.scanSelectedFolder(path, onComplete)
 		local attributes = nil
 		local lock = lfs.lock_dir(paths[1])
 
-		for file in lfs.dir(paths[1]) do
-			if (file ~= "." and file ~= "..") then
-				fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
-				attributes = lfs.attributes(fullPath)
+		local function iterate()
+			for file in lfs.dir(paths[1]) do
+				if (file ~= "." and file ~= "..") then
+					count = count + 1
+					fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
+					attributes = lfs.attributes(fullPath)
 
-				if (attributes) then
-					if (attributes.mode == "directory") then
-						--print("file: " .. file .. " is directory")
-						tInsert(paths, fullPath)
-					elseif (attributes.mode == "file") then
-						if (isMusicFile(file) and attributes.size > 0) then
-							filesInDir = filesInDir + 1
+					if (attributes) then
+						if (attributes.mode == "directory") then
+							--print("file: " .. file .. " is directory")
+							tInsert(paths, fullPath)
+						elseif (attributes.mode == "file") then
+							if (isMusicFile(file) and attributes.size > 0) then
+								filesInDir = filesInDir + 1
 
-							local tags = tag.get({fileName = file, filePath = paths[1]})
-							musicFiles[#musicFiles + 1] = {
-								fileName = file,
-								filePath = paths[1],
-								title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or file,
-								artist = tags.artist:stripLeadingAndTrailingSpaces(),
-								album = tags.album:stripLeadingAndTrailingSpaces(),
-								genre = tags.genre:stripLeadingAndTrailingSpaces(),
-								comment = tags.comment:stripLeadingAndTrailingSpaces(),
-								year = tags.year,
-								trackNumber = tags.trackNumber,
-								rating = ratings:convert(tags.rating),
-								playCount = 0, -- TODO: read from taglib when it supports it
-								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
-								bitrate = tags.bitrate,
-								sampleRate = tags.sampleRate
-							}
+								local tags = tag.get({fileName = file, filePath = paths[1]})
+								musicFiles[#musicFiles + 1] = {
+									fileName = file,
+									filePath = paths[1],
+									title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or file,
+									artist = tags.artist:stripLeadingAndTrailingSpaces(),
+									album = tags.album:stripLeadingAndTrailingSpaces(),
+									genre = tags.genre:stripLeadingAndTrailingSpaces(),
+									comment = tags.comment:stripLeadingAndTrailingSpaces(),
+									year = tags.year,
+									trackNumber = tags.trackNumber,
+									rating = ratings:convert(tags.rating),
+									playCount = 0, -- TODO: read from taglib when it supports it
+									duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+									bitrate = tags.bitrate,
+									sampleRate = tags.sampleRate
+								}
 
-							if (#musicFiles >= 200) then
-								sqlLib:insertMusicBatch(musicFiles)
-								musicFiles = nil
-								musicFiles = {}
+								if (#musicFiles > 49 and #musicFiles <= 50) then
+									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+								elseif (#musicFiles >= 200) then
+									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
+									sqlLib:insertMusicBatch(musicFiles)
+									musicFiles = nil
+									musicFiles = {}
+									onInitial()
+								end
 							end
 						end
+					end
+
+					if (count >= 25) then
+						count = 0
+						coroutine.yield()
 					end
 				end
 			end
 		end
 
-		lock:free()
-		local prevPath = paths[1]
-		tRemove(paths, 1)
+		local co = coroutine.create(iterate)
 
-		if (scanTimer) then
-			timer.cancel(scanTimer)
-			scanTimer = nil
+		local function getNextFile()
+			if (coroutine.status(co) == "dead") then
+				timer.cancel(scanTimer)
+				scanTimer = nil
+				lock:free()
+				local prevPath = paths[1]
+				tRemove(paths, 1)
+
+				scanFoldersRecursively()
+				return
+			end
+
+			coroutine.resume(co)
 		end
 
-		importProgress:updateSubHeading(sFormat("Scanning... %s\nFinished scanning %s", paths[1] or "done", prevPath))
-		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
+		scanTimer = timer.performWithDelay(iterationDelay, getNextFile, 0)
 	end
 
 	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
@@ -218,43 +222,6 @@ function M.scanFiles(files, onComplete)
 	if (type(onComplete) == "function") then
 		onComplete()
 	end
-end
-
-function M.pushProgessToFront()
-	display.getCurrentStage():insert(importProgress)
-end
-
-function M.hideProgressBar()
-	importProgress:hideProgressBar()
-end
-
-function M.showProgressBar()
-	importProgress:showProgressBar()
-end
-
-function M.hideProgress()
-	importProgress.isVisible = false
-end
-
-function M.showProgress()
-	importProgress:toFront()
-	importProgress.isVisible = true
-end
-
-function M.updateHeading(text)
-	importProgress:updateHeading(text)
-end
-
-function M.updateSubHeading(text)
-	importProgress:updateSubHeading(text)
-end
-
-function M.setTotalProgress(progress)
-	importProgress:setTotalProgress(progress)
-end
-
-function M:onResize()
-	importProgress:onResize()
 end
 
 return M

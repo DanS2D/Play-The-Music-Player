@@ -28,7 +28,9 @@ local M = {
 	mainMenu = {
 		name = "mainMenuEvent",
 		events = {
-			close = "close"
+			close = "close",
+			startActivity = "startActivity",
+			stopActivity = "stopActivity"
 		}
 	},
 	mediaBar = {

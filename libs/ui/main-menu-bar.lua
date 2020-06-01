@@ -6,6 +6,7 @@ local musicList = require("libs.ui.music-list")
 local buttonLib = require("libs.ui.button")
 local switchLib = require("libs.ui.switch")
 local desktopTableView = require("libs.ui.desktop-table-view")
+local activityIndicatorLib = require("libs.ui.activity-indicator")
 local alertPopupLib = require("libs.ui.alert-popup")
 local mAbs = math.abs
 local mMin = math.min
@@ -32,6 +33,7 @@ local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
 local isDisabled = false
 local searchBar = nil
 local searchTimer = nil
+local activityIndicator = nil
 local menuBarHeight = 28
 local rowHeight = menuBarHeight + 6
 
@@ -334,7 +336,7 @@ function M.new(options)
 			return
 		end
 
-		if (sqlLib:currentMusicCount() <= 0 or isDisabled) then
+		if (musicList:getMusicCount() <= 0) then
 			target.text = ""
 			return
 		end
@@ -399,6 +401,38 @@ function M.new(options)
 	clearSearchButton.anchorX = 1
 	clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
 	clearSearchButton.y = (menuBarHeight / 2)
+
+	activityIndicator =
+		activityIndicatorLib.new({name = "mainMenu", fontSize = 18, hideWhenStopped = false, parent = group})
+	activityIndicator.x = clearSearchButton.x - clearSearchButton.contentWidth - activityIndicator.contentWidth * 0.5 - 4
+	activityIndicator.y = (menuBarHeight / 2)
+
+	function activityIndicator:touch(event)
+		local phase = event.phase
+		local target = event.target
+		local targetHalfWidth = (target.contentWidth * 0.5)
+		local targetHalfHeight = (target.contentHeight * 0.5)
+		local eventX, eventY = target:contentToLocal(event.x, event.y)
+
+		if (phase == "began") then
+			display.getCurrentStage():setFocus(target)
+			target:setFillColor(uPack(theme:get().iconColor.highlighted))
+		elseif (phase == "ended" or phase == "cancelled") then
+			target:setFillColor(uPack(theme:get().iconColor.primary))
+
+			if (eventX + targetHalfWidth >= 0 and eventX + targetHalfWidth <= target.contentWidth) then
+				if (eventY + targetHalfHeight >= 0 and eventY + targetHalfHeight <= target.contentHeight) then
+				-- TODO:
+				end
+			end
+
+			display.getCurrentStage():setFocus(nil)
+		end
+
+		return true
+	end
+
+	activityIndicator:addEventListener("touch")
 
 	local overButton =
 		display.newText(
@@ -468,10 +502,15 @@ function M.new(options)
 
 	local function playButtonEventHandler(event)
 		local phase = event.phase
+		local menuEvents = eventDispatcher.mainMenu.events
 
-		if (phase == "close") then
+		if (phase == menuEvents.close) then
 			isItemOpen = false
 			closeSubmenus()
+		elseif (phase == menuEvents.startActivity) then
+			activityIndicator:start()
+		elseif (phase == menuEvents.stopActivity) then
+			activityIndicator:stop()
 		end
 	end
 
@@ -480,6 +519,7 @@ function M.new(options)
 	function group:onResize()
 		searchBar.x = display.contentWidth - 10
 		clearSearchButton.x = searchBar.x - searchBar.contentWidth - (clearSearchButton.contentWidth * 0.5)
+		activityIndicator.x = clearSearchButton.x - clearSearchButton.contentWidth - activityIndicator.contentWidth * 0.5 - 4
 		background.width = display.contentWidth
 	end
 
