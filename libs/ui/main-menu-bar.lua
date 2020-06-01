@@ -500,13 +500,17 @@ function M.new(options)
 
 	background:addEventListener("mouse", onMouseEvent)
 
-	local function playButtonEventHandler(event)
+	local function mainMenuEventHandler(event)
 		local phase = event.phase
 		local menuEvents = eventDispatcher.mainMenu.events
 
 		if (phase == menuEvents.close) then
 			isItemOpen = false
 			closeSubmenus()
+		elseif (phase == menuEvents.lock) then
+			isDisabled = true
+		elseif (phase == menuEvents.unlock) then
+			isDisabled = false
 		elseif (phase == menuEvents.startActivity) then
 			activityIndicator:start()
 		elseif (phase == menuEvents.stopActivity) then
@@ -514,7 +518,7 @@ function M.new(options)
 		end
 	end
 
-	Runtime:addEventListener(eventDispatcher.mainMenu.name, playButtonEventHandler)
+	Runtime:addEventListener(eventDispatcher.mainMenu.name, mainMenuEventHandler)
 
 	function group:onResize()
 		searchBar.x = display.contentWidth - 10

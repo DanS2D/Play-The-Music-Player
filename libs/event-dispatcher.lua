@@ -29,6 +29,8 @@ local M = {
 		name = "mainMenuEvent",
 		events = {
 			close = "close",
+			lock = "lock",
+			unlock = "unlock",
 			startActivity = "startActivity",
 			stopActivity = "stopActivity"
 		}

@@ -5,6 +5,7 @@ local tfd = require("plugin.tinyFileDialogs")
 local fileUtils = require("libs.file-utils")
 local audioLib = require("libs.audio-lib")
 local sqlLib = require("libs.sql-lib")
+local settings = require("libs.settings")
 local ratings = require("libs.ui.ratings")
 local eventDispatcher = require("libs.event-dispatcher")
 local activityIndicatorLib = require("libs.ui.activity-indicator")
@@ -21,7 +22,7 @@ local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
-function M.scanSelectedFolder(path, onInitial, onComplete)
+function M:scanSelectedFolder(path, onInitial, onComplete)
 	local paths = {path}
 	local count = 0
 	local iterationDelay = 5
@@ -30,6 +31,7 @@ function M.scanSelectedFolder(path, onInitial, onComplete)
 	musicFiles = {}
 	local startSecond = os.time()
 	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.lock)
 
 	local function scanFoldersRecursively(event)
 		if (#paths == 0) then
@@ -48,6 +50,7 @@ function M.scanSelectedFolder(path, onInitial, onComplete)
 
 			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
 			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
 
 			print("DONE: total time: ", os.difftime(os.time(), startSecond))
 			onComplete()
@@ -93,9 +96,11 @@ function M.scanSelectedFolder(path, onInitial, onComplete)
 									sampleRate = tags.sampleRate
 								}
 
-								if (#musicFiles > 49 and #musicFiles <= 50) then
+								local currentMusicFileCount = #musicFiles
+
+								if (currentMusicFileCount > 49 and currentMusicFileCount <= 50) then
 									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
-								elseif (#musicFiles >= 200) then
+								elseif (currentMusicFileCount >= 200) then
 									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
 									sqlLib:insertMusicBatch(musicFiles)
 									musicFiles = nil
@@ -137,11 +142,24 @@ function M.scanSelectedFolder(path, onInitial, onComplete)
 	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 end
 
-function M.showFolderSelectDialog()
+function M:checkForNewFiles()
+	local function NOP()
+	end
+
+	local musicFolders = settings.musicFolderPaths
+
+	if (#musicFolders > 0) then
+		for i = 1, #musicFolders do
+			self:scanSelectedFolder(musicFolders[i], NOP, NOP)
+		end
+	end
+end
+
+function M:showFolderSelectDialog()
 	return tfd.openFolderDialog({title = "Select Music Folder", initialPath = userHomeDirectoryMusicPath})
 end
 
-function M.showFileSelectDialog(onComplete)
+function M:showFileSelectDialog(onComplete)
 	local foundFiles =
 		tfd.openFileDialog(
 		{
@@ -154,11 +172,11 @@ function M.showFileSelectDialog(onComplete)
 	)
 
 	if (foundFiles ~= nil) then
-		M.scanFiles(foundFiles, onComplete)
+		self:scanFiles(foundFiles, onComplete)
 	end
 end
 
-function M.showFileSaveDialog(onComplete)
+function M:showFileSaveDialog(onComplete)
 	local saveFilePath =
 		tfd.saveFileDialog(
 		{
@@ -174,7 +192,7 @@ function M.showFileSaveDialog(onComplete)
 	end
 end
 
-function M.scanFiles(files, onComplete)
+function M:scanFiles(files, onComplete)
 	if (type(files) == "string") then
 		local fileName, filePath = files:getFileNameAndPath()
 		local tags = tag.get({fileName = fileName, filePath = filePath})

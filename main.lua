@@ -133,11 +133,6 @@ Runtime:addEventListener("AlbumArtDownload", onAlbumArtDownloadComplete)
 local function populateTableViews()
 	mainMenuBar.setEnabled(true)
 
-	if (lastChosenPath ~= nil) then
-		settings.musicFolderPaths[#settings.musicFolderPaths + 1] = lastChosenPath
-		settings:save()
-	end
-
 	if (musicList:getTableViewListCount() <= 0) then
 		musicTableView = musicList.new()
 	end
@@ -194,7 +189,7 @@ local applicationMainMenuBar =
 							interruptedSongPosition = mediaBarLib.getSongProgress()
 							audioLib.reset()
 							mainMenuBar.setEnabled(false)
-							local selectedPath = musicImporter.showFolderSelectDialog()
+							local selectedPath = musicImporter:showFolderSelectDialog()
 							local previousPaths = settings.musicFolderPaths
 							local hasUsedPath = false
 
@@ -214,9 +209,14 @@ local applicationMainMenuBar =
 									lastChosenPath = nil
 								end
 
+								if (lastChosenPath ~= nil) then
+									settings.musicFolderPaths[#settings.musicFolderPaths + 1] = lastChosenPath
+									settings:save()
+								end
+
 								background:toFront()
 								musicList:removeAllRows()
-								musicImporter.scanSelectedFolder(selectedPath, updateTableViews, reloadTableViews)
+								musicImporter:scanSelectedFolder(selectedPath, updateTableViews, reloadTableViews)
 							else
 								mainMenuBar.setEnabled(true)
 								playInterruptedSong()
@@ -231,7 +231,7 @@ local applicationMainMenuBar =
 								reloadTableViews()
 							end
 
-							musicImporter.showFileSelectDialog(onComplete)
+							musicImporter:showFileSelectDialog(onComplete)
 						end
 					},
 					{
@@ -343,20 +343,21 @@ local applicationMainMenuBar =
 				title = "Edit",
 				subItems = {
 					{
-						title = "Preferences",
-						iconName = "tools",
-						onClick = function(event)
-						end
-					},
-					{
 						title = "Scan For New Media",
 						iconName = "sync",
 						onClick = function(event)
+							musicImporter:checkForNewFiles()
 						end
 					},
 					{
 						title = "Scan For Removed Media",
 						iconName = "sync",
+						onClick = function(event)
+						end
+					},
+					{
+						title = "Preferences",
+						iconName = "tools",
 						onClick = function(event)
 						end
 					}
