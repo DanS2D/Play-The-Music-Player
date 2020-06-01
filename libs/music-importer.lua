@@ -153,13 +153,12 @@ function M:scanSelectedFolder(path, onInitial, onComplete)
 
 								local currentMusicFileCount = #musicFiles
 
-								if (currentMusicFileCount > 49 and currentMusicFileCount <= 50) then
-									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
-								elseif (currentMusicFileCount >= 200) then
+								if (currentMusicFileCount >= 200) then
 									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
 									sqlLib:insertMusicBatch(musicFiles)
 									musicFiles = nil
 									musicFiles = {}
+									eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
 									onInitial()
 								end
 							end
@@ -197,15 +196,16 @@ function M:scanSelectedFolder(path, onInitial, onComplete)
 	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 end
 
-function M:checkForNewFiles()
+function M:checkForNewFiles(onComplete)
 	local function NOP()
 	end
 
 	local musicFolders = settings.musicFolderPaths
 
 	if (#musicFolders > 0) then
+		print("Checking for new files")
 		for i = 1, #musicFolders do
-			self:scanSelectedFolder(musicFolders[i], NOP, NOP)
+			self:scanSelectedFolder(musicFolders[i], NOP, onComplete or NOP)
 		end
 	end
 end

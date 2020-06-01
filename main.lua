@@ -343,20 +343,6 @@ local applicationMainMenuBar =
 				title = "Edit",
 				subItems = {
 					{
-						title = "Scan For New Media",
-						iconName = "sync",
-						onClick = function(event)
-							musicImporter:checkForNewFiles()
-						end
-					},
-					{
-						title = "Scan For Removed Media",
-						iconName = "sync",
-						onClick = function(event)
-							musicImporter:checkForRemovedFiles()
-						end
-					},
-					{
 						title = "Preferences",
 						iconName = "tools",
 						onClick = function(event)
@@ -663,3 +649,14 @@ Runtime:addEventListener("system", onSystemEvent)
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)
 populateTableViews()
+
+timer.performWithDelay(
+	2000,
+	function()
+		musicImporter:checkForNewFiles(
+			function()
+				musicImporter:checkForRemovedFiles()
+			end
+		)
+	end
+)
