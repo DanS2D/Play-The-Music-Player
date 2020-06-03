@@ -22,6 +22,65 @@ local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
 end
 
+local function scanFolder(path, delay, onComplete)
+	local paths = {path}
+	local count = 0
+	local iterationDelay = delay or 2
+	local scanTimer = nil
+	fileList = nil
+	fileList = {}
+	musicFiles = nil
+	musicFiles = {}
+	local startSecond = os.time()
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.lock)
+
+	local function scanFoldersRecursively(event)
+		if (#paths == 0) then
+			if (scanTimer) then
+				timer.cancel(scanTimer)
+				scanTimer = nil
+			end
+
+			paths = nil
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
+			_G.printf("Got folder list in: %d seconds", os.difftime(os.time(), startSecond))
+			onComplete()
+
+			return
+		end
+
+		local fullPath = nil
+		local attributes = nil
+
+		for file in lfs.dir(paths[1]) do
+			if (file ~= "." and file ~= "..") then
+				fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
+				attributes = lfs.attributes(fullPath)
+
+				if (attributes) then
+					if (attributes.mode == "directory") then
+						--print("file: " .. file .. " is directory")
+						tInsert(paths, fullPath)
+					elseif (attributes.mode == "file") then
+						if (isMusicFile(file) and attributes.size > 0) then
+							count = count + 1
+							fileList[count] = {fileName = file, filePath = paths[1]}
+						end
+					end
+				end
+			end
+		end
+
+		tRemove(paths, 1)
+		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
+	end
+
+	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
+end
+
 function M:scanFiles(files, onComplete)
 	if (type(files) == "string") then
 		local fileName, filePath = files:getFileNameAndPath()
@@ -79,149 +138,12 @@ end
 
 function M:getFilesFromList(onInitial, onComplete)
 	local startSecond = os.time()
-	musicFiles = nil
-	musicFiles = {}
-
-	for i = 1, #fileList do
-		local item = fileList[i]
-		local fileName = item.fileName
-		local filePath = item.filePath
-		local fullPath = sFormat("%s%s%s", filePath, string.pathSeparator, fileName)
-
-		if (fileName) then
-			if (fileUtils:fileExistsAtRawPath(fullPath)) then
-				local tags = tag.get({fileName = fileName, filePath = filePath})
-
-				musicFiles[#musicFiles + 1] = {
-					fileName = fileName,
-					filePath = filePath,
-					title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or fileName,
-					artist = tags.artist:stripLeadingAndTrailingSpaces(),
-					album = tags.album:stripLeadingAndTrailingSpaces(),
-					genre = tags.genre:stripLeadingAndTrailingSpaces(),
-					comment = tags.comment:stripLeadingAndTrailingSpaces(),
-					year = tags.year,
-					trackNumber = tags.trackNumber,
-					rating = ratings:convert(tags.rating),
-					playCount = 0, -- TODO: read from taglib when it supports it
-					duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
-					bitrate = tags.bitrate,
-					sampleRate = tags.sampleRate
-				}
-			end
-		end
-
-		local currentMusicFileCount = #musicFiles
-
-		if (currentMusicFileCount > 1 and currentMusicFileCount <= 2) then
-			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
-		elseif (currentMusicFileCount >= 450) then
-			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
-			sqlLib:insertMusicBatch(musicFiles)
-			musicFiles = nil
-			musicFiles = {}
-			onInitial()
-		end
-	end
-
-	if (#musicFiles > 0) then
-		sqlLib:insertMusicBatch(musicFiles)
-		onInitial()
-	end
-
-	fileList = {}
-	fileList = nil
-	musicFiles = {}
-	musicFiles = nil
-
-	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
-	eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
-	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
-	_G.printf("populated SQL Database in: %d seconds", os.difftime(os.time(), startSecond))
-
-	onComplete()
-end
-
-function M:scanSelectedFolder(path, onInitial, onComplete, delay)
-	local paths = {path}
-	local count = 0
-	local iterationDelay = delay or 2
 	local scanTimer = nil
-	fileList = nil
-	fileList = {}
 	musicFiles = nil
 	musicFiles = {}
-	local startSecond = os.time()
 	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
-	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.lock)
 
-	local function scanFoldersRecursively(event)
-		if (#paths == 0) then
-			if (scanTimer) then
-				timer.cancel(scanTimer)
-				scanTimer = nil
-			end
-
-			paths = nil
-			_G.printf("Got folder list in: %d seconds", os.difftime(os.time(), startSecond))
-			self:getFilesFromList(onInitial, onComplete)
-
-			return
-		end
-
-		local fullPath = nil
-		local attributes = nil
-
-		for file in lfs.dir(paths[1]) do
-			if (file ~= "." and file ~= "..") then
-				fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
-				attributes = lfs.attributes(fullPath)
-
-				if (attributes) then
-					if (attributes.mode == "directory") then
-						--print("file: " .. file .. " is directory")
-						tInsert(paths, fullPath)
-					elseif (attributes.mode == "file") then
-						if (isMusicFile(file) and attributes.size > 0) then
-							count = count + 1
-							fileList[count] = {fileName = file, filePath = paths[1]}
-						end
-					end
-				end
-			end
-		end
-
-		tRemove(paths, 1)
-		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
-	end
-
-	scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
-end
-
-function M:checkForNewFiles(onComplete)
-	local musicFolders = settings.musicFolderPaths
-	local paths = nil
-	local count = 0
-	local iterationDelay = 4
-	local scanTimer = nil
-	fileList = nil
-	fileList = {}
-	musicFiles = nil
-	musicFiles = {}
-	local startSecond = os.time()
-	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
-	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.lock)
-
-	-- TODO: needs to be split up. You can't be doing multiple loops
-	-- in other words, you should only increase the current musicFolder index after the
-	-- previous one fully completes
-
-	local function getFiles()
-		local stmt = sqlLib:getAllMusicRows()
-		local startSecond = os.time()
-		musicFiles = nil
-		musicFiles = {}
-
+	local function iterate()
 		for i = 1, #fileList do
 			local item = fileList[i]
 			local fileName = item.fileName
@@ -230,26 +152,24 @@ function M:checkForNewFiles(onComplete)
 
 			if (fileName) then
 				if (fileUtils:fileExistsAtRawPath(fullPath)) then
-					if (not sqlLib:doesRowExist(fileName)) then
-						local tags = tag.get({fileName = fileName, filePath = filePath})
+					local tags = tag.get({fileName = fileName, filePath = filePath})
 
-						musicFiles[#musicFiles + 1] = {
-							fileName = fileName,
-							filePath = filePath,
-							title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or fileName,
-							artist = tags.artist:stripLeadingAndTrailingSpaces(),
-							album = tags.album:stripLeadingAndTrailingSpaces(),
-							genre = tags.genre:stripLeadingAndTrailingSpaces(),
-							comment = tags.comment:stripLeadingAndTrailingSpaces(),
-							year = tags.year,
-							trackNumber = tags.trackNumber,
-							rating = ratings:convert(tags.rating),
-							playCount = 0, -- TODO: read from taglib when it supports it
-							duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
-							bitrate = tags.bitrate,
-							sampleRate = tags.sampleRate
-						}
-					end
+					musicFiles[#musicFiles + 1] = {
+						fileName = fileName,
+						filePath = filePath,
+						title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or fileName,
+						artist = tags.artist:stripLeadingAndTrailingSpaces(),
+						album = tags.album:stripLeadingAndTrailingSpaces(),
+						genre = tags.genre:stripLeadingAndTrailingSpaces(),
+						comment = tags.comment:stripLeadingAndTrailingSpaces(),
+						year = tags.year,
+						trackNumber = tags.trackNumber,
+						rating = ratings:convert(tags.rating),
+						playCount = 0, -- TODO: read from taglib when it supports it
+						duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+						bitrate = tags.bitrate,
+						sampleRate = tags.sampleRate
+					}
 				end
 			end
 
@@ -262,79 +182,179 @@ function M:checkForNewFiles(onComplete)
 				sqlLib:insertMusicBatch(musicFiles)
 				musicFiles = nil
 				musicFiles = {}
+				onInitial()
+			end
+
+			if (i % 25 == 0) then
+				coroutine.yield()
 			end
 		end
-
-		if (#musicFiles > 0) then
-			sqlLib:insertMusicBatch(musicFiles)
-		end
-
-		fileList = {}
-		fileList = nil
-		musicFiles = {}
-		musicFiles = nil
-
-		eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
-		eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
-		eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
-		_G.printf("Update: populated SQL Database in: %d seconds", os.difftime(os.time(), startSecond))
-
-		--onComplete()
 	end
 
-	local function scanFoldersRecursively(event)
-		if (#paths == 0) then
-			if (scanTimer) then
-				timer.cancel(scanTimer)
-				scanTimer = nil
+	local co = coroutine.create(iterate)
+
+	local function getNextFile()
+		if (coroutine.status(co) == "dead") then
+			timer.cancel(scanTimer)
+			scanTimer = nil
+
+			if (#musicFiles > 0) then
+				sqlLib:insertMusicBatch(musicFiles)
+				onInitial()
 			end
 
-			paths = nil
-			_G.printf("Update: Got folder list in: %d seconds", os.difftime(os.time(), startSecond))
-			getFiles()
+			fileList = {}
+			fileList = nil
+			musicFiles = {}
+			musicFiles = nil
+
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+			eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+			eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
+			_G.printf("populated SQL Database in: %d seconds", os.difftime(os.time(), startSecond))
+
+			onComplete()
 
 			return
 		end
 
-		local fullPath = nil
-		local attributes = nil
+		coroutine.resume(co)
+	end
 
-		for file in lfs.dir(paths[1]) do
-			if (file ~= "." and file ~= "..") then
-				fullPath = sFormat("%s%s%s", paths[1], string.pathSeparator, file)
-				attributes = lfs.attributes(fullPath)
+	scanTimer = timer.performWithDelay(2, getNextFile, 0)
+end
 
-				if (attributes) then
-					if (attributes.mode == "directory") then
-						--print("file: " .. file .. " is directory")
-						tInsert(paths, fullPath)
-					elseif (attributes.mode == "file") then
-						if (isMusicFile(file) and attributes.size > 0) then
-							count = count + 1
-							fileList[count] = {fileName = file, filePath = paths[1]}
+function M:scanSelectedFolder(path, onInitial, onComplete)
+	local function onFinished()
+		self:getFilesFromList(onInitial, onComplete)
+	end
+
+	scanFolder(path, 2, onFinished)
+end
+
+function M:checkForNewFiles(onComplete)
+	local musicFolders = settings.musicFolderPaths
+	local paths = nil
+	local count = 0
+	local iterationDelay = 4
+	local folderIndex = 1
+	local scanTimer = nil
+	fileList = nil
+	fileList = {}
+	musicFiles = nil
+	musicFiles = {}
+	local startSecond = os.time()
+
+	local function getFiles()
+		local stmt = sqlLib:getAllMusicRows()
+		local startSecond = os.time()
+		musicFiles = nil
+		musicFiles = {}
+
+		local function iterate()
+			for i = 1, #fileList do
+				local item = fileList[i]
+				local fileName = item.fileName
+				local filePath = item.filePath
+				local fullPath = sFormat("%s%s%s", filePath, string.pathSeparator, fileName)
+
+				if (fileName) then
+					if (fileUtils:fileExistsAtRawPath(fullPath)) then
+						if (not sqlLib:doesRowExist(fileName)) then
+							local tags = tag.get({fileName = fileName, filePath = filePath})
+
+							musicFiles[#musicFiles + 1] = {
+								fileName = fileName,
+								filePath = filePath,
+								title = tags.title:len() > 0 and tags.title:stripLeadingAndTrailingSpaces() or fileName,
+								artist = tags.artist:stripLeadingAndTrailingSpaces(),
+								album = tags.album:stripLeadingAndTrailingSpaces(),
+								genre = tags.genre:stripLeadingAndTrailingSpaces(),
+								comment = tags.comment:stripLeadingAndTrailingSpaces(),
+								year = tags.year,
+								trackNumber = tags.trackNumber,
+								rating = ratings:convert(tags.rating),
+								playCount = 0, -- TODO: read from taglib when it supports it
+								duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+								bitrate = tags.bitrate,
+								sampleRate = tags.sampleRate
+							}
 						end
 					end
+				end
+
+				local currentMusicFileCount = #musicFiles
+
+				if (currentMusicFileCount > 1 and currentMusicFileCount <= 2) then
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+				elseif (currentMusicFileCount >= 450) then
+					eventDispatcher:musicListEvent(eventDispatcher.musicList.events.lockScroll)
+					sqlLib:insertMusicBatch(musicFiles)
+					musicFiles = nil
+					musicFiles = {}
+				end
+
+				if (i % 25 == 0) then
+					coroutine.yield()
 				end
 			end
 		end
 
-		tRemove(paths, 1)
-		scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
+		local co = coroutine.create(iterate)
+
+		local function getNextFile()
+			if (coroutine.status(co) == "dead") then
+				if (#musicFiles > 0) then
+					sqlLib:insertMusicBatch(musicFiles)
+				end
+
+				fileList = {}
+				fileList = nil
+				musicFiles = {}
+				musicFiles = nil
+
+				eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+				eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+				eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
+
+				if (folderIndex + 1 <= #musicFolders) then
+					co = coroutine.create(iterate)
+					folderIndex = folderIndex + 1
+					_G.printf("Update: Checking for new files in saved folder path %d", folderIndex)
+					scanFolder(paths[folderIndex], 5, getFiles)
+				else
+					if (scanTimer) then
+						timer.cancel(scanTimer)
+						scanTimer = nil
+					end
+
+					_G.printf("Update: finished new file check in: %d seconds", os.difftime(os.time(), startSecond))
+
+					onComplete()
+				end
+
+				return
+			end
+
+			coroutine.resume(co)
+		end
+
+		scanTimer = timer.performWithDelay(5, getNextFile, 0)
 	end
 
 	if (#musicFolders > 0) then
-		print("Update: Checking for new files")
+		print("Update: Checking for new files in first saved folder path")
 
 		for i = 1, #musicFolders do
-			paths = nil
 			paths = {musicFolders[i]}
-			scanTimer = timer.performWithDelay(iterationDelay, scanFoldersRecursively)
 		end
+
+		scanFolder(paths[1], 5, getFiles)
 	end
 end
 
 function M:checkForRemovedFiles()
-	print("checking for missing files")
+	print("Missing: checking for missing files")
 	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.startActivity)
 
 	local startSecond = os.time()
@@ -352,7 +372,7 @@ function M:checkForRemovedFiles()
 	stmt:finalize()
 	stmt = nil
 	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
-	print("finished missing file check: total time:", os.difftime(os.time(), startSecond))
+	_G.printf("Missing: finished missing file check in: %d seconds", os.difftime(os.time(), startSecond))
 end
 
 function M:showFolderSelectDialog()
