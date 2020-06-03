@@ -54,6 +54,16 @@ sqlLib.currentMusicTable = settings.lastView
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 
+local function cancelAllTimers()
+	for id, value in pairs(timer._runlist) do
+		timer.cancel(value)
+	end
+
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.stopActivity)
+	eventDispatcher:musicListEvent(eventDispatcher.musicList.events.unlockScroll)
+	eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
+end
+
 local function reachedEndOfMusicList()
 	local reachedEnd = false
 
@@ -348,6 +358,7 @@ local applicationMainMenuBar =
 							local function onRemoved()
 								local databasePath = system.pathForFile("", system.DocumentsDirectory)
 
+								cancelAllTimers()
 								sqlLib:close()
 								audioLib:reset()
 								musicList:destroy()
@@ -360,6 +371,7 @@ local applicationMainMenuBar =
 										settings:load()
 										mediaBarLib.resetSongProgress()
 										mediaBarLib.clearPlayingSong()
+										populateTableViews()
 									end
 								)
 							end
@@ -634,12 +646,7 @@ local function onSystemEvent(event)
 	if (event.type == "applicationExit") then
 		sqlLib:close()
 		audioLib.reset()
-
-		for id, value in pairs(timer._runlist) do
-			timer.cancel(value)
-		end
-
-		coroutine.yield()
+		cancelAllTimers()
 		transition.cancel()
 		Runtime:removeEventListener("key", keyEventListener)
 		Runtime:removeEventListener("resize", onResize)
@@ -653,7 +660,7 @@ populateTableViews()
 
 if (sqlLib:totalMusicCount() > 0) then
 	timer.performWithDelay(
-		1000,
+		500,
 		function()
 			musicImporter:checkForNewFiles(
 				function()

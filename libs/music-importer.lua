@@ -308,8 +308,6 @@ function M:checkForNewFiles(onComplete)
 					sqlLib:insertMusicBatch(musicFiles)
 				end
 
-				fileList = {}
-				fileList = nil
 				musicFiles = {}
 				musicFiles = nil
 
@@ -318,6 +316,9 @@ function M:checkForNewFiles(onComplete)
 				eventDispatcher:mainMenuEvent(eventDispatcher.mainMenu.events.unlock)
 
 				if (folderIndex + 1 <= #musicFolders) then
+					fileList = {}
+					fileList = nil
+
 					co = coroutine.create(iterate)
 					folderIndex = folderIndex + 1
 					_G.printf("Update: Checking for new files in saved folder path %d", folderIndex)
@@ -327,6 +328,9 @@ function M:checkForNewFiles(onComplete)
 						timer.cancel(scanTimer)
 						scanTimer = nil
 					end
+
+					fileList = {}
+					fileList = nil
 
 					_G.printf("Update: finished new file check in: %d seconds", os.difftime(os.time(), startSecond))
 
