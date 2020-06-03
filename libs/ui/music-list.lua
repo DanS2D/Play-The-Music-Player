@@ -280,7 +280,7 @@ local function createCategories()
 			{
 				text = listOptions[i].categoryTitle,
 				y = categoryBar.contentHeight * 0.5,
-				font = subTitleFont,
+				font = titleFont,
 				fontSize = rowFontSize,
 				align = "left"
 			}
