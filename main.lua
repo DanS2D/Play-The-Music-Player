@@ -639,6 +639,7 @@ local function onSystemEvent(event)
 			timer.cancel(value)
 		end
 
+		coroutine.yield()
 		transition.cancel()
 		Runtime:removeEventListener("key", keyEventListener)
 		Runtime:removeEventListener("resize", onResize)

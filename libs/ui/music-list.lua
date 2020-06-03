@@ -742,9 +742,16 @@ function M:createTableView(options, index)
 
 	function tView:update()
 		if (musicCount <= 550) then
-			--print("music count <= 200, recreating rows")
+			if (tView.orderIndex == 1) then
+			--print("music count <= 550, recreating rows")
+			end
 			tView:deleteAllRows()
 			tView:createRows()
+			tView:setRowLimit(musicCount)
+		end
+
+		if (tView.orderIndex == 1) then
+		--print("updating music list")
 		end
 
 		tView:setRowLimit(musicCount)
