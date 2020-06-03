@@ -38,7 +38,7 @@ local selectedRowIndex = 0
 local selectedRowRealIndex = 0
 local rightClickRowIndex = 0
 local titleFont = "fonts/Jost-500-Medium.ttf"
-local subTitleFont = "fonts/Jost-300-Light.ttf"
+local subTitleFont = "fonts/Jost-400-Book.ttf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 --local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
@@ -280,7 +280,7 @@ local function createCategories()
 			{
 				text = listOptions[i].categoryTitle,
 				y = categoryBar.contentHeight * 0.5,
-				font = titleFont,
+				font = subTitleFont,
 				fontSize = rowFontSize,
 				align = "left"
 			}

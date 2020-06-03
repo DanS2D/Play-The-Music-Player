@@ -47,7 +47,7 @@ local resizeTimer = nil
 local oldWidth = display.contentWidth
 local oldHeight = display.contentHeight
 local titleFont = "fonts/Jost-500-Medium.ttf"
-local subTitleFont = "fonts/Jost-300-Light.ttf"
+local subTitleFont = "fonts/Jost-400-Book.ttf"
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.ttf"
 local isWindows = system.getInfo("platform") == "win32"
 sqlLib.currentMusicTable = settings.lastView
