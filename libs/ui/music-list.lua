@@ -37,9 +37,9 @@ local rowHeight = 40
 local selectedRowIndex = 0
 local selectedRowRealIndex = 0
 local rightClickRowIndex = 0
-local titleFont = "fonts/Jost-500-Medium.otf"
-local subTitleFont = "fonts/Jost-300-Light.otf"
-local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local titleFont = "fonts/Jost-500-Medium.ttf"
+local subTitleFont = "fonts/Jost-300-Light.ttf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 --local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
 local selectedCategoryTableView = nil
@@ -540,6 +540,7 @@ function M:createTableView(options, index)
 				local rowContentHeight = row.contentHeight
 				local rowLimit = self.musicSearch ~= nil and sqlLib.searchCount or musicCount
 				local nowPlayingIcon = nil
+				local songExists = false
 				parent:setRowLimit(rowLimit)
 
 				if (parent.orderIndex == 1) then
@@ -550,12 +551,14 @@ function M:createTableView(options, index)
 					row.isVisible = false
 				else
 					row.isVisible = true
-				end
 
-				local songExists =
-					fileUtils:fileExistsAtRawPath(
-					sFormat("%s%s%s", musicData[row.index].filePath, string.pathSeparator, musicData[row.index].fileName)
-				)
+					if (musicData[row.index]) then
+						songExists =
+							fileUtils:fileExistsAtRawPath(
+							sFormat("%s%s%s", musicData[row.index].filePath, string.pathSeparator, musicData[row.index].fileName)
+						)
+					end
+				end
 
 				if (options[index].rowTitle == "rating") then
 					local ratingStars =
@@ -738,7 +741,7 @@ function M:createTableView(options, index)
 	end
 
 	function tView:update()
-		if (musicCount <= 200) then
+		if (musicCount <= 550) then
 			--print("music count <= 200, recreating rows")
 			tView:deleteAllRows()
 			tView:createRows()
@@ -1201,7 +1204,7 @@ function M:setSelectedRow(rowIndex)
 end
 
 function M:update()
-	musicCount = self.musicSearch ~= nil and sqlLib.searchCount or sqlLib:currentMusicCount()
+	musicCount = sqlLib:totalMusicCount()
 
 	--print("updating tableViews - music count: ", musicCount)
 

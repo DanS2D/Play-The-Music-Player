@@ -723,6 +723,24 @@ function M:getMusicRowByTitle(index, ascending)
 	return getMusicRowBy(index, ascending, "sortTitle")
 end
 
+function M:doesRowExist(fileName)
+	local exists = false
+	local stmt =
+		database:prepare(
+		sFormat([[ SELECT COUNT(*) AS count FROM `music` WHERE fileName = '%s' LIMIT 1; ]], escapeString(fileName))
+	)
+
+	for row in stmt:nrows() do
+		exists = true
+		break
+	end
+
+	stmt:finalize()
+	stmt = nil
+
+	return exists
+end
+
 function M:getMusicRowBySearch(index, ascending, search, limit)
 	local stmt = nil
 	local orderType = ascending and "ASC" or "DESC"

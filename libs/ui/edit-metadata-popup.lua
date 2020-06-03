@@ -17,13 +17,13 @@ local mMax = math.max
 local sFormat = string.format
 local sSub = string.sub
 local uPack = unpack
-local titleFont = "fonts/Jost-500-Medium.otf"
-local subTitleFont = "fonts/Jost-300-Light.otf"
+local titleFont = "fonts/Jost-500-Medium.ttf"
+local subTitleFont = "fonts/Jost-300-Light.ttf"
 local maxDisplayWidth = 1024
 local maxDisplayHeight = 768
 local group = display.newGroup()
 local alertPopup = alertPopupLib.create()
-local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
+local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.ttf"
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
 local documentsPath = system.pathForFile("", system.DocumentsDirectory)

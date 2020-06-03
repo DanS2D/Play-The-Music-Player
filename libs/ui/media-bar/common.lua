@@ -3,9 +3,9 @@ local M = {
 	smallButtonFontSize = 20,
 	mainButtonFontSize = 28,
 	barHeight = 80,
-	titleFont = "fonts/Jost-500-Medium.otf",
-	subTitleFont = "fonts/Jost-300-Light.otf",
-	fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+	titleFont = "fonts/Jost-500-Medium.ttf",
+	subTitleFont = "fonts/Jost-300-Light.ttf",
+	fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 }
 
 return M

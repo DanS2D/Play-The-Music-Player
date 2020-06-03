@@ -4,7 +4,7 @@ local desktopTableView = require("libs.ui.desktop-table-view")
 local eventDispatcher = require("libs.event-dispatcher")
 local mRound = math.round
 local uPack = unpack
-local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 
 function M.new(options)
 	local x = options.left or display.contentWidth

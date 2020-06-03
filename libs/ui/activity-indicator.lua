@@ -1,7 +1,7 @@
 local M = {}
 local theme = require("libs.theme")
 local uPack = unpack
-local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 
 function M.new(options)
 	local x = options.x or 0

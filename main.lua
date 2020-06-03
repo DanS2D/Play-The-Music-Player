@@ -6,11 +6,14 @@ local lfs = require("lfs")
 local stringExt = require("libs.string-ext")
 local luaExt = require("libs.lua-ext")
 local sFormat = string.format
+
 lfs.mkdir(system.pathForFile("data", system.DocumentsDirectory))
 lfs.mkdir(system.pathForFile(sFormat("data%sthemes", string.pathSeparator), system.DocumentsDirectory))
 lfs.mkdir(system.pathForFile(sFormat("data%salbumArt", string.pathSeparator), system.DocumentsDirectory))
+
 local theme = require("libs.theme")
 local settings = require("libs.settings")
+
 settings:load()
 theme:set(settings.theme)
 theme:setDefaultBackgroundColor()
@@ -43,9 +46,9 @@ local background = nil
 local resizeTimer = nil
 local oldWidth = display.contentWidth
 local oldHeight = display.contentHeight
-local titleFont = "fonts/Jost-500-Medium.otf"
-local subTitleFont = "fonts/Jost-300-Light.otf"
-local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.otf"
+local titleFont = "fonts/Jost-500-Medium.ttf"
+local subTitleFont = "fonts/Jost-300-Light.ttf"
+local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.ttf"
 local isWindows = system.getInfo("platform") == "win32"
 sqlLib.currentMusicTable = settings.lastView
 local isWindows = system.getInfo("platform") == "win32"
@@ -79,7 +82,7 @@ local function onAudioEvent(event)
 	local decrementIndex = event.decrementIndex
 
 	if (phase == "started") then
-		--print("song STARTED")
+		-- print("song STARTED")
 		eventDispatcher:mediaBarEvent(eventDispatcher.mediaBar.events.loadedUrl)
 		mediaBarLib.updatePlayPauseState(true)
 		mediaBarLib.removeAlbumArtwork()
@@ -146,6 +149,7 @@ Runtime:addEventListener("playAudio", onAudioEvent)
 local function playInterruptedSong()
 	if (wasSongPlaying) then
 		local previousSong = musicList:getRow(audioLib.currentSongIndex)
+
 		audioLib.load(previousSong)
 		audioLib.play(previousSong)
 
@@ -176,7 +180,7 @@ local function populateTableViews()
 	end
 
 	musicList:populate()
-	--playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
+	-- playInterruptedSong() <-- plays the wrong song if the user was playing via search. Fix this later. Kinda complicated
 end
 
 local function reloadTableViews()
@@ -227,6 +231,7 @@ local applicationMainMenuBar =
 							interruptedSongPosition = mediaBarLib.getSongProgress()
 							audioLib.reset()
 							mainMenuBar.setEnabled(false)
+
 							local selectedPath = musicImporter:showFolderSelectDialog()
 							local previousPaths = settings.musicFolderPaths
 							local hasUsedPath = false
@@ -289,7 +294,6 @@ local applicationMainMenuBar =
 
 							if (foundFile ~= nil) then
 								local newPath = system.pathForFile(sqlLib.dbFilePath, system.DocumentsDirectory)
-
 								settings:save()
 								sqlLib:close()
 
@@ -344,6 +348,7 @@ local applicationMainMenuBar =
 						onClick = function()
 							local function onRemoved()
 								local databasePath = system.pathForFile("", system.DocumentsDirectory)
+
 								sqlLib:close()
 								audioLib:reset()
 								musicList:destroy()
@@ -470,47 +475,6 @@ local applicationMainMenuBar =
 					}
 				}
 			},
-			--[[
-			{
-				title = "Visualizer",
-				subItems = {
-					{
-						title = "Enabled",
-						iconName = "eye",
-						useCheckmark = true,
-						checkMarkIsOn = toboolean(settings.showVisualizer),
-						onClick = function(event)
-							if (event.isSwitch) then
-								if (event.isOn) then
-									settings.showVisualizer = true
-								else
-									settings.showVisualizer = false
-								end
-							end
-
-							settings:save()
-						end
-					},
-					{
-						title = "Start",
-						iconName = "play",
-						onClick = function(event)
-						end
-					},
-					{
-						title = "Pause",
-						iconName = "pause",
-						onClick = function(event)
-						end
-					},
-					{
-						title = "Stop",
-						iconName = "stop",
-						onClick = function(event)
-						end
-					},
-				}
-			},--]]
 			{
 				title = "Help",
 				subItems = {
@@ -564,7 +528,6 @@ background.anchorY = 0
 background.x = 0
 background.y = 150
 background:setFillColor(unpack(theme:get().backgroundColor.primary))
-
 mediaBar = mediaBarLib.new({})
 musicTableView = musicList.new()
 background:toFront()
@@ -573,9 +536,10 @@ local function keyEventListener(event)
 	local phase = event.phase
 
 	if (phase == "down") then
-		--print(event.keyName)
+		-- print(event.keyName)
 		local isShiftDown = event.isShiftDown
 		local keyDescriptor = event.descriptor:lower()
+
 		-- TODO: only execute the below IF there is music data
 
 		if (isShiftDown) then
@@ -642,7 +606,6 @@ local function onResize(event)
 
 	background.width = display.contentWidth
 	background.height = display.contentHeight - 161
-
 	applicationMainMenuBar:onResize()
 	mediaBarLib:onResize()
 	musicList:onResize()
@@ -683,18 +646,23 @@ local function onSystemEvent(event)
 end
 
 Runtime:addEventListener("system", onSystemEvent)
-
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)
 populateTableViews()
 
-timer.performWithDelay(
-	2000,
-	function()
-		musicImporter:checkForNewFiles(
-			function()
-				musicImporter:checkForRemovedFiles()
-			end
-		)
-	end
-)
+--_G.printf("hello there. %s is #%d", "This", 1)
+
+---[[
+if (sqlLib:totalMusicCount() > 0) then
+	timer.performWithDelay(
+		2000,
+		function()
+			musicImporter:checkForNewFiles(
+				function()
+					musicImporter:checkForRemovedFiles()
+				end
+			)
+		end
+	)
+end
+--]]

@@ -12,4 +12,8 @@ function _G.toboolean(value)
 	return value
 end
 
+function _G.printf(msg, ...)
+	print(msg:format(...))
+end
+
 return M

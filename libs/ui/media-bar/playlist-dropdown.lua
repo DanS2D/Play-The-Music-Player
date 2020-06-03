@@ -14,9 +14,9 @@ local tInsert = table.insert
 local uPack = unpack
 local smallButtonFontSize = 16
 local mainButtonFontSize = 28
-local titleFont = "fonts/Jost-500-Medium.otf"
-local subTitleFont = "fonts/Jost-300-Light.otf"
-local fontAwesomeSolidFont = "fonts/FA5-Solid.otf"
+local titleFont = "fonts/Jost-500-Medium.ttf"
+local subTitleFont = "fonts/Jost-300-Light.ttf"
+local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
 local alertPopup = alertPopupLib.create()
 local playlistCreatePopup = playlistCreatePopupLib.create()
 
