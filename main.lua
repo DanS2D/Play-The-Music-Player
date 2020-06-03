@@ -634,13 +634,14 @@ local function onSystemEvent(event)
 	if (event.type == "applicationExit") then
 		sqlLib:close()
 		audioLib.reset()
-		transition.cancel()
-		Runtime:removeEventListener("key", keyEventListener)
-		Runtime:removeEventListener("resize", onResize)
 
 		for id, value in pairs(timer._runlist) do
 			timer.cancel(value)
 		end
+
+		transition.cancel()
+		Runtime:removeEventListener("key", keyEventListener)
+		Runtime:removeEventListener("resize", onResize)
 	end
 end
 
@@ -648,8 +649,6 @@ Runtime:addEventListener("system", onSystemEvent)
 mediaBarLib.setVolumeSliderValue(settings.volume * 100)
 audioLib.setVolume(settings.volume)
 populateTableViews()
-
---_G.printf("hello there. %s is #%d", "This", 1)
 
 if (sqlLib:totalMusicCount() > 0) then
 	timer.performWithDelay(
