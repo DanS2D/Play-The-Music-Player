@@ -621,7 +621,7 @@ function M:createTableView(options, index)
 						display.newText(
 						{
 							text = musicData and musicData[row.index] and musicData[row.index][options[index].rowTitle] or "",
-							font = subTitleFont,
+							font = titleFont,
 							x = 0,
 							y = (rowContentHeight * 0.5),
 							fontSize = rowFontSize,

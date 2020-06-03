@@ -217,11 +217,10 @@ end
 local applicationMainMenuBar =
 	mainMenuBar.new(
 	{
-		font = subTitleFont,
+		font = titleFont,
 		items = {
 			{
 				title = "File",
-				font = subTitleFont,
 				subItems = {
 					{
 						title = "Add Music Folder",
@@ -652,10 +651,9 @@ populateTableViews()
 
 --_G.printf("hello there. %s is #%d", "This", 1)
 
----[[
 if (sqlLib:totalMusicCount() > 0) then
 	timer.performWithDelay(
-		2000,
+		1000,
 		function()
 			musicImporter:checkForNewFiles(
 				function()
@@ -665,4 +663,3 @@ if (sqlLib:totalMusicCount() > 0) then
 		end
 	)
 end
---]]
