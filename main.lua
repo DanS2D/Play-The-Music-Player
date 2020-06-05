@@ -55,7 +55,7 @@ local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.ttf"
 local isWindows = system.getInfo("platform") == "win32"
 sqlLib.currentMusicTable = settings.lastView
 local isWindows = system.getInfo("platform") == "win32"
-local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
+local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or os.getenv("HOME")
 
 local function cancelAllTimers()
 	for id, value in pairs(timer._runlist) do

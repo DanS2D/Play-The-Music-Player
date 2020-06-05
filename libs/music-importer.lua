@@ -15,8 +15,8 @@ local tRemove = table.remove
 local musicFiles = {}
 local fileList = {}
 local isWindows = system.getInfo("platform") == "win32"
-local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or "~/"
-local userHomeDirectoryMusicPath = isWindows and "%HOMEPATH%\\Music\\" or "~/Music"
+local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or os.getenv("HOME")
+local userHomeDirectoryMusicPath = isWindows and "%HOMEPATH%\\Music\\" or os.getenv("HOME") .. "/Music"
 
 local function isMusicFile(fileName)
 	return audioLib.supportedFormats[fileName:fileExtension()]
