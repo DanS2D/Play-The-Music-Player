@@ -20,6 +20,8 @@ theme:setDefaultBackgroundColor()
 math.randomseed(os.time())
 
 local tfd = require("plugin.tinyFileDialogs")
+local directoryMonitor = require("plugin.directoryMonitor")
+local tagLib = require("plugin.taglib")
 local strict = require("strict")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
@@ -30,6 +32,7 @@ local eventDispatcher = require("libs.event-dispatcher")
 local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
+local ratings = require("libs.ui.ratings")
 local alertPopupLib = require("libs.ui.alert-popup")
 local aboutPopupLib = require("libs.ui.about-popup")
 local alertPopup = alertPopupLib.create()
@@ -669,4 +672,50 @@ if (sqlLib:totalMusicCount() > 0) then
 			)
 		end
 	)
+end
+
+local function directoryListener(event)
+	for k, v in pairs(event) do
+		print(k, v)
+	end
+	--[[
+	local action = event.action
+	local rootDir = event.rootDirectory
+	local filePath = event.filePath
+
+	if (action == "create") then
+		local tags = tagLib.get({fileName = filePath, filePath = rootDir})
+		local musicData = {
+			fileName = filePath:getFileName(),
+			filePath = filePath,
+			title = tags.title:len() > 0 and tags.title or filePath:getFileName(),
+			artist = tags.artist,
+			album = tags.album,
+			genre = tags.genre,
+			comment = tags.comment,
+			year = tags.year,
+			trackNumber = tags.trackNumber,
+			rating = ratings:convert(tags.rating),
+			duration = sFormat("%02d:%02d", tags.durationMinutes, tags.durationSeconds),
+			bitrate = tags.bitrate,
+			sampleRate = tags.sampleRate
+		}
+
+		sqlLib:insertMusic(musicData)
+		_G.printf("directory monitor: adding file %s\\%s to the database", rootDir, filePath)
+	elseif (action == "delete") then
+		local row = sqlLib:getMusicRowByFileName(filePath:getFileName())
+		sqlLib:removeMusicFromAll(row)
+		_G.printf("directory monitor: removing file %s\\%s from the database", rootDir, filePath)
+	elseif (action == "modify") then
+	elseif (action == "move") then
+	end--]]
+	return true
+end
+
+Runtime:addEventListener("directoryMonitor", directoryListener)
+
+for i = 1, #settings.musicFolderPaths do
+	_G.printf("Monitoring directory: %s for changes", settings.musicFolderPaths[i])
+	local watchID = directoryMonitor.watch(settings.musicFolderPaths[i])
 end

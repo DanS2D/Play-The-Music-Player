@@ -723,6 +723,41 @@ function M:getMusicRowByTitle(index, ascending)
 	return getMusicRowBy(index, ascending, "sortTitle")
 end
 
+function M:getMusicRowByFileName(fileName)
+	local music = {}
+	local stmt =
+		database:prepare(sFormat([[ SELECT * FROM `music` WHERE fileName = '%s' LIMIT 1; ]], escapeString(fileName)))
+
+	for row in stmt:nrows() do
+		music = {
+			id = row.id,
+			fileName = row.fileName,
+			filePath = row.filePath,
+			md5 = row.md5,
+			title = row.title,
+			artist = row.artist,
+			album = row.album,
+			genre = row.genre,
+			comment = row.comment,
+			year = row.year,
+			trackNumber = row.trackNumber,
+			rating = row.rating,
+			playCount = row.playCount,
+			duration = row.duration,
+			bitrate = row.bitrate,
+			sampleRate = row.sampleRate,
+			sortTitle = row.title,
+			albumSearch = row.album,
+			artistSearch = row.artist,
+			titleSearch = row.title
+		}
+	end
+
+	stmt:finalize()
+	stmt = nil
+	return music
+end
+
 function M:doesRowExist(fileName)
 	local exists = false
 	local stmt =

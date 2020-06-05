@@ -1,5 +1,5 @@
 local M = {}
-local tag = require("plugin.taglib")
+local tagLib = require("plugin.taglib")
 local lfs = require("lfs")
 local tfd = require("plugin.tinyFileDialogs")
 local fileUtils = require("libs.file-utils")
@@ -84,7 +84,7 @@ end
 function M:scanFiles(files, onComplete)
 	if (type(files) == "string") then
 		local fileName, filePath = files:getFileNameAndPath()
-		local tags = tag.get({fileName = fileName, filePath = filePath})
+		local tags = tagLib.get({fileName = fileName, filePath = filePath})
 		local musicData = {
 			fileName = fileName,
 			filePath = filePath,
@@ -107,7 +107,7 @@ function M:scanFiles(files, onComplete)
 
 		for i = 1, #files do
 			local fileName, filePath = files[i]:getFileNameAndPath()
-			local tags = tag.get({fileName = fileName, filePath = filePath})
+			local tags = tagLib.get({fileName = fileName, filePath = filePath})
 
 			musicData[#musicData + 1] = {
 				fileName = fileName,
@@ -152,7 +152,7 @@ function M:getFilesFromList(onInitial, onComplete)
 
 			if (fileName) then
 				if (fileUtils:fileExistsAtRawPath(fullPath)) then
-					local tags = tag.get({fileName = fileName, filePath = filePath})
+					local tags = tagLib.get({fileName = fileName, filePath = filePath})
 
 					musicFiles[#musicFiles + 1] = {
 						fileName = fileName,
@@ -261,7 +261,7 @@ function M:checkForNewFiles(onComplete)
 				if (fileName) then
 					if (fileUtils:fileExistsAtRawPath(fullPath)) then
 						if (not sqlLib:doesRowExist(fileName)) then
-							local tags = tag.get({fileName = fileName, filePath = filePath})
+							local tags = tagLib.get({fileName = fileName, filePath = filePath})
 
 							musicFiles[#musicFiles + 1] = {
 								fileName = fileName,

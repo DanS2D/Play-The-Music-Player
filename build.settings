@@ -67,6 +67,7 @@ settings =
 		["plugin.tinyFileDialogs"] = {publisherId = "com.revolt64"},
 		["plugin.bass"] = {publisherId = "com.revolt64"},
 		["plugin.taglib"] = {publisherId = "com.revolt64"},
+		["plugin.directoryMonitor"] = {publisherId = "com.revolt64"},
 	},
 
 	--
