@@ -2,7 +2,6 @@ local M = {
 	musicSearch = nil,
 	rowCreationTimers = {}
 }
---local mousecursor = require("plugin.mousecursor")
 local sqlLib = require("libs.sql-lib")
 local audioLib = require("libs.audio-lib")
 local fileUtils = require("libs.file-utils")
@@ -22,6 +21,7 @@ local mMax = math.max
 local tInsert = table.insert
 local sFormat = string.format
 local uPack = unpack
+local nSetProperty = native.setProperty
 local tableViewList = {}
 local tableViewTarget = nil
 local categoryBar = nil
@@ -40,7 +40,6 @@ local rightClickRowIndex = 0
 local titleFont = "fonts/Jost-500-Medium.ttf"
 local subTitleFont = "fonts/Jost-400-Book.ttf"
 local fontAwesomeSolidFont = "fonts/FA5-Solid.ttf"
---local resizeCursor = mousecursor.newCursor("resize left right")
 local musicData = {}
 local selectedCategoryTableView = nil
 local musicListRightClickMenu = nil
@@ -227,7 +226,7 @@ local function createCategories()
 				display.getCurrentStage():setFocus(nil)
 				lockScrolling(false)
 			elseif (phase == "move") then
-			--resizeCursor:hide()
+				nSetProperty("mouseCursor", "arrow")
 			end
 
 			return true
@@ -258,7 +257,7 @@ local function createCategories()
 			end
 
 			if (phase == "move") then
-				--resizeCursor:show()
+				nSetProperty("mouseCursor", "resizeLeftRight")
 			elseif (phase == "down") then
 				lockScrolling(true)
 				tableViewTarget = tableViewList[self.parent.index]
@@ -419,6 +418,8 @@ local function moveColumns(event)
 			local oldX = tableViewTarget.x
 			draggingCategoryRight = event.x > oldX
 
+			nSetProperty("mouseCursor", "resizeLeftRight")
+
 			if (allowCategoryDragRight and draggingCategoryRight) then
 				local minPosition = display.contentWidth - categoryTarget.title.x - categoryTarget.title.contentWidth - 10
 
@@ -452,7 +453,7 @@ local function moveColumns(event)
 		end
 
 		if (phase == "ended" or phase == "cancelled") then
-			--resizeCursor:hide()
+			nSetProperty("mouseCursor", "arrow")
 			tableViewTarget = nil
 			categoryTarget = nil
 		end
@@ -481,7 +482,7 @@ local function onMouseEvent(event)
 		tableViewList[i]:mouse(event)
 	end
 
-	--resizeCursor:hide()
+	nSetProperty("mouseCursor", "arrow")
 end
 
 Runtime:addEventListener("mouse", onMouseEvent)
