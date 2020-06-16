@@ -13,7 +13,7 @@ local musicBrainzProvider = require("libs.album-art-provider-musicbrainz")
 local googleProvider = require("libs.album-art-provider-google")
 local fileUtils = require("libs.file-utils")
 local sFormat = string.format
-local documentsPath = system.pathForFile("", system.DocumentsDirectory)
+local documentsPath = system.pathForFile(nil, system.DocumentsDirectory)
 local coverSavePath = sFormat("%s%s%s", documentsPath, string.pathSeparator, fileUtils.albumArtworkFolder)
 
 local function dispatchCoverFoundEvent(fileName)

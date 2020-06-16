@@ -26,7 +26,7 @@ local alertPopup = alertPopupLib.create()
 local fontAwesomeBrandsFont = "fonts/FA5-Brands-Regular.ttf"
 local isWindows = system.getInfo("platform") == "win32"
 local userHomeDirectoryPath = isWindows and "%HOMEPATH%\\" or os.getenv("HOME")
-local documentsPath = system.pathForFile("", system.DocumentsDirectory)
+local documentsPath = system.pathForFile(nil, system.DocumentsDirectory)
 local created = false
 
 local function onTextFieldInput(event)

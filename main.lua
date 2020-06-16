@@ -33,8 +33,10 @@ local mainMenuBar = require("libs.ui.main-menu-bar")
 local mediaBarLib = require("libs.ui.media-bar")
 local musicList = require("libs.ui.music-list")
 local ratings = require("libs.ui.ratings")
+local settingsPopupLib = require("libs.ui.settings-popup")
 local alertPopupLib = require("libs.ui.alert-popup")
 local aboutPopupLib = require("libs.ui.about-popup")
+local settingsPopup = settingsPopupLib.create()
 local alertPopup = alertPopupLib.create()
 local aboutPopup = aboutPopupLib.create()
 local mMin = math.min
@@ -359,7 +361,7 @@ local applicationMainMenuBar =
 						iconName = "trash",
 						onClick = function()
 							local function onRemoved()
-								local databasePath = system.pathForFile("", system.DocumentsDirectory)
+								local databasePath = system.pathForFile(nil, system.DocumentsDirectory)
 
 								cancelAllTimers()
 								sqlLib:close()
@@ -403,6 +405,7 @@ local applicationMainMenuBar =
 						title = "Preferences",
 						iconName = "tools",
 						onClick = function(event)
+							settingsPopup:show()
 						end
 					}
 				}
