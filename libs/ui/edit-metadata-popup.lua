@@ -327,10 +327,10 @@ function M.create()
 		albumArtworkPathButton.isVisible = false
 
 		albumArtworkMusicDiscogsButton =
-			buttonLib.new(
+			filledButtonLib.new(
 			{
 				iconName = "compact-disc",
-				fontSize = maxHeight * 0.03,
+				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(clickEvent)
 					if (albumArtwork) then
@@ -346,16 +346,16 @@ function M.create()
 				end
 			}
 		)
-		albumArtworkMusicDiscogsButton.x =
-			albumArtworkPathButton.x - albumArtworkPathButton.contentWidth * 0.5 + albumArtworkMusicDiscogsButton.contentWidth
+		albumArtworkMusicDiscogsButton.anchorX = 0
+		albumArtworkMusicDiscogsButton.x = albumArtworkContainer.x + albumArtworkMusicDiscogsButton.contentWidth * 0.5
 		albumArtworkMusicDiscogsButton.y = albumArtworkPathButton.y
 		albumArtworkMusicDiscogsButton.isVisible = false
 
 		albumArtworkMusicBrainzButton =
-			buttonLib.new(
+			filledButtonLib.new(
 			{
 				iconName = "head-side-brain",
-				fontSize = maxHeight * 0.03,
+				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(clickEvent)
 					if (albumArtwork) then
@@ -371,16 +371,16 @@ function M.create()
 				end
 			}
 		)
-		albumArtworkMusicBrainzButton.x = albumArtworkMusicDiscogsButton.x - albumArtworkMusicBrainzButton.contentWidth - 5
+		albumArtworkMusicBrainzButton.x = albumArtworkMusicDiscogsButton.x + albumArtworkMusicBrainzButton.contentWidth + 5
 		albumArtworkMusicBrainzButton.y = albumArtworkMusicDiscogsButton.y
 		albumArtworkMusicBrainzButton.isVisible = false
 
 		albumArtworkGoogleButton =
-			buttonLib.new(
+			filledButtonLib.new(
 			{
 				iconName = "google",
-				font = fontAwesomeBrandsFont,
-				fontSize = maxHeight * 0.03,
+				iconFont = fontAwesomeBrandsFont,
+				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(clickEvent)
 					if (albumArtwork) then
@@ -396,7 +396,7 @@ function M.create()
 				end
 			}
 		)
-		albumArtworkGoogleButton.x = albumArtworkMusicBrainzButton.x - albumArtworkMusicBrainzButton.contentWidth - 5
+		albumArtworkGoogleButton.x = albumArtworkMusicBrainzButton.x + albumArtworkMusicBrainzButton.contentWidth + 5
 		albumArtworkGoogleButton.y = albumArtworkMusicBrainzButton.y
 		albumArtworkGoogleButton.isVisible = false
 
@@ -721,7 +721,7 @@ function M.create()
 			{
 				iconName = "window-close",
 				labelText = "Cancel",
-				fontSize = maxHeight * 0.04,
+				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,
 				onClick = function(event)
 					self:hide()
@@ -736,7 +736,7 @@ function M.create()
 			{
 				iconName = "save",
 				labelText = "Confirm",
-				fontSize = maxHeight * 0.04,
+				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,
 				onClick = function(event)
 					local checksFailed = false

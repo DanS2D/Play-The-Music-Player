@@ -13,6 +13,7 @@ function M.new(options)
 	local buttonLabel = options.labelText
 	local fontSize = options.fontSize or 14
 	local font = options.font or subTitleFont
+	local iconFont = options.iconFont or fontAwesomeSolidFont
 	local fillColor = options.fillColor or theme:get().iconColor.primary
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
@@ -23,7 +24,7 @@ function M.new(options)
 		display.newText(
 		{
 			text = iconName,
-			font = fontAwesomeSolidFont,
+			font = iconFont,
 			fontSize = fontSize,
 			align = "center"
 		}
@@ -46,9 +47,11 @@ function M.new(options)
 		group:insert(label)
 	end
 
-	local background = display.newRoundedRect(0, 0, group.contentWidth * 1.5, group.contentHeight, 2)
+	local background = display.newRoundedRect(0, 0, group.contentWidth * 1.5, group.contentHeight + 2, 2)
 	background.x = (buttonLabel) and icon.x + icon.contentWidth + label.contentWidth * 0.25 or icon.x
+	background.strokeWidth = 1
 	background:setFillColor(uPack(theme:get().backgroundColor.primary))
+	background:setStrokeColor(uPack(theme:get().backgroundColor.outline))
 	group:insert(1, background)
 
 	function group:touch(event)

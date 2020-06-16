@@ -1,6 +1,7 @@
 local M = {}
 local theme = require("libs.theme")
 local buttonLib = require("libs.ui.button")
+local filledButtonLib = require("libs.ui.filled-button")
 local mMin = math.min
 local mMax = math.max
 local uPack = unpack
@@ -142,10 +143,10 @@ function M.create()
 
 		if (onlyUseOkButton) then
 			okButton =
-				buttonLib.new(
+				filledButtonLib.new(
 				{
 					iconName = "check-circle OK",
-					fontSize = maxHeight * 0.03,
+					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)
 						self:hide()
@@ -161,10 +162,10 @@ function M.create()
 			okButton.y = background.y + background.contentHeight * 0.5 - okButton.contentHeight
 		else
 			cancelButton =
-				buttonLib.new(
+				filledButtonLib.new(
 				{
 					iconName = "window-close No",
-					fontSize = maxHeight * 0.03,
+					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)
 						self:hide()
@@ -179,10 +180,10 @@ function M.create()
 			cancelButton.y = background.y + background.contentHeight * 0.5 - cancelButton.contentHeight
 
 			confirmButton =
-				buttonLib.new(
+				filledButtonLib.new(
 				{
 					iconName = "check-circle Yes",
-					fontSize = maxHeight * 0.03,
+					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)
 						if (type(onConfirm) == "function") then

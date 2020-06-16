@@ -194,7 +194,7 @@ function M.create()
 			{
 				iconName = "window-close",
 				labelText = "Close",
-				fontSize = maxHeight * 0.04,
+				fontSize = maxHeight * 0.030,
 				parent = group,
 				onClick = function(event)
 					self:hide()
