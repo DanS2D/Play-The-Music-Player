@@ -2,6 +2,7 @@
 -- Copyright 2020 Danny Glover, all rights reserved
 -----------------------------------------------------------------------------------------
 
+_G.isLinux = system.getInfo("platform") == "linux"
 local lfs = require("lfs")
 local stringExt = require("libs.string-ext")
 local luaExt = require("libs.lua-ext")
@@ -20,7 +21,7 @@ theme:setDefaultBackgroundColor()
 math.randomseed(os.time())
 
 local tfd = require("plugin.tinyFileDialogs")
-local directoryMonitor = require("plugin.directoryMonitor")
+--local directoryMonitor = require("plugin.directoryMonitor")
 local tagLib = require("plugin.taglib")
 local strict = require("strict")
 local sqlLib = require("libs.sql-lib")
@@ -49,6 +50,7 @@ local mediaBar = nil
 local musicTableView = nil
 local background = nil
 local resizeTimer = nil
+local watchIDs = {}
 local oldWidth = display.contentWidth
 local oldHeight = display.contentHeight
 local titleFont = "fonts/Jost-500-Medium.ttf"
@@ -239,7 +241,7 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Add Music Folder",
-						iconName = "folder-plus",
+						iconName = _G.isLinux and "" or "folder-plus",
 						onClick = function()
 							wasSongPlaying = audioLib.isChannelPlaying()
 							interruptedSongPosition = mediaBarLib.getSongProgress()
@@ -282,7 +284,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Add Music File(s)",
-						iconName = "file-music",
+						iconName = _G.isLinux and "" or "file-music",
 						onClick = function()
 							local function onComplete()
 								reloadTableViews()
@@ -293,7 +295,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Import Music Library",
-						iconName = "file-import",
+						iconName = _G.isLinux and "" or "file-import",
 						onClick = function()
 							local foundFile =
 								tfd.openFileDialog(
@@ -326,7 +328,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Export Music Library",
-						iconName = "file-export",
+						iconName = _G.isLinux and "" or "file-export",
 						onClick = function()
 							local saveFilePath =
 								tfd.saveFileDialog(
@@ -358,7 +360,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Delete Music Library",
-						iconName = "trash",
+						iconName = _G.isLinux and "" or "trash",
 						onClick = function()
 							local function onRemoved()
 								local databasePath = system.pathForFile(nil, system.DocumentsDirectory)
@@ -391,7 +393,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Exit",
-						iconName = "power-off",
+						iconName = _G.isLinux and "" or "power-off",
 						onClick = function()
 							native.requestExit()
 						end
@@ -403,7 +405,7 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Preferences",
-						iconName = "tools",
+						iconName = _G.isLinux and "" or "tools",
 						onClick = function(event)
 							settingsPopup:show()
 						end
@@ -415,7 +417,7 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Fade In Track",
-						iconName = "turntable",
+						iconName = _G.isLinux and "" or "turntable",
 						useCheckmark = true,
 						checkMarkIsOn = toboolean(settings.fadeInTrack),
 						onClick = function(event)
@@ -432,7 +434,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Fade Out Track",
-						iconName = "turntable",
+						iconName = _G.isLinux and "" or "turntable",
 						useCheckmark = true,
 						checkMarkIsOn = toboolean(settings.fadeOutTrack),
 						onClick = function(event)
@@ -449,7 +451,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Crossfade",
-						iconName = "music",
+						iconName = _G.isLinux and "" or "music",
 						useCheckmark = true,
 						checkMarkIsOn = toboolean(settings.crossFade),
 						onClick = function(event)
@@ -471,21 +473,21 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Light Theme",
-						iconName = "palette",
+						iconName = _G.isLinux and "" or "palette",
 						onClick = function(event)
 							changeTheme("light")
 						end
 					},
 					{
 						title = "Dark Theme",
-						iconName = "palette",
+						iconName = _G.isLinux and "" or "palette",
 						onClick = function(event)
 							changeTheme("dark")
 						end
 					},
 					{
 						title = "Hacker Theme",
-						iconName = "palette",
+						iconName = _G.isLinux and "" or "palette",
 						onClick = function(event)
 							changeTheme("hacker")
 						end
@@ -497,7 +499,7 @@ local applicationMainMenuBar =
 				subItems = {
 					{
 						title = "Support Me On Patreon",
-						iconName = "patreon",
+						iconName = _G.isLinux and "" or "patreon",
 						font = fontAwesomeBrandsFont,
 						onClick = function(event)
 							system.openURL("https://www.patreon.com/dannyglover")
@@ -505,7 +507,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Report Bug",
-						iconName = "github",
+						iconName = _G.isLinux and "" or "github",
 						font = fontAwesomeBrandsFont,
 						onClick = function(event)
 							system.openURL("https://github.com/DannyGlover/Play-The-Music-Player")
@@ -513,7 +515,7 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Submit Feature Request",
-						iconName = "trello",
+						iconName = _G.isLinux and "" or "trello",
 						font = fontAwesomeBrandsFont,
 						onClick = function(event)
 							system.openURL("https://trello.com/b/HdFlGXkR")
@@ -521,14 +523,14 @@ local applicationMainMenuBar =
 					},
 					{
 						title = "Visit Website",
-						iconName = "browser",
+						iconName = _G.isLinux and "" or "browser",
 						onClick = function(event)
 							system.openURL("https://playmusicplayer.net")
 						end
 					},
 					{
 						title = "About",
-						iconName = "info-circle",
+						iconName = _G.isLinux and "" or "info-circle",
 						onClick = function(event)
 							aboutPopup:show()
 						end
@@ -616,6 +618,7 @@ end
 Runtime:addEventListener(eventDispatcher.mainEvent.name, onMainEvent)
 
 local function onResize(event)
+	--print("WINDOW WAS FUCKING RESIZED!!!")
 	if (alertPopupLib:isOpen()) then
 		native.setProperty("windowSize", {width = oldWidth, height = oldHeight})
 		return
@@ -627,16 +630,22 @@ local function onResize(event)
 	mediaBarLib:onResize()
 	musicList:onResize()
 
+	--print(display.contentWidth)
+
 	if (sqlLib:currentMusicCount() > 0) then
 		if (resizeTimer) then
 			timer.cancel(resizeTimer)
 			resizeTimer = nil
 		end
 
+		--print("recreating music list")
+		--musicList:recreateMusicList()
+
 		resizeTimer =
 			timer.performWithDelay(
 			500,
 			function()
+				print("recreating music list")
 				musicList:recreateMusicList()
 			end
 		)
@@ -654,6 +663,11 @@ local function onSystemEvent(event)
 		audioLib.reset()
 		cancelAllTimers()
 		transition.cancel()
+
+		for i = 1, #settings.musicFolderPaths do
+			--directoryMonitor.unwatch(watchIDs[i])
+		end
+
 		Runtime:removeEventListener("key", keyEventListener)
 		Runtime:removeEventListener("resize", onResize)
 	end
@@ -716,9 +730,9 @@ local function directoryListener(event)
 	return true
 end
 
-Runtime:addEventListener("directoryMonitor", directoryListener)
+--Runtime:addEventListener("directoryMonitor", directoryListener)
 
 for i = 1, #settings.musicFolderPaths do
-	_G.printf("Monitoring directory: %s for changes", settings.musicFolderPaths[i])
-	local watchID = directoryMonitor.watch(settings.musicFolderPaths[i])
+	--_G.printf("Monitoring directory: %s for changes", settings.musicFolderPaths[i])
+	--w1atchIDs[i] = directoryMonitor.watch(settings.musicFolderPaths[i])
 end

@@ -31,81 +31,81 @@ local ratingsInverse = {
 }
 local ratingStars = {
 	["0"] = {
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["0.5"] = {
-		{name = "star-half-alt", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star-half-alt", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["1"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["1.5"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star-half-alt", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star-half-alt", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["2"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["2.5"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star-half-alt", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star-half-alt", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["3"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["3.5"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star-half-alt", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star-half-alt", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["4"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont, isEmpty = true}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont, isEmpty = true}
 	},
 	["4.5"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star-half-alt", font = fontAwesomeSolidFont}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star-half-alt", font = fontAwesomeSolidFont}
 	},
 	["5"] = {
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont},
-		{name = "star", font = fontAwesomeSolidFont}
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont},
+		{name = _G.isLinux and "" or "star", font = fontAwesomeSolidFont}
 	}
 }
 

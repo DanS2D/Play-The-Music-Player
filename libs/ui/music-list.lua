@@ -237,7 +237,7 @@ local function createCategories()
 		local seperatorText =
 			display.newText(
 			{
-				text = "horizontal-rule",
+				text = _G.isLinux and "" or "horizontal-rule",
 				left = 0,
 				y = categoryHeight * 0.5 + 2,
 				font = fontAwesomeSolidFont,
@@ -295,7 +295,7 @@ local function createCategories()
 		local sortIndicator =
 			display.newText(
 			{
-				text = "caret-up",
+				text = _G.isLinux and "" or "caret-up",
 				y = categoryBar.contentHeight * 0.5,
 				font = fontAwesomeSolidFont,
 				fontSize = rowFontSize,
@@ -492,7 +492,7 @@ local function refreshPlaylistData()
 	local playlistData = {
 		{
 			title = "Create New Playlist",
-			icon = "list-music",
+			icon = _G.isLinux and "" or "list-music",
 			iconFont = fontAwesomeSolidFont,
 			font = titleFont,
 			closeOnClick = true,
@@ -505,7 +505,7 @@ local function refreshPlaylistData()
 	for i = 1, #playLists do
 		playlistData[#playlistData + 1] = {
 			title = playLists[i].name,
-			icon = "list-music",
+			icon = _G.isLinux and "" or "list-music",
 			iconFont = fontAwesomeSolidFont,
 			font = titleFont,
 			closeOnClick = true,
@@ -585,7 +585,7 @@ function M:createTableView(options, index)
 							nowPlayingIcon =
 								display.newText(
 								{
-									text = "volume",
+									text = _G.isLinux and "" or "volume",
 									font = fontAwesomeSolidFont,
 									x = 0,
 									y = (rowContentHeight * 0.5),
@@ -603,7 +603,7 @@ function M:createTableView(options, index)
 							nowPlayingIcon =
 								display.newText(
 								{
-									text = "exclamation-circle",
+									text = _G.isLinux and "" or "exclamation-circle",
 									font = fontAwesomeSolidFont,
 									x = 0,
 									y = (rowContentHeight * 0.5),
@@ -656,9 +656,11 @@ function M:createTableView(options, index)
 			end,
 			onRowClick = function(event)
 				local phase = event.phase
-				local numClicks = event.numClicks
+				local numClicks = event.numClicks + 1
 				local row = event.row
 				local parent = row.parent
+
+				print("num clicks are:", numClicks)
 
 				if (numClicks == 1) then
 					closeRightClickMenus()
@@ -839,7 +841,7 @@ function M.new()
 			items = {
 				{
 					title = "Move Left",
-					icon = "arrow-left",
+					icon = _G.isLinux and "" or "arrow-left",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -849,7 +851,7 @@ function M.new()
 				},
 				{
 					title = "Move Right",
-					icon = "arrow-right",
+					icon = _G.isLinux and "" or "arrow-right",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -859,7 +861,7 @@ function M.new()
 				},
 				{
 					title = "Hide",
-					icon = "eye",
+					icon = _G.isLinux and "" or "eye",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -868,7 +870,7 @@ function M.new()
 				},
 				{
 					title = "Auto Size All Column",
-					icon = "arrows-alt-h",
+					icon = _G.isLinux and "" or "arrows-alt-h",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -877,7 +879,7 @@ function M.new()
 				},
 				{
 					title = "Close",
-					icon = "times-circle",
+					icon = _G.isLinux and "" or "times-circle",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -894,7 +896,7 @@ function M.new()
 			items = {
 				{
 					title = "Edit Metadata",
-					icon = "edit",
+					icon = _G.isLinux and "" or "edit",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -906,7 +908,7 @@ function M.new()
 				},
 				{
 					title = "Add To Playlist",
-					icon = "list-music",
+					icon = _G.isLinux and "" or "list-music",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					hasSubmenu = true,
@@ -917,7 +919,7 @@ function M.new()
 				},
 				{
 					title = "Remove From Library",
-					icon = "database",
+					icon = _G.isLinux and "" or "database",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -964,7 +966,7 @@ function M.new()
 				},
 				{
 					title = "Remove From Library & Disk",
-					icon = "trash-alt",
+					icon = _G.isLinux and "" or "trash-alt",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,
@@ -992,7 +994,7 @@ function M.new()
 				},
 				{
 					title = "Close",
-					icon = "times-circle",
+					icon = _G.isLinux and "" or "times-circle",
 					iconFont = fontAwesomeSolidFont,
 					font = titleFont,
 					closeOnClick = true,

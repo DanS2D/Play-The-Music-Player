@@ -16,7 +16,7 @@ function M.new(parent)
 	local podcastListButton =
 		buttonLib.new(
 		{
-			iconName = "podcast",
+			iconName = _G.isLinux and "" or "podcast",
 			fontSize = common.mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
@@ -47,7 +47,7 @@ function M.new(parent)
 	local addNewRadioButton =
 		buttonLib.new(
 		{
-			iconName = "plus-square",
+			iconName = _G.isLinux and "" or "plus-square",
 			fontSize = common.smallButtonFontSize,
 			parent = group,
 			onClick = function(event)

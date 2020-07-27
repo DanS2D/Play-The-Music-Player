@@ -14,6 +14,10 @@ function M.new(options)
 	local onClick = options.onClick
 	local parent = options.parent or display.getCurrentStage()
 
+	if (_G.isLinux and iconName == "sync-alt") then
+		iconName = ""
+	end
+
 	local activityIndicator =
 		display.newText(
 		{

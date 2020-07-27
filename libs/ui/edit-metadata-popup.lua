@@ -269,7 +269,7 @@ function M.create()
 		albumArtworkPathButton =
 			filledButtonLib.new(
 			{
-				iconName = "image-polaroid",
+				iconName = _G.isLinux and "" or "image-polaroid",
 				labelText = "Select",
 				fontSize = maxHeight * 0.03,
 				parent = self,
@@ -329,7 +329,7 @@ function M.create()
 		albumArtworkMusicDiscogsButton =
 			filledButtonLib.new(
 			{
-				iconName = "compact-disc",
+				iconName = _G.isLinux and "" or "compact-disc",
 				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(clickEvent)
@@ -354,7 +354,7 @@ function M.create()
 		albumArtworkMusicBrainzButton =
 			filledButtonLib.new(
 			{
-				iconName = "head-side-brain",
+				iconName = _G.isLinux and "" or "head-side-brain",
 				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(clickEvent)
@@ -378,7 +378,7 @@ function M.create()
 		albumArtworkGoogleButton =
 			filledButtonLib.new(
 			{
-				iconName = "google",
+				iconName = _G.isLinux and "" or "google",
 				iconFont = fontAwesomeBrandsFont,
 				fontSize = maxHeight * 0.0395,
 				parent = self,
@@ -485,7 +485,7 @@ function M.create()
 		songFilePathButton =
 			filledButtonLib.new(
 			{
-				iconName = "ellipsis-h",
+				iconName = _G.isLinux and "" or "ellipsis-h",
 				fontSize = maxHeight * 0.0395,
 				parent = self,
 				onClick = function(event)
@@ -719,7 +719,7 @@ function M.create()
 		cancelButton =
 			filledButtonLib.new(
 			{
-				iconName = "window-close",
+				iconName = _G.isLinux and "" or "window-close",
 				labelText = "Cancel",
 				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,
@@ -734,7 +734,7 @@ function M.create()
 		confirmButton =
 			filledButtonLib.new(
 			{
-				iconName = "save",
+				iconName = _G.isLinux and "" or "save",
 				labelText = "Confirm",
 				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,

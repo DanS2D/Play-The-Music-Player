@@ -11,7 +11,7 @@ function M.new(parent)
 	local button =
 		buttonLib.new(
 		{
-			iconName = "user-music",
+			iconName = _G.isLinux and "" or "user-music",
 			fontSize = common.mainButtonFontSize,
 			parent = parent,
 			onClick = function(event)

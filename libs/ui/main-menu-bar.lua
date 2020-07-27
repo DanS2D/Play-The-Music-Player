@@ -197,8 +197,8 @@ function M.new(options)
 							switchLib.new(
 							{
 								y = rowContentHeight * 0.5,
-								offIconName = "square-full",
-								onIconName = "check-square",
+								offIconName = _G.isLinux and "" or "square-full",
+								onIconName = _G.isLinux and "" or "check-square",
 								fontSize = fontSize,
 								parent = group,
 								onClick = function(event)
@@ -383,7 +383,7 @@ function M.new(options)
 	local clearSearchButton =
 		buttonLib.new(
 		{
-			iconName = "search-minus",
+			iconName = _G.isLinux and "" or "search-minus",
 			fontSize = 18,
 			parent = group,
 			onClick = function(event)

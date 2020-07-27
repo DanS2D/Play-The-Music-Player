@@ -96,7 +96,7 @@ function M.new(options)
 						{
 							x = 0,
 							y = (rowContentHeight * 0.5),
-							text = "list-music",
+							text = _G.isLinux and "" or "list-music",
 							font = fontAwesomeSolidFont,
 							fontSize = fontSize,
 							align = "left"
@@ -125,7 +125,7 @@ function M.new(options)
 					local trashIcon =
 						buttonLib.new(
 						{
-							iconName = "trash-alt",
+							iconName = _G.isLinux and "" or "trash-alt",
 							fontSize = fontSize,
 							parent = group,
 							onClick = function(event)
@@ -233,7 +233,7 @@ function M.new(options)
 		tableView.outLineCaret =
 			display.newText(
 			{
-				text = "caret-up",
+				text = _G.isLinux and "" or "caret-up",
 				font = fontAwesomeSolidFont,
 				fontSize = fontSize,
 				align = "center"
@@ -249,7 +249,7 @@ function M.new(options)
 	local playListButton =
 		buttonLib.new(
 		{
-			iconName = "list-music",
+			iconName = _G.isLinux and "" or "list-music",
 			fontSize = mainButtonFontSize,
 			parent = group,
 			onClick = function(event)
@@ -301,7 +301,7 @@ function M.new(options)
 	playListCaret =
 		display.newText(
 		{
-			text = "caret-up",
+			text = _G.isLinux and "" or "caret-up",
 			font = fontAwesomeSolidFont,
 			fontSize = smallButtonFontSize
 		}
@@ -314,7 +314,7 @@ function M.new(options)
 	local addNewPlaylistButton =
 		buttonLib.new(
 		{
-			iconName = "plus-square",
+			iconName = _G.isLinux and "" or "plus-square",
 			fontSize = smallButtonFontSize,
 			parent = group,
 			onClick = function(event)

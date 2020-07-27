@@ -20,6 +20,32 @@ local M = {
 	previousSongIndex = 0,
 	currentSong = nil
 }
+--require("plugin.bass")
+--[[
+local bass = {
+	dispose = function() end,
+	fadeIn = function() end,
+	fadeOut = function() end,
+	getDuration = function() return 0 end,
+	getLevel = function() return {left = 0, right = 0} end,
+	getPlaybackTime = function() return {} end,
+	getVolume = function() return 0 end,
+	isChannelActive = function() return false end,
+	isChannelPaused = function() return false end,
+	isChannelPlaying = function() return false end,
+	isChipTunesPluginLoaded = function() return true end,
+	loadChipTunesPlugin = function() end,
+	unloadChipTunesPlugin = function() end,
+	load = function() end,
+	loadUrl = function() end,
+	pause = function() end,
+	play = function() end,
+	resume = function() end,
+	rewind = function() end,
+	seek = function() end,
+	setVolume = function() end,
+	stop = function() end,
+}--]]
 local bass = require("plugin.bass")
 local settings = require("libs.settings")
 local eventDispatcher = require("libs.event-dispatcher")

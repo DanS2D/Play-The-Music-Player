@@ -13,7 +13,7 @@ function M.new(parent)
 			fontSize = common.smallButtonFontSize,
 			buttonOptions = {
 				{
-					iconName = "repeat",
+					iconName = _G.isLinux and "" or "repeat",
 					name = "off",
 					alpha = 0.6,
 					onClick = function(event)
@@ -22,7 +22,7 @@ function M.new(parent)
 					end
 				},
 				{
-					iconName = "repeat",
+					iconName = _G.isLinux and "" or "repeat",
 					name = "repeatAll",
 					onClick = function(event)
 						audioLib.loopOne = true
@@ -30,7 +30,7 @@ function M.new(parent)
 					end
 				},
 				{
-					iconName = "repeat-1",
+					iconName = _G.isLinux and "" or "repeat-1",
 					name = "repeatOne",
 					onClick = function(event)
 						audioLib.loopAll = false

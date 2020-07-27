@@ -12,8 +12,8 @@ function M.new(parent)
 	button =
 		switchLib.new(
 		{
-			offIconName = "play",
-			onIconName = "pause",
+			offIconName = _G.isLinux and "" or "play",
+			onIconName = _G.isLinux and "" or "pause",
 			fontSize = common.mainButtonFontSize,
 			parent = parent,
 			onClick = function(event)

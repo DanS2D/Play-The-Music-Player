@@ -10,7 +10,7 @@ function M.new(parent)
 	local button =
 		buttonLib.new(
 		{
-			iconName = "step-backward",
+			iconName = _G.isLinux and "" or "step-backward",
 			fontSize = common.mainButtonFontSize,
 			parent = parent,
 			onClick = function(event)

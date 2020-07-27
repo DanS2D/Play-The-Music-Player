@@ -145,7 +145,7 @@ function M.create()
 			okButton =
 				filledButtonLib.new(
 				{
-					iconName = "check-circle OK",
+					iconName = _G.isLinux and " OK" or "check-circle OK",
 					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)
@@ -164,7 +164,7 @@ function M.create()
 			cancelButton =
 				filledButtonLib.new(
 				{
-					iconName = "window-close No",
+					iconName = _G.isLinux and " No" or "window-close No",
 					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)
@@ -182,7 +182,7 @@ function M.create()
 			confirmButton =
 				filledButtonLib.new(
 				{
-					iconName = "check-circle Yes",
+					iconName = _G.isLinux and " Yes" or "check-circle Yes",
 					fontSize = maxHeight * 0.030,
 					parent = self,
 					onClick = function(event)

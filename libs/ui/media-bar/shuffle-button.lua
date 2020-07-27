@@ -10,8 +10,8 @@ function M.new(parent)
 	button =
 		switchLib.new(
 		{
-			offIconName = "random",
-			onIconName = "random",
+			offIconName = _G.isLinux and "" or "random",
+			onIconName = _G.isLinux and "" or "random",
 			offAlpha = 0.6,
 			fontSize = common.smallButtonFontSize,
 			parent = parent,

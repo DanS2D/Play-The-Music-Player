@@ -255,7 +255,7 @@ function M.create()
 		cancelButton =
 			filledButtonLib.new(
 			{
-				iconName = "window-close",
+				iconName = _G.isLinux and "" or "window-close",
 				labelText = "Cancel",
 				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,
@@ -269,7 +269,7 @@ function M.create()
 		confirmButton =
 			filledButtonLib.new(
 			{
-				iconName = "save",
+				iconName = _G.isLinux and "" or "save",
 				labelText = "Confirm",
 				fontSize = maxHeight * 0.030,
 				parent = buttonGroup,

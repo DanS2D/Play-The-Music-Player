@@ -11,8 +11,8 @@ function M.new(parent)
 	button =
 		switchLib.new(
 		{
-			offIconName = "volume-slash",
-			onIconName = "volume-up",
+			offIconName = _G.isLinux and "" or "volume-slash",
+			onIconName = _G.isLinux and "" or "volume-up",
 			fontSize = common.mainButtonFontSize,
 			parent = parent,
 			onClick = function(event)

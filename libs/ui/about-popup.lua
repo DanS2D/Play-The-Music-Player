@@ -192,7 +192,7 @@ function M.create()
 		closeButton =
 			filledButtonLib.new(
 			{
-				iconName = "window-close",
+				iconName = _G.isLinux and "" or "window-close",
 				labelText = "Close",
 				fontSize = maxHeight * 0.030,
 				parent = group,
