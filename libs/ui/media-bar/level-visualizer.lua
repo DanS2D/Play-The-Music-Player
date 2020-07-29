@@ -22,8 +22,7 @@ local function updateVisualization()
 		end
 	end
 end
-
-timer.performWithDelay(20, updateVisualization, 0)
+--timer.performWithDelay(_G.isLinux and 1 or 20, updateVisualization, 0)
 
 function M.new()
 	local group = display.newGroup()

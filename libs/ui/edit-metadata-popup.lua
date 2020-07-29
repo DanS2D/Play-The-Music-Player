@@ -405,7 +405,7 @@ function M.create()
 
 			if (phase == "downloaded") then
 				local coverFileName = event.fileName
-
+				
 				tempArtworkFullPath = sFormat("%s%s", fileUtils.temporaryFullPath, coverFileName)
 				realArtworkFullPath =
 					sFormat(
@@ -811,9 +811,10 @@ function M.create()
 					end
 
 					if (realArtworkFullPath) then
+						local docsLen = fileUtils.documentsFullPath:len()
 						albumArt:saveCoverToAudioFile(
 							song,
-							sFormat("%s%s", fileUtils.albumArtworkFolder, realArtworkFullPath:getFileName())
+							realArtworkFullPath:sub(docsLen + 1)
 						)
 					end
 

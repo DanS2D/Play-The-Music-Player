@@ -21,9 +21,9 @@ function M.new(parent)
 
 	function playbackTimeText:update(song, elapsed, duration)
 		if (song and song.url) then
-			playbackTimeText.text = sFormat("%02d:%02d", elapsed % 60, elapsed / 60)
+			playbackTimeText.text = sFormat(" %02d:%02d", elapsed % 60, elapsed / 60)
 		else
-			playbackTimeText.text = sFormat("%02d:%02d/%02d:%02d", elapsed / 60, elapsed % 60, duration / 60, duration % 60)
+			playbackTimeText.text = sFormat(" %02d:%02d/%02d:%02d", elapsed / 60, elapsed % 60, duration / 60, duration % 60)
 		end
 	end
 

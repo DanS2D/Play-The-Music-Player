@@ -127,7 +127,7 @@ function M.new(options)
 
 	playBackTimeText = playbackTimeTextLib.new(group)
 	playBackTimeText.anchorX = 1
-	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
+	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 2
 	playBackTimeText.y = songContainerBox.y + (songContainerBox.contentHeight * 0.5) - 16
 	playBackTimeText.text = ""
 
@@ -170,7 +170,7 @@ end
 Runtime:addEventListener(eventDispatcher.mediaBar.name, mediaBarEventListener)
 
 function M.resetSongProgress()
-	playBackTimeText.text = "00:00/00:00"
+	playBackTimeText.text = " 00:00/00:00"
 	musicDuration = 0
 	songProgressView:setElapsedProgress(0)
 	songProgressView:setOverallProgress(0)
@@ -322,7 +322,7 @@ function M:onResize()
 	loopButton.x = songContainerBox.x + songContainerBox.contentWidth - shuffleButton.contentWidth
 	volumeButton.x = (nextButton.x + nextButton.contentWidth + volumeButton.contentWidth * 0.25 + controlButtonsXOffset)
 	volumeSlider.x = (volumeButton.x + volumeButton.contentWidth * 0.70 + controlButtonsXOffset)
-	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 5
+	playBackTimeText.x = songContainerBox.x + songContainerBox.contentWidth - 2
 	songProgressView.x = songContainerBox.x
 	levelVisualizer.x = songContainerBox.x + levelVisualizer.contentWidth + 16
 	podcastListButton.x = (display.contentWidth - podcastListButton.contentWidth - 50)
