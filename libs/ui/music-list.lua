@@ -656,11 +656,9 @@ function M:createTableView(options, index)
 			end,
 			onRowClick = function(event)
 				local phase = event.phase
-				local numClicks = event.numClicks + 1
+				local numClicks = event.numClicks
 				local row = event.row
 				local parent = row.parent
-
-				print("num clicks are:", numClicks)
 
 				if (numClicks == 1) then
 					closeRightClickMenus()
